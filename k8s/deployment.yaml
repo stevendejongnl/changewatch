@@ -25,7 +25,7 @@ spec:
         kubernetes.io/hostname: worker-02
       containers:
         - name: changewatch
-          image: git.madebysteven.nl/stevendejong/changewatch:latest
+          image: ghcr.io/stevendejongnl/changewatch:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
