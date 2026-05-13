@@ -20,7 +20,6 @@
     .changed { background: #78350f; color: #fde68a; }
     .pending { background: #1e293b; color: #94a3b8; }
     .error-msg { color: #fca5a5; font-size: 0.75rem; max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    form { display: inline; }
     button { background: #334155; border: none; color: #e2e8f0; padding: 0.25rem 0.75rem;
              border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
     button:hover { background: #475569; }
@@ -62,9 +61,7 @@
           {% endif %}
         </td>
         <td>
-          <form method="post" action="/monitors/{{ m.monitor_name }}/run">
-            <button type="submit">Run now</button>
-          </form>
+          <button onclick="runMonitor(this, '{{ m.monitor_name }}')">Run now</button>
         </td>
       </tr>
       {% else %}
@@ -72,6 +69,25 @@
       {% endfor %}
     </tbody>
   </table>
+  <script>
+    async function runMonitor(btn, name) {
+      btn.disabled = true;
+      btn.textContent = 'Queued…';
+      try {
+        const res = await fetch(`/monitors/${name}/run`, { method: 'POST' });
+        if (res.ok) {
+          btn.textContent = 'Queued';
+          setTimeout(() => location.reload(), 2000);
+        } else {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+        }
+      } catch (e) {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+      }
+    }
+  </script>
   {% if git_sync_enabled %}
   <script>
     async function syncMonitors() {
