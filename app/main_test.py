@@ -1,0 +1,115 @@
+import pytest
+from httpx import AsyncClient, ASGITransport
+
+from app.db import Database
+from app.main import app, get_db, get_scheduler
+from app.scheduler import Scheduler
+
+
+@pytest.fixture
+async def db(tmp_path):
+    database = Database(str(tmp_path / "main_test.db"))
+    await database.init()
+    yield database
+    await database.close()
+
+
+@pytest.fixture
+async def scheduler(db, tmp_path):
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir()
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+    yield sched
+    await sched.stop()
+
+
+@pytest.fixture
+async def client(db, scheduler):
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: scheduler
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+async def test_dashboard_returns_200(client):
+    response = await client.get("/")
+    assert response.status_code == 200
+
+
+async def test_dashboard_renders_html(client):
+    response = await client.get("/")
+    assert "text/html" in response.headers["content-type"]
+
+
+async def test_dashboard_shows_no_monitors_when_empty(client):
+    response = await client.get("/")
+    assert response.status_code == 200
+
+
+async def test_api_monitors_returns_json(client, db):
+    await db.record_run("price_check", status="ok", last_value="42.50", error=None, duration_ms=200)
+    response = await client.get("/api/monitors")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert data[0]["monitor_name"] == "price_check"
+    assert data[0]["status"] == "ok"
+
+
+async def test_api_monitors_empty_returns_empty_list(client):
+    response = await client.get("/api/monitors")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_run_now_queues_known_monitor(db, tmp_path):
+    import asyncio
+    from app.helpers import Monitor
+
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir()
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+
+    m = Monitor(name="example_price", schedule="*/5 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        pass
+
+    await check(None, None)
+    sched._monitors.append(m)
+
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: sched
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/monitors/example_price/run")
+
+    await asyncio.sleep(0.05)
+    app.dependency_overrides.clear()
+    await sched.stop()
+
+    assert response.status_code == 202
+
+
+async def test_run_now_returns_404_for_unknown_monitor(client):
+    response = await client.post("/monitors/does_not_exist_xyz/run")
+    assert response.status_code == 404
+
+
+async def test_run_now_returns_503_when_scheduler_not_ready(db):
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/monitors/example_price/run")
+    app.dependency_overrides.clear()
+    assert response.status_code == 503
+
+
+async def test_healthz_returns_ok(client):
+    response = await client.get("/healthz")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

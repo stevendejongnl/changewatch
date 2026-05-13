@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>changewatch</title>
+  <meta http-equiv="refresh" content="30">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #f8fafc; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    tr:hover td { background: #1e293b; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .ok      { background: #14532d; color: #86efac; }
+    .error   { background: #7f1d1d; color: #fca5a5; }
+    .changed { background: #78350f; color: #fde68a; }
+    .pending { background: #1e293b; color: #94a3b8; }
+    .error-msg { color: #fca5a5; font-size: 0.75rem; max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    form { display: inline; }
+    button { background: #334155; border: none; color: #e2e8f0; padding: 0.25rem 0.75rem;
+             border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+    button:hover { background: #475569; }
+  </style>
+</head>
+<body>
+  <h1>changewatch</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Monitor</th>
+        <th>Status</th>
+        <th>Last value</th>
+        <th>Last run</th>
+        <th>Duration</th>
+        <th>Error</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in monitors %}
+      <tr>
+        <td>{{ m.monitor_name }}</td>
+        <td><span class="badge {{ m.status }}">{{ m.status }}</span></td>
+        <td>{{ m.last_value or "—" }}</td>
+        <td>{{ m.ran_at or "never" }}</td>
+        <td>{{ m.duration_ms }}ms</td>
+        <td>
+          {% if m.error %}
+          <span class="error-msg" title="{{ m.error }}">{{ m.error }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="/monitors/{{ m.monitor_name }}/run">
+            <button type="submit">Run now</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;color:#475569;padding:2rem">No monitors yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

@@ -1,0 +1,83 @@
+import aiosqlite
+from typing import Optional
+
+
+class Database:
+    def __init__(self, path: str = "/data/state.db"):
+        self._path = path
+        self.conn: aiosqlite.Connection
+
+    async def init(self) -> None:
+        self.conn = await aiosqlite.connect(self._path)
+        self.conn.row_factory = aiosqlite.Row
+        await self.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS state (
+                monitor_name TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                monitor_name TEXT NOT NULL,
+                status TEXT NOT NULL,
+                last_value TEXT,
+                error TEXT,
+                duration_ms INTEGER NOT NULL,
+                ran_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+        """)
+        await self.conn.commit()
+
+    async def close(self) -> None:
+        await self.conn.close()
+
+    async def get_last_value(self, monitor_name: str) -> Optional[str]:
+        async with self.conn.execute(
+            "SELECT value FROM state WHERE monitor_name = ?", (monitor_name,)
+        ) as cur:
+            row = await cur.fetchone()
+        return row["value"] if row else None
+
+    async def set_value(self, monitor_name: str, value: str) -> None:
+        await self.conn.execute(
+            """INSERT INTO state (monitor_name, value, updated_at)
+               VALUES (?, ?, datetime('now'))
+               ON CONFLICT(monitor_name) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at""",
+            (monitor_name, value),
+        )
+        await self.conn.commit()
+
+    async def record_run(
+        self,
+        monitor_name: str,
+        status: str,
+        last_value: Optional[str],
+        error: Optional[str],
+        duration_ms: int,
+    ) -> None:
+        await self.conn.execute(
+            """INSERT INTO runs (monitor_name, status, last_value, error, duration_ms)
+               VALUES (?, ?, ?, ?, ?)""",
+            (monitor_name, status, last_value, error, duration_ms),
+        )
+        await self.conn.commit()
+
+    async def get_recent_runs(self, monitor_name: str, limit: int = 10) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT * FROM runs WHERE monitor_name = ? ORDER BY id DESC LIMIT ?",
+            (monitor_name, limit),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(r) for r in rows]
+
+    async def get_all_monitor_states(self) -> list[dict]:
+        async with self.conn.execute(
+            """SELECT r.monitor_name, r.status, r.last_value, r.error, r.duration_ms, r.ran_at
+               FROM runs r
+               INNER JOIN (
+                   SELECT monitor_name, MAX(ran_at) AS latest
+                   FROM runs GROUP BY monitor_name
+               ) latest ON r.monitor_name = latest.monitor_name AND r.ran_at = latest.latest"""
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(r) for r in rows]
