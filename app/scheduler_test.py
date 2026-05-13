@@ -181,3 +181,34 @@ async def test_scheduler_reload_removes_deleted_monitor(monitors_dir, tmp_path):
     await scheduler.stop()
     await db.close()
     assert {j["name"] for j in jobs} == {"keep"}
+
+
+async def test_scheduler_reload_preserves_dunder_jobs(monitors_dir, tmp_path):
+    """reload() must not remove internal jobs whose IDs are prefixed with __."""
+    from apscheduler.triggers.cron import CronTrigger
+
+    _make_monitor_module(monitors_dir, "mon")
+    db = Database(str(tmp_path / "reload3.db"))
+    await db.init()
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+
+    async def _noop():  # pragma: no cover
+        pass
+
+    scheduler._scheduler.add_job(
+        _noop,
+        CronTrigger.from_crontab("0 * * * *"),
+        id="__internal__",
+        name="internal",
+        replace_existing=True,
+    )
+    assert any(j.id == "__internal__" for j in scheduler._scheduler.get_jobs())
+
+    await scheduler.reload()
+
+    assert any(j.id == "__internal__" for j in scheduler._scheduler.get_jobs()), (
+        "reload() must not remove internal __ jobs"
+    )
+    await scheduler.stop()
+    await db.close()

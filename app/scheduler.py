@@ -69,7 +69,7 @@ class Scheduler:
     async def reload(self) -> None:
         new_monitors = discover_monitors(self._monitors_dir)
         new_ids = {m.name for m in new_monitors}
-        old_ids = {job.id for job in self._scheduler.get_jobs()}
+        old_ids = {job.id for job in self._scheduler.get_jobs() if not job.id.startswith("__")}
         runner = Runner(db=self._db, browser=self._browser)
         for job_id in old_ids - new_ids:
             self._scheduler.remove_job(job_id)
