@@ -26,6 +26,8 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
         monitor = getattr(module, "monitor", None)
         if isinstance(monitor, Monitor):
             monitors.append(monitor)
+    if len(monitors) > 1:
+        monitors = [m for m in monitors if m.name != "example_price"]
     return monitors
 
 

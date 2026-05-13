@@ -130,3 +130,19 @@ async def test_scheduler_trigger_raises_for_unknown_monitor(monitors_dir, tmp_pa
         await scheduler.trigger("no_such_monitor", None)
     await scheduler.stop()
     await db.close()
+
+
+def test_discover_monitors_hides_example_when_others_exist(monitors_dir):
+    _make_monitor_module(monitors_dir, "example_price")
+    _make_monitor_module(monitors_dir, "real_monitor")
+    monitors = discover_monitors(monitors_dir)
+    names = [m.name for m in monitors]
+    assert "example_price" not in names
+    assert "real_monitor" in names
+
+
+def test_discover_monitors_shows_example_when_it_is_the_only_monitor(monitors_dir):
+    _make_monitor_module(monitors_dir, "example_price")
+    monitors = discover_monitors(monitors_dir)
+    assert len(monitors) == 1
+    assert monitors[0].name == "example_price"
