@@ -9,7 +9,7 @@ class GitSync:
         self._token = token
 
     def _authenticated_url(self) -> str:
-        if not self._token:
+        if not self._token or "://" not in self._repo_url:
             return self._repo_url
         scheme, rest = self._repo_url.split("://", 1)
         return f"{scheme}://{self._token}@{rest}"
@@ -22,7 +22,7 @@ class GitSync:
         )
         _, stderr = await proc.communicate()
         if proc.returncode != 0:
-            raise RuntimeError(f"git failed: {args[0]}\n{stderr.decode()}")
+            raise RuntimeError(f"git command failed: {' '.join(args)}\n{stderr.decode()}")
 
     async def sync(self) -> None:
         url = self._authenticated_url()
