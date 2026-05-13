@@ -5,6 +5,9 @@ on:
     branches: ["main"]
   pull_request:
 
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
 jobs:
   test:
     name: Test
@@ -14,6 +17,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - name: Install dependencies
         run: uv sync
@@ -48,5 +53,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/stevendejongnl/changewatch:latest
-            ghcr.io/stevendejongnl/changewatch:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
