@@ -29,11 +29,34 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
-  build:
-    name: Build & Push
+  release:
+    name: Release
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      released: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Semantic release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build & Push
+    needs: release
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
     permissions:
       contents: read
       packages: write
@@ -54,4 +77,4 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:v${{ needs.release.outputs.version }}

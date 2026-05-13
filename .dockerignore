@@ -5,8 +5,6 @@
 docs/
 app/*_test.py
 app/conftest.py
-app/templates/
-app/static/
 __pycache__/
 .coverage
 .pytest_cache/
