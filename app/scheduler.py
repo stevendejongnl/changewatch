@@ -35,6 +35,7 @@ class Scheduler:
     def __init__(self, monitors_dir: Path, db: Database) -> None:
         self._monitors_dir = monitors_dir
         self._db = db
+        self._browser: Any = None
         self._scheduler = AsyncIOScheduler()
         self._monitors: list[Monitor] = []
 
@@ -42,9 +43,10 @@ class Scheduler:
     def running(self) -> bool:
         return self._scheduler.running
 
-    async def start(self) -> None:
+    async def start(self, browser: Any = None) -> None:
+        self._browser = browser
         self._monitors = discover_monitors(self._monitors_dir)
-        runner = Runner(db=self._db, browser=None)
+        runner = Runner(db=self._db, browser=self._browser)
         for monitor in self._monitors:
             self._scheduler.add_job(
                 runner.run,
@@ -63,6 +65,25 @@ class Scheduler:
 
     def list_jobs(self) -> list[dict[str, Any]]:
         return [{"name": job.name, "id": job.id} for job in self._scheduler.get_jobs()]
+
+    async def reload(self) -> None:
+        new_monitors = discover_monitors(self._monitors_dir)
+        new_ids = {m.name for m in new_monitors}
+        old_ids = {job.id for job in self._scheduler.get_jobs()}
+        runner = Runner(db=self._db, browser=self._browser)
+        for job_id in old_ids - new_ids:
+            self._scheduler.remove_job(job_id)
+        for monitor in new_monitors:
+            self._scheduler.add_job(
+                runner.run,
+                CronTrigger.from_crontab(monitor.schedule),
+                args=[monitor],
+                id=monitor.name,
+                name=monitor.name,
+                misfire_grace_time=60,
+                replace_existing=True,
+            )
+        self._monitors = new_monitors
 
     async def trigger(self, monitor_name: str, browser: Any) -> None:
         monitor = next((m for m in self._monitors if m.name == monitor_name), None)

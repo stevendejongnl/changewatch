@@ -146,3 +146,38 @@ def test_discover_monitors_shows_example_when_it_is_the_only_monitor(monitors_di
     monitors = discover_monitors(monitors_dir)
     assert len(monitors) == 1
     assert monitors[0].name == "example_price"
+
+
+async def test_scheduler_reload_adds_new_monitor(monitors_dir, tmp_path):
+    _make_monitor_module(monitors_dir, "original")
+    db = Database(str(tmp_path / "reload1.db"))
+    await db.init()
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+    assert len(scheduler.list_jobs()) == 1
+
+    _make_monitor_module(monitors_dir, "added")
+    await scheduler.reload()
+
+    jobs = scheduler.list_jobs()
+    await scheduler.stop()
+    await db.close()
+    assert {j["name"] for j in jobs} == {"original", "added"}
+
+
+async def test_scheduler_reload_removes_deleted_monitor(monitors_dir, tmp_path):
+    _make_monitor_module(monitors_dir, "keep")
+    path_to_delete = _make_monitor_module(monitors_dir, "delete_me")
+    db = Database(str(tmp_path / "reload2.db"))
+    await db.init()
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+    assert len(scheduler.list_jobs()) == 2
+
+    path_to_delete.unlink()
+    await scheduler.reload()
+
+    jobs = scheduler.list_jobs()
+    await scheduler.stop()
+    await db.close()
+    assert {j["name"] for j in jobs} == {"keep"}
