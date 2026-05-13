@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "▶ pre-push: running full test suite with coverage check..."
+cd "$(git rev-parse --show-toplevel)"
+uv run pytest
+
+echo "✓ pre-push passed — safe to push"

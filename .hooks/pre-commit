@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "▶ pre-commit: running tests (fail-fast, no coverage)..."
+cd "$(git rev-parse --show-toplevel)"
+uv run pytest --no-cov -x -q
+
+echo "✓ pre-commit passed"
