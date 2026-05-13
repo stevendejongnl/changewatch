@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.db import Database
-from app.main import app, get_db, get_scheduler
+from app.main import app, get_db, get_scheduler, get_git_sync
 from app.scheduler import Scheduler
 
 
@@ -113,3 +113,28 @@ async def test_healthz_returns_ok(client):
     response = await client.get("/healthz")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+async def test_sync_returns_503_when_git_sync_not_configured(db, scheduler):
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: scheduler
+    app.dependency_overrides[get_git_sync] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/sync")
+    app.dependency_overrides.clear()
+    assert response.status_code == 503
+
+
+async def test_sync_returns_202_when_configured(db, scheduler):
+    from unittest.mock import AsyncMock
+    mock_gs = AsyncMock()
+    mock_gs.sync = AsyncMock()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: scheduler
+    app.dependency_overrides[get_git_sync] = lambda: mock_gs
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/sync")
+    app.dependency_overrides.clear()
+    assert response.status_code == 202
+    assert response.json() == {"synced": True}
+    mock_gs.sync.assert_called_once()
