@@ -8,7 +8,8 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
-    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #f8fafc; }
+    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; color: #f8fafc; }
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
     td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
@@ -23,10 +24,18 @@
     button { background: #334155; border: none; color: #e2e8f0; padding: 0.25rem 0.75rem;
              border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
     button:hover { background: #475569; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #sync-error { color: #fca5a5; font-size: 0.75rem; }
   </style>
 </head>
 <body>
-  <h1>changewatch</h1>
+  <div class="header">
+    <h1>changewatch</h1>
+    {% if git_sync_enabled %}
+    <button id="sync-btn" onclick="syncMonitors()">Sync monitors</button>
+    <span id="sync-error"></span>
+    {% endif %}
+  </div>
   <table>
     <thead>
       <tr>
@@ -63,5 +72,31 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if git_sync_enabled %}
+  <script>
+    async function syncMonitors() {
+      const btn = document.getElementById('sync-btn');
+      const err = document.getElementById('sync-error');
+      btn.disabled = true;
+      btn.textContent = 'Syncing…';
+      err.textContent = '';
+      try {
+        const res = await fetch('/sync', { method: 'POST' });
+        if (res.ok) {
+          location.reload();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          err.textContent = data.detail || 'Sync failed';
+          btn.disabled = false;
+          btn.textContent = 'Sync monitors';
+        }
+      } catch (e) {
+        err.textContent = 'Network error';
+        btn.disabled = false;
+        btn.textContent = 'Sync monitors';
+      }
+    }
+  </script>
+  {% endif %}
 </body>
 </html>
