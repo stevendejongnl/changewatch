@@ -155,3 +155,28 @@ async def test_api_monitor_runs_empty_returns_empty_list(client):
     response = await client.get("/api/monitors/no_runs_here/runs")
     assert response.status_code == 200
     assert response.json() == []
+
+
+async def test_monitor_detail_returns_404_for_unknown_monitor(client):
+    response = await client.get("/monitors/does_not_exist_xyz")
+    assert response.status_code == 404
+
+
+async def test_monitor_detail_returns_200_for_known_monitor(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "my_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="my_mon", schedule="0 8 * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/monitors/my_mon")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert "my_mon" in response.text
+    assert "0 8 * * *" in response.text

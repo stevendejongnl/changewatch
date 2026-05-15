@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ monitor_name }} — changewatch</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
+    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .breadcrumb { color: #64748b; font-size: 0.875rem; }
+    .breadcrumb a { color: #93c5fd; text-decoration: none; }
+    h1 { font-size: 1.25rem; color: #f8fafc; }
+    .meta { color: #64748b; font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    tr:hover td { background: #1e293b22; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .ok      { background: #14532d; color: #86efac; }
+    .error   { background: #7f1d1d; color: #fca5a5; }
+    .changed { background: #78350f; color: #fde68a; }
+    .pending { background: #1e293b; color: #94a3b8; }
+    .error-msg { color: #fca5a5; font-size: 0.8rem; }
+    .log-block { margin-top: 0.5rem; background: #0a0d14; border-radius: 4px; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.72rem; line-height: 1.8; color: #94a3b8; }
+    .log-line { display: flex; gap: 0.75rem; }
+    .log-time { color: #475569; white-space: nowrap; }
+    .log-level-INFO    { color: #60a5fa; }
+    .log-level-WARNING { color: #fbbf24; }
+    .log-level-ERROR   { color: #f87171; }
+    .log-level-DEBUG   { color: #6b7280; }
+    details summary { cursor: pointer; color: #64748b; font-size: 0.75rem; user-select: none; }
+    details summary:hover { color: #94a3b8; }
+    button { background: #334155; border: none; color: #e2e8f0; padding: 0.35rem 0.9rem;
+             border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+    button:hover { background: #475569; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="breadcrumb"><a href="/">changewatch</a> › {{ monitor_name }}</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.35rem">
+        <h1>{{ monitor_name }}</h1>
+        <span class="badge {{ current_status }}">{{ current_status }}</span>
+        <span class="meta">runs at {{ schedule }}</span>
+      </div>
+    </div>
+    <button id="run-btn" onclick="runNow()">&#9654; Run now</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Duration</th>
+        <th>Value</th>
+        <th>Error / Logs</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for run in runs %}
+      <tr data-run-id="{{ run.id }}">
+        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at }}</td>
+        <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
+        <td style="color:#94a3b8">{{ run.duration_ms }}ms</td>
+        <td>{{ run.last_value or "—" }}</td>
+        <td>
+          {% if run.error %}
+          <div class="error-msg">{{ run.error }}</div>
+          {% endif %}
+          {% if run.logs %}
+          <details {% if loop.first and run.status == 'error' %}open{% endif %}>
+            <summary>{{ run.logs | length }} log line{{ 's' if run.logs | length != 1 }}</summary>
+            <div class="log-block">
+              {% for line in run.logs %}
+              <div class="log-line">
+                <span class="log-time">{{ line.logged_at }}</span>
+                <span class="log-level-{{ line.level }}">{{ line.level }}</span>
+                <span>{{ line.message }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </details>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:#475569;padding:2rem">No runs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <script>
+    async function runNow() {
+      const btn = document.getElementById('run-btn');
+      btn.disabled = true;
+      btn.textContent = 'Queued…';
+      const latestId = parseInt(document.querySelector('tr[data-run-id]')?.dataset.runId || '0');
+      try {
+        const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
+        if (!res.ok) { btn.textContent = 'Error'; btn.disabled = false; return; }
+        const poll = setInterval(async () => {
+          try {
+            const r = await fetch('/api/monitors/{{ monitor_name }}/runs');
+            if (!r.ok) return;
+            const runs = await r.json();
+            if (runs.length > 0 && runs[0].id > latestId) {
+              clearInterval(poll);
+              location.reload();
+            }
+          } catch (_) {}
+        }, 1000);
+      } catch (_) {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

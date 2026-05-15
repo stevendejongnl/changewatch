@@ -134,6 +134,24 @@ async def run_now(name: str, db: DbDep, scheduler: SchedulerDep):
     return {"queued": name}
 
 
+@app.get("/monitors/{name}", response_class=HTMLResponse)
+async def monitor_detail(name: str, request: Request, db: DbDep):
+    known = {m.name: m for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    monitor = known[name]
+    runs = await db.get_runs_with_logs(name)
+    current_status = runs[0]["status"] if runs else "pending"
+    return templates.TemplateResponse(
+        request, "monitor_detail.html", {
+            "monitor_name": name,
+            "schedule": monitor.schedule,
+            "current_status": current_status,
+            "runs": runs,
+        }
+    )
+
+
 @app.post("/sync", status_code=202)
 async def sync_monitors(git_sync: GitSyncDep, scheduler: SchedulerDep):
     if git_sync is None:
