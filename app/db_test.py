@@ -136,3 +136,14 @@ async def test_get_all_runs_offset(db):
     page2 = await db.get_all_runs(limit=2, offset=2)
     assert len(page1) == 2
     assert len(page2) == 1
+
+
+async def test_get_run_logs_isolated_by_run_id(db):
+    run_id_a = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=10)
+    run_id_b = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.write_run_logs(run_id_a, [("INFO", "from a")])
+    await db.write_run_logs(run_id_b, [("INFO", "from b")])
+    logs_a = await db.get_run_logs(run_id_a)
+    logs_b = await db.get_run_logs(run_id_b)
+    assert len(logs_a) == 1 and logs_a[0]["message"] == "from a"
+    assert len(logs_b) == 1 and logs_b[0]["message"] == "from b"

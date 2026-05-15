@@ -32,6 +32,7 @@ class Database:
                 message TEXT NOT NULL,
                 logged_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
+            CREATE INDEX IF NOT EXISTS idx_run_logs_run_id ON run_logs(run_id);
         """)
         await self.conn.commit()
 
@@ -67,8 +68,9 @@ class Database:
                VALUES (?, ?, ?, ?, ?)""",
             (monitor_name, status, last_value, error, duration_ms),
         ) as cur:
-            await self.conn.commit()
-            return cur.lastrowid
+            row_id = cur.lastrowid
+        await self.conn.commit()
+        return row_id
 
     async def write_run_logs(self, run_id: int, lines: list[tuple[str, str]]) -> None:
         if not lines:
