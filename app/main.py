@@ -152,6 +152,22 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
     )
 
 
+@app.get("/activity", response_class=HTMLResponse)
+async def activity_feed(request: Request, db: DbDep, limit: int = 50, offset: int = 0):
+    runs = await db.get_all_runs(limit=limit, offset=offset)
+    monitor_names = sorted({r["monitor_name"] for r in runs})
+    has_more = len(runs) == limit
+    return templates.TemplateResponse(
+        request, "activity.html", {
+            "runs": runs,
+            "monitor_names": monitor_names,
+            "limit": limit,
+            "offset": offset,
+            "has_more": has_more,
+        }
+    )
+
+
 @app.post("/sync", status_code=202)
 async def sync_monitors(git_sync: GitSyncDep, scheduler: SchedulerDep):
     if git_sync is None:

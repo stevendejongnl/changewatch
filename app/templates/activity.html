@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity — changewatch</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
+    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .breadcrumb { color: #64748b; font-size: 0.875rem; }
+    .breadcrumb a { color: #93c5fd; text-decoration: none; }
+    h1 { font-size: 1.25rem; color: #f8fafc; }
+    .filters { display: flex; gap: 0.5rem; margin-left: auto; }
+    select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    tr:hover td { background: #1e293b22; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .ok      { background: #14532d; color: #86efac; }
+    .error   { background: #7f1d1d; color: #fca5a5; }
+    .changed { background: #78350f; color: #fde68a; }
+    .pending { background: #1e293b; color: #94a3b8; }
+    .monitor-link { color: #93c5fd; text-decoration: none; font-size: 0.85rem; }
+    .monitor-link:hover { text-decoration: underline; }
+    .error-snippet { color: #fca5a5; font-size: 0.78rem; }
+    .pagination { margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: center; font-size: 0.8rem; }
+    .pagination a { color: #93c5fd; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="breadcrumb"><a href="/">changewatch</a> › activity</div>
+      <h1 style="margin-top:0.35rem">Activity</h1>
+    </div>
+    <div class="filters">
+      <select id="mon-filter" onchange="applyFilters()">
+        <option value="">All monitors</option>
+        {% for name in monitor_names %}
+        <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+      <select id="status-filter" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option value="ok">ok</option>
+        <option value="error">error</option>
+        <option value="changed">changed</option>
+      </select>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Monitor</th>
+        <th>Status</th>
+        <th>Value / Error</th>
+        <th>Duration</th>
+      </tr>
+    </thead>
+    <tbody id="feed">
+      {% for run in runs %}
+      <tr data-monitor="{{ run.monitor_name }}" data-status="{{ run.status }}">
+        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at }}</td>
+        <td><a class="monitor-link" href="/monitors/{{ run.monitor_name }}">{{ run.monitor_name }}</a></td>
+        <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
+        <td>
+          {% if run.error %}
+          <span class="error-snippet">{{ run.error[:80] }}{% if run.error | length > 80 %}…{% endif %}</span>
+          {% elif run.last_value %}
+          <span style="color:#94a3b8;font-size:0.85rem">{{ run.last_value }}</span>
+          {% else %}
+          <span style="color:#475569">—</span>
+          {% endif %}
+        </td>
+        <td style="color:#64748b">{{ run.duration_ms }}ms</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:#475569;padding:2rem">No runs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if offset > 0 %}
+    <a href="/activity?offset={{ [offset - limit, 0] | max }}&limit={{ limit }}">← newer</a>
+    {% endif %}
+    {% if has_more %}
+    <a href="/activity?offset={{ offset + limit }}&limit={{ limit }}">older →</a>
+    {% endif %}
+  </div>
+
+  <script>
+    function applyFilters() {
+      const mon = document.getElementById('mon-filter').value;
+      const status = document.getElementById('status-filter').value;
+      document.querySelectorAll('#feed tr[data-monitor]').forEach(row => {
+        const monMatch = !mon || row.dataset.monitor === mon;
+        const statusMatch = !status || row.dataset.status === status;
+        row.style.display = monMatch && statusMatch ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

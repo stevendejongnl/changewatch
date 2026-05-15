@@ -48,6 +48,27 @@ async def test_dashboard_shows_no_monitors_when_empty(client):
     assert response.status_code == 200
 
 
+async def test_activity_returns_200(client):
+    response = await client.get("/activity")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+async def test_activity_shows_runs_from_all_monitors(client, db):
+    await db.record_run("mon_a", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="error", last_value=None, error="boom", duration_ms=20)
+    response = await client.get("/activity")
+    assert "mon_a" in response.text
+    assert "mon_b" in response.text
+
+
+async def test_activity_offset_pagination(client, db):
+    for i in range(3):
+        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=10)
+    response = await client.get("/activity?offset=2&limit=2")
+    assert response.status_code == 200
+
+
 async def test_api_monitors_returns_json(client, db):
     await db.record_run("price_check", status="ok", last_value="42.50", error=None, duration_ms=200)
     response = await client.get("/api/monitors")
