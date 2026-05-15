@@ -63,10 +63,19 @@ async def test_activity_shows_runs_from_all_monitors(client, db):
 
 
 async def test_activity_offset_pagination(client, db):
-    for i in range(3):
-        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=10)
+    # Insert 4 runs with distinct monitor names so we can verify the slice.
+    # ORDER BY id DESC means newest first: mon_d, mon_c, mon_b, mon_a
+    for name in ["mon_a", "mon_b", "mon_c", "mon_d"]:
+        await db.record_run(name, status="ok", last_value=None, error=None, duration_ms=10)
     response = await client.get("/activity?offset=2&limit=2")
     assert response.status_code == 200
+    # offset=2 skips mon_d and mon_c (the two most-recent runs),
+    # so the response should contain mon_b and mon_a
+    assert "mon_b" in response.text
+    assert "mon_a" in response.text
+    # The first-page runs should NOT appear on this offset page
+    assert "mon_d" not in response.text
+    assert "mon_c" not in response.text
 
 
 async def test_api_monitors_returns_json(client, db):
