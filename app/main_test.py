@@ -138,3 +138,20 @@ async def test_sync_returns_202_when_configured(db, scheduler):
     assert response.status_code == 202
     assert response.json() == {"synced": True}
     mock_gs.sync.assert_called_once()
+
+
+async def test_api_monitor_runs_returns_json_with_logs(client, db):
+    run_id = await db.record_run("weather", status="ok", last_value="14°C", error=None, duration_ms=500)
+    await db.write_run_logs(run_id, [("INFO", "fetched ok")])
+    response = await client.get("/api/monitors/weather/runs")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert data[0]["status"] == "ok"
+    assert data[0]["logs"][0]["message"] == "fetched ok"
+
+
+async def test_api_monitor_runs_empty_returns_empty_list(client):
+    response = await client.get("/api/monitors/no_runs_here/runs")
+    assert response.status_code == 200
+    assert response.json() == []

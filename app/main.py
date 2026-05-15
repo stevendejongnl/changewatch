@@ -117,6 +117,11 @@ async def api_monitors(db: DbDep):
     return await db.get_all_monitor_states()
 
 
+@app.get("/api/monitors/{name}/runs")
+async def api_monitor_runs(name: str, db: DbDep) -> list[dict]:
+    return await db.get_runs_with_logs(name)
+
+
 @app.post("/monitors/{name}/run", status_code=202)
 async def run_now(name: str, db: DbDep, scheduler: SchedulerDep):
     known = {m.name for m in discover_monitors(MONITORS_DIR)}
