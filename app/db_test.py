@@ -65,3 +65,74 @@ async def test_get_all_monitor_states_returns_latest_per_monitor(db):
     states = await db.get_all_monitor_states()
     names = {s["monitor_name"] for s in states}
     assert names == {"a", "b"}
+
+
+async def test_record_run_returns_int(db):
+    run_id = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)
+    assert isinstance(run_id, int)
+    assert run_id > 0
+
+
+async def test_write_and_get_run_logs(db):
+    run_id = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)
+    await db.write_run_logs(run_id, [("INFO", "hello"), ("ERROR", "world")])
+    logs = await db.get_run_logs(run_id)
+    assert len(logs) == 2
+    assert logs[0]["level"] == "INFO"
+    assert logs[0]["message"] == "hello"
+    assert logs[1]["level"] == "ERROR"
+    assert logs[1]["message"] == "world"
+
+
+async def test_write_run_logs_noop_when_empty(db):
+    run_id = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)
+    await db.write_run_logs(run_id, [])
+    assert await db.get_run_logs(run_id) == []
+
+
+async def test_get_runs_with_logs_includes_log_lines(db):
+    run_id = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)
+    await db.write_run_logs(run_id, [("INFO", "ran ok")])
+    runs = await db.get_runs_with_logs("mon")
+    assert len(runs) == 1
+    assert runs[0]["id"] == run_id
+    assert len(runs[0]["logs"]) == 1
+    assert runs[0]["logs"][0]["message"] == "ran ok"
+
+
+async def test_get_runs_with_logs_empty_logs(db):
+    await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)
+    runs = await db.get_runs_with_logs("mon")
+    assert runs[0]["logs"] == []
+
+
+async def test_get_runs_with_logs_limit(db):
+    for i in range(60):
+        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=10)
+    runs = await db.get_runs_with_logs("mon", limit=50)
+    assert len(runs) == 50
+
+
+async def test_get_all_runs_returns_all_monitors(db):
+    await db.record_run("mon_a", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="error", last_value=None, error="boom", duration_ms=20)
+    runs = await db.get_all_runs()
+    names = {r["monitor_name"] for r in runs}
+    assert "mon_a" in names
+    assert "mon_b" in names
+
+
+async def test_get_all_runs_ordered_newest_first(db):
+    await db.record_run("mon", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.record_run("mon", status="error", last_value=None, error="e", duration_ms=20)
+    runs = await db.get_all_runs()
+    assert runs[0]["status"] == "error"
+
+
+async def test_get_all_runs_offset(db):
+    for i in range(3):
+        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=10)
+    page1 = await db.get_all_runs(limit=2, offset=0)
+    page2 = await db.get_all_runs(limit=2, offset=2)
+    assert len(page1) == 2
+    assert len(page2) == 1

@@ -25,6 +25,13 @@ class Database:
                 duration_ms INTEGER NOT NULL,
                 ran_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
+            CREATE TABLE IF NOT EXISTS run_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL REFERENCES runs(id),
+                level TEXT NOT NULL,
+                message TEXT NOT NULL,
+                logged_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
         """)
         await self.conn.commit()
 
@@ -54,13 +61,52 @@ class Database:
         last_value: Optional[str],
         error: Optional[str],
         duration_ms: int,
-    ) -> None:
-        await self.conn.execute(
+    ) -> int:
+        async with self.conn.execute(
             """INSERT INTO runs (monitor_name, status, last_value, error, duration_ms)
                VALUES (?, ?, ?, ?, ?)""",
             (monitor_name, status, last_value, error, duration_ms),
+        ) as cur:
+            await self.conn.commit()
+            return cur.lastrowid
+
+    async def write_run_logs(self, run_id: int, lines: list[tuple[str, str]]) -> None:
+        if not lines:
+            return
+        await self.conn.executemany(
+            "INSERT INTO run_logs (run_id, level, message) VALUES (?, ?, ?)",
+            [(run_id, level, msg) for level, msg in lines],
         )
         await self.conn.commit()
+
+    async def get_run_logs(self, run_id: int) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT level, message, logged_at FROM run_logs WHERE run_id = ? ORDER BY id",
+            (run_id,),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(r) for r in rows]
+
+    async def get_runs_with_logs(self, monitor_name: str, limit: int = 50) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT * FROM runs WHERE monitor_name = ? ORDER BY id DESC LIMIT ?",
+            (monitor_name, limit),
+        ) as cur:
+            run_rows = await cur.fetchall()
+        runs = []
+        for row in run_rows:
+            run = dict(row)
+            run["logs"] = await self.get_run_logs(run["id"])
+            runs.append(run)
+        return runs
+
+    async def get_all_runs(self, limit: int = 50, offset: int = 0) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT * FROM runs ORDER BY id DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(r) for r in rows]
 
     async def get_recent_runs(self, monitor_name: str, limit: int = 10) -> list[dict]:
         async with self.conn.execute(
