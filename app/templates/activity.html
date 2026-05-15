@@ -64,7 +64,7 @@
     <tbody id="feed">
       {% for run in runs %}
       <tr data-monitor="{{ run.monitor_name }}" data-status="{{ run.status }}">
-        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at }}</td>
+        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at | localtime }}</td>
         <td><a class="monitor-link" href="/monitors/{{ run.monitor_name }}">{{ run.monitor_name }}</a></td>
         <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
         <td>

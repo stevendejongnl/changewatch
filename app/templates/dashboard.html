@@ -54,7 +54,7 @@
         <td><a href="/monitors/{{ m.monitor_name }}" style="color:#93c5fd;text-decoration:none">{{ m.monitor_name }}</a></td>
         <td><span class="badge {{ m.status }}">{{ m.status }}</span></td>
         <td>{{ m.last_value or "—" }}</td>
-        <td>{{ m.ran_at or "never" }}</td>
+        <td>{{ m.ran_at | localtime or "never" }}</td>
         <td>{{ m.duration_ms }}ms</td>
         <td>
           {% if m.error %}

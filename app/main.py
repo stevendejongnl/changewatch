@@ -1,7 +1,9 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
+from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -19,6 +21,7 @@ MONITORS_REPO_TOKEN = os.getenv("MONITORS_REPO_TOKEN", "")
 MONITORS_REPO_SYNC_INTERVAL = os.getenv("MONITORS_REPO_SYNC_INTERVAL", "0 * * * *")
 
 DB_PATH = os.getenv("DB_PATH", "/data/state.db")
+DISPLAY_TZ = os.getenv("TZ", "Europe/Amsterdam")
 
 if MONITORS_REPO_URL:  # pragma: no cover
     MONITORS_DIR = Path(DB_PATH).parent / "monitors-repo"
@@ -70,6 +73,16 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 
 app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
+
+def _to_local(dt_str: Optional[str]) -> str:
+    if not dt_str:
+        return ""
+    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=ZoneInfo("UTC"))
+    return dt.astimezone(ZoneInfo(DISPLAY_TZ)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+templates.env.filters["localtime"] = _to_local
 
 
 async def get_db() -> Database:  # pragma: no cover

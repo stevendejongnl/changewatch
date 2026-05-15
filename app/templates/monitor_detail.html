@@ -63,7 +63,7 @@
     <tbody>
       {% for run in runs %}
       <tr data-run-id="{{ run.id }}">
-        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at }}</td>
+        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at | localtime }}</td>
         <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
         <td style="color:#94a3b8">{{ run.duration_ms }}ms</td>
         <td>{{ run.last_value or "—" }}</td>
@@ -77,7 +77,7 @@
             <div class="log-block">
               {% for line in run.logs %}
               <div class="log-line">
-                <span class="log-time">{{ line.logged_at }}</span>
+                <span class="log-time">{{ line.logged_at | localtime }}</span>
                 <span class="log-level-{{ line.level }}">{{ line.level }}</span>
                 <span>{{ line.message }}</span>
               </div>
