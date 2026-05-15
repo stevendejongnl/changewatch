@@ -100,6 +100,8 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
     monitors = await db.get_all_monitor_states()
     known = discover_monitors(MONITORS_DIR)
     all_names = {m.name for m in known}
+    if "example_price" not in all_names and all_names:
+        monitors = [m for m in monitors if m["monitor_name"] != "example_price"]
     seen = {m["monitor_name"] for m in monitors}
     for name in sorted(all_names - seen):
         monitors.append({"monitor_name": name, "status": "pending", "last_value": None,

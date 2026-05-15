@@ -236,3 +236,43 @@ async def test_dashboard_has_activity_link(client):
     response = await client.get("/")
     assert response.status_code == 200
     assert 'href="/activity"' in response.text
+
+
+def _make_monitor_file(monitors_dir, name):
+    (monitors_dir / f"{name}.py").write_text(
+        f'from app.helpers import Monitor\n'
+        f'monitor = Monitor(name="{name}", schedule="0 8 * * *", notify_channels=[])\n'
+        f'@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+
+
+async def test_dashboard_hides_example_price_when_real_monitors_exist(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    _make_monitor_file(monitors_dir, "real_mon")
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("example_price", status="ok", last_value="99", error=None, duration_ms=10)
+    await db.record_run("real_mon", status="ok", last_value="42", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/")
+    app.dependency_overrides.clear()
+    assert "example_price" not in response.text
+    assert "real_mon" in response.text
+
+
+async def test_dashboard_shows_example_price_when_only_monitor(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    _make_monitor_file(monitors_dir, "example_price")
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("example_price", status="ok", last_value="99", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/")
+    app.dependency_overrides.clear()
+    assert "example_price" in response.text
