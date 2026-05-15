@@ -1,132 +1,318 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ monitor_name }} — changewatch</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
-    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .breadcrumb { color: #64748b; font-size: 0.875rem; }
-    .breadcrumb a { color: #93c5fd; text-decoration: none; }
-    h1 { font-size: 1.25rem; color: #f8fafc; }
-    .meta { color: #64748b; font-size: 0.8rem; }
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
-    td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
-    tr:hover td { background: #1e293b22; }
-    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-    .ok      { background: #14532d; color: #86efac; }
-    .error   { background: #7f1d1d; color: #fca5a5; }
-    .changed { background: #78350f; color: #fde68a; }
-    .pending { background: #1e293b; color: #94a3b8; }
-    .error-msg { color: #fca5a5; font-size: 0.8rem; }
-    .log-block { margin-top: 0.5rem; background: #0a0d14; border-radius: 4px; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.72rem; line-height: 1.8; color: #94a3b8; overflow-x: auto; }
-    .log-line { display: flex; gap: 0.75rem; }
-    .log-time { color: #475569; white-space: nowrap; }
-    .log-level-INFO    { color: #60a5fa; }
-    .log-level-WARNING { color: #fbbf24; }
-    .log-level-ERROR   { color: #f87171; }
-    .log-level-DEBUG   { color: #6b7280; }
-    details summary { cursor: pointer; color: #64748b; font-size: 0.75rem; user-select: none; }
-    details summary:hover { color: #94a3b8; }
-    button { background: #334155; border: none; color: #e2e8f0; padding: 0.35rem 0.9rem;
-             border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-    button:hover { background: #475569; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    @media (max-width: 600px) {
-      body { padding: 1rem; }
-      /* Hide Duration and Value columns on mobile */
-      th:nth-child(3), td:nth-child(3),
-      th:nth-child(4), td:nth-child(4) { display: none; }
+{% extends "base.html" %}
+
+{% block title %}{{ monitor_name }} — changewatch{% endblock %}
+{% block nav_monitors %}active{% endblock %}
+{% block mob_monitors %}active{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Metric strip ────────────────────────────────────────── */
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .metric-card {
+    padding: 14px 16px;
+  }
+  .metric-value {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 7px;
+    font: 600 22px/1 var(--mono);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .metric-unit {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-weight: 500;
+    font-family: var(--sans);
+  }
+  .metric-sub {
+    font-size: 10.5px;
+    color: var(--ink-3);
+    margin-top: 5px;
+  }
+
+  /* ── Run rows ────────────────────────────────────────────── */
+  .runs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .runs-header h2 { font: 600 15px var(--sans); }
+
+  .run-row {
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .run-row-main {
+    display: grid;
+    grid-template-columns: 20px 120px 70px 70px 1fr 24px;
+    gap: 14px;
+    padding: 12px 16px;
+    align-items: center;
+    cursor: pointer;
+  }
+  .run-row-main:hover { opacity: .9; }
+  .run-time  { font: 400 11.5px var(--mono); color: var(--ink-2); white-space: nowrap; }
+  .run-dur   { font: 400 11px var(--mono); color: var(--ink-3); }
+  .run-value { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .run-chevron { color: var(--ink-3); transition: transform .15s; }
+  .run-row.open .run-chevron { transform: none; }
+  .run-row:not(.open) .run-chevron { transform: rotate(-90deg); }
+
+  .run-logs {
+    padding: 0 16px 14px;
+    display: none;
+  }
+  .run-row.open .run-logs { display: block; }
+
+  .log-line {
+    display: flex;
+    gap: 12px;
+    font: 11px/1.8 var(--mono);
+  }
+  .log-time  { color: var(--ink-4); white-space: nowrap; }
+  .log-INFO  { color: var(--accent-dim); width: 50px; flex-shrink: 0; }
+  .log-WARN  { color: var(--chg); width: 50px; flex-shrink: 0; }
+  .log-ERROR { color: var(--err); width: 50px; flex-shrink: 0; }
+  .log-DEBUG { color: var(--ink-4); width: 50px; flex-shrink: 0; }
+  .log-msg   { color: var(--ink-2); }
+
+  /* ── Error banner ────────────────────────────────────────── */
+  .error-banner {
+    position: relative;
+    overflow: hidden;
+    padding: 14px;
+    margin-bottom: 6px;
+  }
+  .error-banner-glow {
+    position: absolute;
+    inset: 0;
+    background: var(--err-glow);
+    opacity: .18;
+    pointer-events: none;
+  }
+
+  /* ── Source preview ──────────────────────────────────────── */
+  .source-block {
+    padding: 18px;
+    margin-top: 18px;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .source-header h2 { font: 600 14px var(--sans); }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .metric-strip { grid-template-columns: repeat(2, 1fr); }
+    .run-row-main {
+      grid-template-columns: 20px 90px 60px 1fr 20px;
+      gap: 10px;
     }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="breadcrumb"><a href="/">changewatch</a> › {{ monitor_name }}</div>
-      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.35rem;flex-wrap:wrap">
-        <h1>{{ monitor_name }}</h1>
-        <span class="badge {{ current_status }}">{{ current_status }}</span>
-        <span class="meta">runs at {{ schedule }}</span>
-      </div>
+    .run-dur { display: none; }
+  }
+  @media (max-width: 700px) {
+    .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .run-row-main {
+      grid-template-columns: 20px 80px 1fr 20px;
+      gap: 8px;
+      padding: 10px 13px;
+    }
+    .run-time { font-size: 10.5px; }
+  }
+</style>
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-left">
+  <div class="topbar-breadcrumb">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    <a href="/" class="t-3">monitors</a>
+    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    <span class="t-2">{{ monitor_name }}</span>
+  </div>
+  <h1 style="display:flex;align-items:center;gap:12px">
+    <div class="led lg {{ current_status }}" style="transform:translateY(-2px);flex-shrink:0"></div>
+    <span class="mono" style="font-family:var(--mono);font-weight:500;font-size:22px">{{ monitor_name }}</span>
+  </h1>
+  <div class="topbar-sub">{{ schedule }}</div>
+</div>
+<div class="topbar-right">
+  <button class="btn" id="pause-btn" style="opacity:.5;cursor:default" disabled>
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
+      <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
+    </svg>
+    Pause
+  </button>
+  <button class="btn primary" id="run-btn" onclick="runNow()">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
+      <path d="M7 5l11 7-11 7V5z"/>
+    </svg>
+    <span id="run-label">Run now</span>
+  </button>
+</div>
+{% endblock %}
+
+{% block content %}
+{% set total_runs = runs | length %}
+{% set ok_runs    = runs | selectattr('status', 'equalto', 'ok')    | list | length %}
+{% set err_runs   = runs | selectattr('status', 'equalto', 'error') | list | length %}
+
+<!-- Metric strip -->
+<div class="metric-strip">
+  <div class="neu-raised-sm metric-card">
+    <div class="eyebrow">schedule</div>
+    <div class="metric-value mono" style="font-size:16px">{{ schedule }}</div>
+  </div>
+  <div class="neu-raised-sm metric-card">
+    <div class="eyebrow">status</div>
+    <div class="metric-value" style="font-size:18px">
+      <div class="led lg {{ current_status }}"></div>
+      <span class="{% if current_status == 'ok' %}t-ok{% elif current_status == 'error' %}t-err{% elif current_status == 'changed' %}t-chg{% else %}t-pen{% endif %}">{{ current_status }}</span>
     </div>
-    <button id="run-btn" onclick="runNow()">&#9654; Run now</button>
   </div>
-
-  <div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>Status</th>
-        <th>Duration</th>
-        <th>Value</th>
-        <th>Error / Logs</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for run in runs %}
-      <tr data-run-id="{{ run.id }}">
-        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at | localtime }}</td>
-        <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
-        <td style="color:#94a3b8">{{ run.duration_ms }}ms</td>
-        <td>{{ run.last_value or "—" }}</td>
-        <td>
-          {% if run.error %}
-          <div class="error-msg">{{ run.error }}</div>
-          {% endif %}
-          {% if run.logs %}
-          <details {% if loop.first and run.status == 'error' %}open{% endif %}>
-            <summary>{{ run.logs | length }} log line{{ 's' if run.logs | length != 1 }}</summary>
-            <div class="log-block">
-              {% for line in run.logs %}
-              <div class="log-line">
-                <span class="log-time">{{ line.logged_at | localtime }}</span>
-                <span class="log-level-{{ line.level }}">{{ line.level }}</span>
-                <span>{{ line.message }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </details>
-          {% endif %}
-        </td>
-      </tr>
+  <div class="neu-raised-sm metric-card">
+    <div class="eyebrow">success rate</div>
+    <div class="metric-value {% if total_runs > 0 and ok_runs / total_runs < 0.9 %}t-err{% else %}t-ok{% endif %}">
+      {% if total_runs > 0 %}
+        {{ "%.1f" | format(ok_runs / total_runs * 100) }}<span class="metric-unit">%</span>
       {% else %}
-      <tr><td colspan="5" style="text-align:center;color:#475569;padding:2rem">No runs yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        <span class="t-4">—</span>
+      {% endif %}
+    </div>
+    {% if err_runs > 0 %}
+    <div class="metric-sub">{{ err_runs }} error{{ 's' if err_runs != 1 }}</div>
+    {% endif %}
   </div>
+  <div class="neu-raised-sm metric-card">
+    <div class="eyebrow">total runs</div>
+    <div class="metric-value num">{{ total_runs }}</div>
+  </div>
+</div>
 
-  <script>
-    async function runNow() {
-      const btn = document.getElementById('run-btn');
-      btn.disabled = true;
-      btn.textContent = 'Queued…';
-      const latestId = parseInt(document.querySelector('tr[data-run-id]')?.dataset.runId || '0');
-      try {
-        const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
-        if (!res.ok) { btn.textContent = 'Error'; btn.disabled = false; return; }
-        const poll = setInterval(async () => {
-          try {
-            const r = await fetch('/api/monitors/{{ monitor_name }}/runs');
-            if (!r.ok) return;
-            const runs = await r.json();
-            if (runs.length > 0 && runs[0].id > latestId) {
-              clearInterval(poll);
-              location.reload();
-            }
-          } catch (_) {}
-        }, 1000);
-      } catch (_) {
-        btn.textContent = 'Error';
-        btn.disabled = false;
-      }
+{% if current_status == 'error' and runs %}
+<!-- Error banner -->
+<div class="neu-raised-sm error-banner" style="margin-bottom:18px">
+  <div class="error-banner-glow"></div>
+  <div style="position:relative">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div class="led error"></div>
+      <span class="eyebrow t-err">Last error</span>
+    </div>
+    <div class="mono" style="font-size:11px;color:var(--ink-2);line-height:1.45">
+      {{ runs[0].error or 'Unknown error' }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Run history header -->
+<div class="runs-header">
+  <h2>Recent runs</h2>
+  <div class="seg" style="transform:scale(.9);transform-origin:right">
+    <button class="on" onclick="filterRuns('all', this)">All</button>
+    <button onclick="filterRuns('error', this)">Errors</button>
+    <button onclick="filterRuns('changed', this)">Changes</button>
+  </div>
+</div>
+
+<!-- Run rows -->
+{% if runs %}
+<div id="runs-list">
+{% for run in runs %}
+<div class="neu-raised-sm run-row {% if run.status == 'error' and loop.first %}open{% endif %}"
+  data-status="{{ run.status }}" id="run-{{ run.id }}">
+  <div class="run-row-main" onclick="toggleRun('{{ run.id }}', {{ 'true' if run.logs else 'false' }})">
+    <div class="led {{ run.status }}"></div>
+    <span class="run-time mono num">{{ run.ran_at | localtime if run.ran_at else '—' }}</span>
+    <span class="chip {{ run.status }}" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">{{ run.status }}</span>
+    <span class="run-dur mono num">{{ run.duration_ms }}ms</span>
+    <span class="run-value {% if run.status == 'error' %}t-err mono{% elif run.status == 'changed' %}t-chg mono{% else %}t-2{% endif %}">
+      {{- run.last_value or run.error.split('\n')[0] if run.error else '—' -}}
+    </span>
+    <span class="run-chevron">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </span>
+  </div>
+  {% if run.error or run.logs %}
+  <div class="run-logs">
+    {% if run.error %}
+    <div class="t-err mono" style="font-size:11px;margin-bottom:8px;line-height:1.4">{{ run.error }}</div>
+    {% endif %}
+    {% if run.logs %}
+    <div class="console">
+      {% for line in run.logs %}
+      <div class="log-line">
+        <span class="log-time">{{ line.logged_at | localtime if line.logged_at else '' }}</span>
+        <span class="log-{{ line.level }}">{{ line.level }}</span>
+        <span class="log-msg">{{ line.message }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:3rem 2rem;color:var(--ink-4)">
+  <div style="font:500 14px var(--sans)">No runs yet</div>
+  <div style="font:11px var(--mono);margin-top:8px">Hit "Run now" to trigger a manual run</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleRun(id, hasLogs) {
+    if (!hasLogs) return;
+    const row = document.getElementById('run-' + id);
+    if (row) row.classList.toggle('open');
+  }
+
+  function filterRuns(status, btn) {
+    document.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('#runs-list .run-row').forEach(row => {
+      row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+  }
+
+  async function runNow() {
+    const btn = document.getElementById('run-btn');
+    const label = document.getElementById('run-label');
+    btn.disabled = true;
+    label.textContent = 'Queued…';
+    const latestId = parseInt(document.querySelector('.run-row')?.id.replace('run-', '') || '0');
+    try {
+      const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
+      if (!res.ok) { label.textContent = 'Error'; btn.disabled = false; return; }
+      const poll = setInterval(async () => {
+        try {
+          const r = await fetch('/api/monitors/{{ monitor_name }}/runs');
+          if (!r.ok) return;
+          const runs = await r.json();
+          if (runs.length > 0 && runs[0].id > latestId) {
+            clearInterval(poll);
+            location.reload();
+          }
+        } catch (_) {}
+      }, 1000);
+    } catch (_) {
+      label.textContent = 'Error';
+      btn.disabled = false;
     }
-  </script>
-</body>
-</html>
+  }
+</script>
+{% endblock %}

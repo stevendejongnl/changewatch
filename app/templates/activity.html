@@ -1,118 +1,261 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Activity — changewatch</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
-    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .breadcrumb { color: #64748b; font-size: 0.875rem; }
-    .breadcrumb a { color: #93c5fd; text-decoration: none; }
-    h1 { font-size: 1.25rem; color: #f8fafc; }
-    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
-    td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
-    tr:hover td { background: #1e293b22; }
-    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-    .ok      { background: #14532d; color: #86efac; }
-    .error   { background: #7f1d1d; color: #fca5a5; }
-    .changed { background: #78350f; color: #fde68a; }
-    .pending { background: #1e293b; color: #94a3b8; }
-    .monitor-link { color: #93c5fd; text-decoration: none; font-size: 0.85rem; }
-    .monitor-link:hover { text-decoration: underline; }
-    .error-snippet { color: #fca5a5; font-size: 0.78rem; }
-    .pagination { margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: center; font-size: 0.8rem; }
-    .pagination a { color: #93c5fd; text-decoration: none; }
-    @media (max-width: 600px) {
-      body { padding: 1rem; }
-      .filters { margin-top: 0.5rem; }
-      /* Hide Value/Error and Duration columns on mobile */
-      th:nth-child(4), td:nth-child(4),
-      th:nth-child(5), td:nth-child(5) { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="breadcrumb"><a href="/">changewatch</a> › activity</div>
-      <h1 style="margin-top:0.35rem">Activity</h1>
-    </div>
-    <div class="filters">
-      <select id="mon-filter" onchange="applyFilters()">
-        <option value="">All monitors</option>
-        {% for name in monitor_names %}
-        <option value="{{ name }}">{{ name }}</option>
-        {% endfor %}
-      </select>
-      <select id="status-filter" onchange="applyFilters()">
-        <option value="">All statuses</option>
-        <option value="ok">ok</option>
-        <option value="error">error</option>
-        <option value="changed">changed</option>
-      </select>
-    </div>
-  </div>
+{% extends "base.html" %}
 
-  <div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>Monitor</th>
-        <th>Status</th>
-        <th>Value / Error</th>
-        <th>Duration</th>
-      </tr>
-    </thead>
-    <tbody id="feed">
-      {% for run in runs %}
-      <tr data-monitor="{{ run.monitor_name }}" data-status="{{ run.status }}">
-        <td style="color:#94a3b8;white-space:nowrap">{{ run.ran_at | localtime }}</td>
-        <td><a class="monitor-link" href="/monitors/{{ run.monitor_name }}">{{ run.monitor_name }}</a></td>
-        <td><span class="badge {{ run.status }}">{{ run.status }}</span></td>
-        <td>
-          {% if run.error %}
-          <span class="error-snippet">{{ run.error[:80] }}{% if run.error | length > 80 %}…{% endif %}</span>
-          {% elif run.last_value %}
-          <span style="color:#94a3b8;font-size:0.85rem">{{ run.last_value }}</span>
-          {% else %}
-          <span style="color:#475569">—</span>
-          {% endif %}
-        </td>
-        <td style="color:#64748b">{{ run.duration_ms }}ms</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="5" style="text-align:center;color:#475569;padding:2rem">No runs yet.</td></tr>
+{% block title %}Activity — changewatch{% endblock %}
+{% block nav_activity %}active{% endblock %}
+{% block mob_activity %}active{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Filter row ─────────────────────────────────────────── */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .filter-count {
+    margin-left: auto;
+    font: 400 11px var(--mono);
+    color: var(--ink-3);
+  }
+
+  /* ── Monitor select (inset well style) ──────────────────── */
+  .mon-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 9px;
+    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
+  }
+  .mon-select {
+    background: transparent;
+    border: 0;
+    color: var(--ink-2);
+    font: 11px var(--mono);
+    outline: none;
+    cursor: pointer;
+  }
+  .mon-select option { background: #2a2d35; }
+
+  /* ── Live chip ───────────────────────────────────────────── */
+  .live-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font: 500 10.5px/1 var(--sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    background: var(--surface);
+    box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--raise);
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 6px var(--ok-glow);
+  }
+
+  /* ── Day group ───────────────────────────────────────────── */
+  .day-group { margin-bottom: 18px; }
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .day-label {
+    font: 500 10px/1 var(--sans);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .day-line {
+    flex: 1; height: 1px;
+    background: var(--line);
+  }
+  .day-count {
+    font: 400 10px var(--mono);
+    color: var(--ink-3);
+  }
+
+  /* ── Activity row ────────────────────────────────────────── */
+  .activity-row {
+    display: grid;
+    grid-template-columns: 20px 100px 220px 1fr 70px 90px 28px;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 18px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: opacity .1s;
+  }
+  .activity-row:hover { opacity: .9; }
+  .act-time  { font: 400 11.5px var(--mono); color: var(--ink-2); white-space: nowrap; }
+  .act-name  { font: 400 13px var(--mono); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act-value { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act-dur   { font: 400 11px var(--mono); color: var(--ink-3); text-align: right; }
+  .act-chevron { color: var(--ink-3); }
+
+  /* ── Pagination ──────────────────────────────────────────── */
+  .pagination {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 16px 0 4px;
+    font: 400 12px var(--sans);
+  }
+  .page-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    color: var(--accent);
+    background: var(--surface);
+    box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
+    transition: box-shadow .12s;
+  }
+  .page-btn:hover {
+    box-shadow: -3px -3px 7px var(--raise-strong), 4px 4px 9px var(--shadow);
+  }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .activity-row {
+      grid-template-columns: 20px 90px 1fr 60px;
+    }
+    .act-value, .act-dur, .act-chip, .act-chevron { display: none; }
+    .act-dur   { display: block; }
+  }
+  @media (max-width: 700px) {
+    .activity-row {
+      grid-template-columns: 20px 1fr 50px;
+      gap: 10px;
+      padding: 11px 13px;
+    }
+    .act-time { display: none; }
+    .filter-count { display: none; }
+    .mon-select-wrap { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-left">
+  <h1>Activity</h1>
+  <div class="topbar-sub">Every run, across every monitor</div>
+</div>
+<div class="topbar-right">
+  <div class="live-chip">
+    <div class="live-dot"></div>
+    Live
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="filter-row">
+  <div class="seg">
+    <button class="on" onclick="filterActivity('all', this)">All</button>
+    <button onclick="filterActivity('error', this)">Errors</button>
+    <button onclick="filterActivity('changed', this)">Changes</button>
+    <button onclick="filterActivity('ok', this)">OK</button>
+  </div>
+  <div class="mon-select-wrap">
+    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>
+    <select class="mon-select" id="mon-filter" onchange="filterActivity(null, null)">
+      <option value="">All monitors</option>
+      {% for name in monitor_names %}
+      <option value="{{ name }}">{{ name }}</option>
       {% endfor %}
-    </tbody>
-  </table>
+    </select>
   </div>
+  <span class="filter-count">showing {{ runs | length }}{% if has_more %}+{% endif %} events</span>
+</div>
 
-  <div class="pagination">
-    {% if offset > 0 %}
-    <a href="/activity?offset={{ [offset - limit, 0] | max }}&limit={{ limit }}">← newer</a>
+<!-- Activity stream grouped by date -->
+{% if runs %}
+  {% set ns = namespace(current_date='', group_count=0) %}
+  <div id="activity-feed">
+  {% for run in runs %}
+    {% set run_date = (run.ran_at | localtime)[:10] if run.ran_at else 'unknown' %}
+    {% if run_date != ns.current_date %}
+      {% if ns.current_date != '' %}</div>{% endif %}
+      {% set ns.current_date = run_date %}
+      <div class="day-group">
+        <div class="day-header">
+          <span class="day-label">{{ run_date }}</span>
+          <div class="day-line"></div>
+        </div>
     {% endif %}
-    {% if has_more %}
-    <a href="/activity?offset={{ offset + limit }}&limit={{ limit }}">older →</a>
-    {% endif %}
+    <a href="/monitors/{{ run.monitor_name }}" class="neu-raised-sm activity-row"
+      data-status="{{ run.status }}" data-monitor="{{ run.monitor_name }}" style="text-decoration:none">
+      <div class="led {{ run.status }}"></div>
+      <span class="act-time">{{ (run.ran_at | localtime)[11:19] if run.ran_at else '—' }}</span>
+      <span class="act-name">{{ run.monitor_name }}</span>
+      <span class="act-value {% if run.status == 'error' %}t-err mono{% elif run.status == 'changed' %}t-chg mono{% else %}t-2{% endif %}">
+        {%- if run.error -%}
+          {{ run.error[:80] }}{% if run.error | length > 80 %}…{% endif %}
+        {%- elif run.last_value -%}
+          {{ run.last_value }}
+        {%- else -%}
+          —
+        {%- endif -%}
+      </span>
+      <span class="act-dur mono num">{{ run.duration_ms }}ms</span>
+      <span class="chip {{ run.status }} act-chip" style="padding:3px 8px;font-size:9px">{{ run.status }}</span>
+      <span class="act-chevron">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+  {% endfor %}
+  {% if ns.current_date != '' %}</div>{% endif %}
   </div>
+{% else %}
+  <div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
+    <div style="font:500 14px var(--sans)">No runs yet</div>
+  </div>
+{% endif %}
 
-  <script>
-    function applyFilters() {
-      const mon = document.getElementById('mon-filter').value;
-      const status = document.getElementById('status-filter').value;
-      document.querySelectorAll('#feed tr[data-monitor]').forEach(row => {
-        const monMatch = !mon || row.dataset.monitor === mon;
-        const statusMatch = !status || row.dataset.status === status;
-        row.style.display = monMatch && statusMatch ? '' : 'none';
-      });
+<!-- Pagination -->
+<div class="pagination">
+  {% if offset > 0 %}
+  <a class="page-btn" href="/activity?offset={{ [offset - limit, 0] | max }}&amp;limit={{ limit }}">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Newer
+  </a>
+  {% endif %}
+  {% if has_more %}
+  <a class="page-btn" href="/activity?offset={{ offset + limit }}&amp;limit={{ limit }}">
+    Older
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function filterActivity(status, btn) {
+    if (btn) {
+      document.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
     }
-  </script>
-</body>
-</html>
+    const monFilter = document.getElementById('mon-filter').value;
+    const activeBtn = document.querySelector('.seg button.on');
+    const statusFilter = activeBtn ? activeBtn.textContent.trim().toLowerCase() : 'all';
+    const resolvedStatus = status !== null ? status : statusFilter;
+
+    document.querySelectorAll('#activity-feed .activity-row').forEach(row => {
+      const statusMatch = resolvedStatus === 'all' || row.dataset.status === resolvedStatus;
+      const monMatch = !monFilter || row.dataset.monitor === monFilter;
+      row.style.display = statusMatch && monMatch ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

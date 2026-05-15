@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from playwright.async_api import async_playwright
 
@@ -72,6 +73,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
