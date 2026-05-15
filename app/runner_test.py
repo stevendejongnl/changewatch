@@ -84,3 +84,106 @@ async def test_runner_records_duration(db, browser):
     await runner.run(m)
     runs = await db.get_recent_runs("slow_mon")
     assert runs[0]["duration_ms"] >= 10
+
+
+async def test_runner_notifies_on_failure(db, browser):
+    class StubApprise:
+        def __init__(self):
+            self.calls: list[dict] = []
+
+        async def notify(self, title, body, tags=None):
+            self.calls.append({"title": title, "body": body, "tags": tags})
+
+    stub = StubApprise()
+    m = Monitor(name="fail_mon", schedule="*/5 * * * *", notify_channels=["telegram"])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("boom")
+
+    runner = Runner(db=db, browser=browser, apprise=stub)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("fail_mon")
+    assert runs[0]["status"] == "error"
+    assert len(stub.calls) == 1
+    assert "fail_mon" in stub.calls[0]["title"]
+    assert stub.calls[0]["tags"] == ["telegram"]
+
+
+async def test_runner_swallows_notify_exception_on_failure(db, browser):
+    class BrokenApprise:
+        async def notify(self, title, body, tags=None):
+            raise ConnectionError("apprise unreachable")
+
+    m = Monitor(name="nf_mon", schedule="*/5 * * * *", notify_channels=["telegram"])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("original error")
+
+    runner = Runner(db=db, browser=browser, apprise=BrokenApprise())
+    await runner.run(m)  # must not raise
+
+    runs = await db.get_recent_runs("nf_mon")
+    assert runs[0]["status"] == "error"
+    assert "original error" in runs[0]["error"]
+
+
+async def test_runner_does_not_notify_when_no_channels(db, browser):
+    class StubApprise:
+        def __init__(self):
+            self.calls: list[dict] = []
+
+        async def notify(self, title, body, tags=None):  # pragma: no cover
+            self.calls.append({"title": title})
+
+    stub = StubApprise()
+    m = Monitor(name="silent_mon", schedule="*/5 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("error without channels")
+
+    runner = Runner(db=db, browser=browser, apprise=stub)
+    await runner.run(m)
+    assert stub.calls == []
+
+
+async def test_runner_captures_log_output(db, browser):
+    m = Monitor(name="log_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        ctx.logger.info("step 1 complete")
+        ctx.logger.warning("step 2 warning")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("log_mon")
+    run_id = runs[0]["id"]
+    logs = await db.get_run_logs(run_id)
+    assert len(logs) == 2
+    assert logs[0]["level"] == "INFO"
+    assert "step 1 complete" in logs[0]["message"]
+    assert logs[1]["level"] == "WARNING"
+    assert "step 2 warning" in logs[1]["message"]
+
+
+async def test_runner_captures_logs_on_error(db, browser):
+    m = Monitor(name="err_log_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        ctx.logger.info("before crash")
+        raise ValueError("crash")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("err_log_mon")
+    run_id = runs[0]["id"]
+    logs = await db.get_run_logs(run_id)
+    assert len(logs) == 1
+    assert "before crash" in logs[0]["message"]
