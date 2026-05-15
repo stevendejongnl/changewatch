@@ -8,8 +8,9 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; padding: 2rem; }
-    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
     h1 { font-size: 1.5rem; color: #f8fafc; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
     td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
@@ -25,6 +26,12 @@
     button:hover { background: #475569; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     #sync-error { color: #fca5a5; font-size: 0.75rem; }
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      /* Hide Duration and Error columns on mobile */
+      th:nth-child(5), td:nth-child(5),
+      th:nth-child(6), td:nth-child(6) { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -36,6 +43,7 @@
     <span id="sync-error"></span>
     {% endif %}
   </div>
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -70,6 +78,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   <script>
     async function runMonitor(btn, name) {
       btn.disabled = true;

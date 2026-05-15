@@ -11,8 +11,9 @@
     .breadcrumb { color: #64748b; font-size: 0.875rem; }
     .breadcrumb a { color: #93c5fd; text-decoration: none; }
     h1 { font-size: 1.25rem; color: #f8fafc; }
-    .filters { display: flex; gap: 0.5rem; margin-left: auto; }
+    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     select { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 0.3rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     th { text-align: left; padding: 0.5rem 1rem; border-bottom: 1px solid #1e293b; color: #94a3b8; font-weight: 500; }
     td { padding: 0.6rem 1rem; border-bottom: 1px solid #1e293b; vertical-align: top; }
@@ -27,6 +28,13 @@
     .error-snippet { color: #fca5a5; font-size: 0.78rem; }
     .pagination { margin-top: 1rem; display: flex; gap: 0.75rem; justify-content: center; font-size: 0.8rem; }
     .pagination a { color: #93c5fd; text-decoration: none; }
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      .filters { margin-top: 0.5rem; }
+      /* Hide Value/Error and Duration columns on mobile */
+      th:nth-child(4), td:nth-child(4),
+      th:nth-child(5), td:nth-child(5) { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -51,6 +59,7 @@
     </div>
   </div>
 
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -83,6 +92,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 
   <div class="pagination">
     {% if offset > 0 %}
