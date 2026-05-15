@@ -21,7 +21,7 @@ MONITORS_REPO_TOKEN = os.getenv("MONITORS_REPO_TOKEN", "")
 MONITORS_REPO_SYNC_INTERVAL = os.getenv("MONITORS_REPO_SYNC_INTERVAL", "0 * * * *")
 
 DB_PATH = os.getenv("DB_PATH", "/data/state.db")
-DISPLAY_TZ = os.getenv("TZ", "Europe/Amsterdam")
+DISPLAY_TZ = os.getenv("DISPLAY_TZ", "Europe/Amsterdam")
 
 if MONITORS_REPO_URL:  # pragma: no cover
     MONITORS_DIR = Path(DB_PATH).parent / "monitors-repo"
