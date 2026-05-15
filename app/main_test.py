@@ -2,8 +2,16 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.db import Database
-from app.main import app, get_db, get_scheduler, get_git_sync
+from app.main import app, get_db, get_scheduler, get_git_sync, _to_local
 from app.scheduler import Scheduler
+
+
+def test_to_local_returns_empty_string_for_none():
+    assert _to_local(None) == ""
+
+
+def test_to_local_returns_empty_string_for_empty_string():
+    assert _to_local("") == ""
 
 
 @pytest.fixture
