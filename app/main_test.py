@@ -210,3 +210,29 @@ async def test_monitor_detail_returns_200_for_known_monitor(db, tmp_path, monkey
     assert response.status_code == 200
     assert "my_mon" in response.text
     assert "0 8 * * *" in response.text
+
+
+async def test_dashboard_has_monitor_name_links(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "link_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="link_mon", schedule="0 8 * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("link_mon", status="ok", last_value="test", error=None, duration_ms=100)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert 'href="/monitors/link_mon"' in response.text
+
+
+async def test_dashboard_has_activity_link(client):
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert 'href="/activity"' in response.text

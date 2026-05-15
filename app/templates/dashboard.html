@@ -30,6 +30,7 @@
 <body>
   <div class="header">
     <h1>changewatch</h1>
+    <a href="/activity" style="color:#93c5fd;text-decoration:none;font-size:0.875rem">Activity</a>
     {% if git_sync_enabled %}
     <button id="sync-btn" onclick="syncMonitors()">Sync monitors</button>
     <span id="sync-error"></span>
@@ -50,7 +51,7 @@
     <tbody>
       {% for m in monitors %}
       <tr>
-        <td>{{ m.monitor_name }}</td>
+        <td><a href="/monitors/{{ m.monitor_name }}" style="color:#93c5fd;text-decoration:none">{{ m.monitor_name }}</a></td>
         <td><span class="badge {{ m.status }}">{{ m.status }}</span></td>
         <td>{{ m.last_value or "—" }}</td>
         <td>{{ m.ran_at or "never" }}</td>
