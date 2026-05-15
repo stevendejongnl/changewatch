@@ -187,3 +187,23 @@ async def test_runner_captures_logs_on_error(db, browser):
     logs = await db.get_run_logs(run_id)
     assert len(logs) == 1
     assert "before crash" in logs[0]["message"]
+
+
+async def test_runner_does_not_mutate_shared_logger_level(db, browser):
+    import logging
+    shared = logging.getLogger("changewatch.level_test_mon")
+    shared.setLevel(logging.WARNING)
+    m = Monitor(name="level_test_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        ctx.logger.info("this should be captured")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    assert shared.level == logging.WARNING  # unchanged
+    runs = await db.get_recent_runs("level_test_mon")
+    run_id = runs[0]["id"]
+    logs = await db.get_run_logs(run_id)
+    assert any("this should be captured" in l["message"] for l in logs)

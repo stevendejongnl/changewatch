@@ -183,6 +183,16 @@ async def test_scheduler_reload_removes_deleted_monitor(monitors_dir, tmp_path):
     assert {j["name"] for j in jobs} == {"keep"}
 
 
+def test_scheduler_stores_apprise_client(monitors_dir, tmp_path):
+    class StubApprise:
+        pass
+
+    db = Database.__new__(Database)
+    stub = StubApprise()
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db, apprise=stub)
+    assert scheduler._apprise is stub
+
+
 async def test_scheduler_reload_preserves_dunder_jobs(monitors_dir, tmp_path):
     """reload() must not remove internal jobs whose IDs are prefixed with __."""
     from apscheduler.triggers.cron import CronTrigger

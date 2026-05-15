@@ -39,8 +39,15 @@ async def extract_text(page: Page, selector: str, timeout: int = 10_000) -> str:
 
 async def extract_json(page: Page, url: str, timeout: int = 10_000) -> Any:
     """Fetch a JSON URL directly using the browser request context (respects cookies/auth)."""
+    import json
     response = await page.request.get(url, timeout=timeout)
-    return await response.json()
+    text = await response.text()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"non-JSON response from {url}: status={response.status} body={text[:200]!r}"
+        ) from exc
 
 
 async def notify(

@@ -2,7 +2,7 @@ import asyncio
 import importlib.util
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -10,6 +10,9 @@ from apscheduler.triggers.cron import CronTrigger
 from app.db import Database
 from app.helpers import Monitor
 from app.runner import Runner
+
+if TYPE_CHECKING:  # pragma: no cover
+    from app.apprise_client import AppriseClient
 
 
 def discover_monitors(monitors_dir: Path) -> list[Monitor]:
@@ -32,9 +35,10 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
 
 
 class Scheduler:
-    def __init__(self, monitors_dir: Path, db: Database) -> None:
+    def __init__(self, monitors_dir: Path, db: Database, apprise: Optional["AppriseClient"] = None) -> None:
         self._monitors_dir = monitors_dir
         self._db = db
+        self._apprise = apprise
         self._browser: Any = None
         self._scheduler = AsyncIOScheduler()
         self._monitors: list[Monitor] = []
@@ -46,7 +50,7 @@ class Scheduler:
     async def start(self, browser: Any = None) -> None:
         self._browser = browser
         self._monitors = discover_monitors(self._monitors_dir)
-        runner = Runner(db=self._db, browser=self._browser)
+        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise)
         for monitor in self._monitors:
             self._scheduler.add_job(
                 runner.run,
@@ -70,7 +74,7 @@ class Scheduler:
         new_monitors = discover_monitors(self._monitors_dir)
         new_ids = {m.name for m in new_monitors}
         old_ids = {job.id for job in self._scheduler.get_jobs() if not job.id.startswith("__")}
-        runner = Runner(db=self._db, browser=self._browser)
+        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise)
         for job_id in old_ids - new_ids:
             self._scheduler.remove_job(job_id)
         for monitor in new_monitors:
@@ -89,5 +93,5 @@ class Scheduler:
         monitor = next((m for m in self._monitors if m.name == monitor_name), None)
         if monitor is None:
             raise KeyError(f"No monitor named {monitor_name!r}")
-        runner = Runner(db=self._db, browser=browser)
+        runner = Runner(db=self._db, browser=browser, apprise=self._apprise)
         await runner.run(monitor)

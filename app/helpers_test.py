@@ -124,6 +124,26 @@ async def test_extract_json_returns_parsed_response(html_server, browser):
     assert result["in_stock"] is True
 
 
+async def test_extract_json_raises_runtime_error_for_non_json(html_server, browser):
+    base_url, pages = html_server
+    pages["bad"] = "<html>Service Unavailable</html>"
+    page = await browser.new_page()
+    with pytest.raises(RuntimeError, match="non-JSON response"):
+        await extract_json(page, f"{base_url}/bad")
+    await page.close()
+
+
+async def test_extract_json_error_includes_status_and_body_snippet(html_server, browser):
+    base_url, pages = html_server
+    pages["empty"] = ""
+    page = await browser.new_page()
+    with pytest.raises(RuntimeError) as exc_info:
+        await extract_json(page, f"{base_url}/empty")
+    await page.close()
+    assert "status=" in str(exc_info.value)
+    assert "body=" in str(exc_info.value)
+
+
 # ── notify helper ─────────────────────────────────────────────────────────
 
 @pytest.fixture

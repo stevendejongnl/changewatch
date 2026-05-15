@@ -1,5 +1,6 @@
 import logging
 import time
+import uuid
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -43,7 +44,9 @@ class Runner:
         self._influx = influx
 
     async def run(self, monitor: Monitor) -> None:
-        logger = logging.getLogger(f"changewatch.{monitor.name}")
+        logger = logging.getLogger(f"changewatch.{monitor.name}.{uuid.uuid4().hex[:8]}")
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
         ctx = RunContext(
             monitor_name=monitor.name,
             logger=logger,
@@ -53,8 +56,6 @@ class Runner:
         )
         log_buffer = _RunLogBuffer()
         log_buffer.setLevel(logging.DEBUG)
-        prev_level = logger.level
-        logger.setLevel(logging.DEBUG)
         logger.addHandler(log_buffer)
         start = time.monotonic()
         page = None
@@ -95,7 +96,6 @@ class Runner:
                     pass
         finally:
             logger.removeHandler(log_buffer)
-            logger.setLevel(prev_level)
             if page is not None:
                 await page.close()
                 await page.context.close()

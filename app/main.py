@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from playwright.async_api import async_playwright
 
+from app.apprise_client import AppriseClient
 from app.db import Database
 from app.git_sync import GitSync
 from app.scheduler import Scheduler, discover_monitors
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         _git_sync = GitSync(repo_url=MONITORS_REPO_URL, clone_path=MONITORS_DIR, token=MONITORS_REPO_TOKEN)
         await _git_sync.sync()
 
-    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db)
+    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=AppriseClient())
     await _scheduler.start(_browser)
 
     if MONITORS_REPO_URL and _git_sync is not None:
