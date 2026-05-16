@@ -62,12 +62,14 @@ class Runner:
         try:
             context = await self._browser.new_context()
             page = await context.new_page()
+            prev_value = await self._db.get_last_value(monitor.name)
             await monitor.fn(page, ctx)
             duration_ms = int((time.monotonic() - start) * 1000)
             last_value = await self._db.get_last_value(monitor.name)
+            status = "changed" if prev_value is not None and last_value != prev_value else "ok"
             run_id = await self._db.record_run(
                 monitor_name=monitor.name,
-                status="ok",
+                status=status,
                 last_value=last_value,
                 error=None,
                 duration_ms=duration_ms,

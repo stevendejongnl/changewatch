@@ -189,6 +189,52 @@ async def test_runner_captures_logs_on_error(db, browser):
     assert "before crash" in logs[0]["message"]
 
 
+async def test_runner_records_changed_status_when_value_differs(db, browser):
+    from app.db import Database
+    await db.set_value("chg_mon", "old_value")
+    m = Monitor(name="chg_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        await ctx.db.set_value("chg_mon", "new_value")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("chg_mon")
+    assert runs[0]["status"] == "changed"
+    assert runs[0]["last_value"] == "new_value"
+
+
+async def test_runner_records_ok_when_value_unchanged(db, browser):
+    await db.set_value("same_mon", "same_value")
+    m = Monitor(name="same_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        await ctx.db.set_value("same_mon", "same_value")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("same_mon")
+    assert runs[0]["status"] == "ok"
+
+
+async def test_runner_records_ok_on_first_run_with_no_prior_value(db, browser):
+    m = Monitor(name="new_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        await ctx.db.set_value("new_mon", "first_value")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("new_mon")
+    assert runs[0]["status"] == "ok"
+
+
 async def test_runner_does_not_mutate_shared_logger_level(db, browser):
     import logging
     shared = logging.getLogger("changewatch.level_test_mon")
