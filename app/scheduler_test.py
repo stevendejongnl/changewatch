@@ -193,6 +193,25 @@ def test_scheduler_stores_apprise_client(monitors_dir, tmp_path):
     assert scheduler._apprise is stub
 
 
+def test_scheduler_stores_timezone(monitors_dir, tmp_path):
+    db = Database.__new__(Database)
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db, timezone="Europe/Amsterdam")
+    assert scheduler._timezone == "Europe/Amsterdam"
+
+
+async def test_scheduler_uses_timezone_for_cron_trigger(monitors_dir, tmp_path):
+    from apscheduler.triggers.cron import CronTrigger
+    _make_monitor_module(monitors_dir, "tz_mon", schedule="0 8 * * *")
+    db = Database(str(tmp_path / "tz.db"))
+    await db.init()
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db, timezone="Europe/Amsterdam")
+    await scheduler.start()
+    job = next(j for j in scheduler._scheduler.get_jobs() if j.id == "tz_mon")
+    assert str(job.trigger.timezone) == "Europe/Amsterdam"
+    await scheduler.stop()
+    await db.close()
+
+
 async def test_scheduler_reload_preserves_dunder_jobs(monitors_dir, tmp_path):
     """reload() must not remove internal jobs whose IDs are prefixed with __."""
     from apscheduler.triggers.cron import CronTrigger

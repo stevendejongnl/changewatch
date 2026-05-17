@@ -35,10 +35,11 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
 
 
 class Scheduler:
-    def __init__(self, monitors_dir: Path, db: Database, apprise: Optional["AppriseClient"] = None) -> None:
+    def __init__(self, monitors_dir: Path, db: Database, apprise: Optional["AppriseClient"] = None, timezone: str = "UTC") -> None:
         self._monitors_dir = monitors_dir
         self._db = db
         self._apprise = apprise
+        self._timezone = timezone
         self._browser: Any = None
         self._scheduler = AsyncIOScheduler()
         self._monitors: list[Monitor] = []
@@ -54,7 +55,7 @@ class Scheduler:
         for monitor in self._monitors:
             self._scheduler.add_job(
                 runner.run,
-                CronTrigger.from_crontab(monitor.schedule),
+                CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),
                 args=[monitor],
                 id=monitor.name,
                 name=monitor.name,
@@ -80,7 +81,7 @@ class Scheduler:
         for monitor in new_monitors:
             self._scheduler.add_job(
                 runner.run,
-                CronTrigger.from_crontab(monitor.schedule),
+                CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),
                 args=[monitor],
                 id=monitor.name,
                 name=monitor.name,
