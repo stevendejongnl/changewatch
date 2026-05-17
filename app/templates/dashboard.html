@@ -5,7 +5,6 @@
 {% block mob_monitors %}active{% endblock %}
 
 {% block head %}
-<meta http-equiv="refresh" content="30">
 <style>
   /* ── Stat tiles ─────────────────────────────────────────── */
   .stat-strip {
@@ -138,7 +137,7 @@
 {% block topbar %}
 <div class="topbar-left">
   <h1>Monitors</h1>
-  <div class="topbar-sub">{{ monitors | length }} monitors · auto-refresh every 30s</div>
+  <div class="topbar-sub">{{ monitors | length }} monitors · live</div>
 </div>
 <div class="topbar-right">
   {% if git_sync_enabled %}
@@ -322,5 +321,27 @@
     }
   }
   {% endif %}
+
+  (function () {
+    const indicator = document.querySelector('.conn-indicator');
+    const dot = indicator && indicator.querySelector('.conn-dot');
+
+    function setConn(ok) {
+      if (!dot || !indicator) return;
+      dot.style.background = ok ? '' : 'var(--ink-4)';
+      dot.style.boxShadow  = ok ? '' : 'none';
+      // Walk child nodes to find the text node and update it
+      indicator.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          node.textContent = ok ? ' connected' : ' reconnecting…';
+        }
+      });
+    }
+
+    const src = new EventSource('/api/events');
+    src.onmessage = () => location.reload();
+    src.onopen    = () => setConn(true);
+    src.onerror   = () => setConn(false);
+  })();
 </script>
 {% endblock %}

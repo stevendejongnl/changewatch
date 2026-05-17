@@ -330,3 +330,18 @@ async def test_api_events_endpoint_returns_streaming_response():
     assert response.headers["x-accel-buffering"] == "no"
     # Clean up: close the generator to avoid resource leak
     await response.body_iterator.aclose()
+
+
+async def test_dashboard_has_no_meta_refresh(client):
+    response = await client.get("/")
+    assert 'http-equiv="refresh"' not in response.text
+
+
+async def test_dashboard_has_eventsource_script(client):
+    response = await client.get("/")
+    assert "EventSource" in response.text
+
+
+async def test_dashboard_subtitle_does_not_mention_auto_refresh(client):
+    response = await client.get("/")
+    assert "auto-refresh" not in response.text
