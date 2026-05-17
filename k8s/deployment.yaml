@@ -23,6 +23,8 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: worker-02
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: changewatch
           image: ghcr.io/stevendejongnl/changewatch:latest

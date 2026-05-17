@@ -38,15 +38,16 @@ async def extract_text(page: Page, selector: str, timeout: int = 10_000) -> str:
 
 
 async def extract_json(page: Page, url: str, timeout: int = 10_000) -> Any:
-    """Fetch a JSON URL directly using the browser request context (respects cookies/auth)."""
-    import json
-    response = await page.request.get(url, timeout=timeout)
-    text = await response.text()
+    """Fetch a JSON URL via httpx. The page parameter is kept for API compatibility."""
+    import httpx
+    timeout_s = timeout / 1000
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url, timeout=timeout_s)
     try:
-        return json.loads(text)
-    except json.JSONDecodeError as exc:
+        return response.json()
+    except Exception as exc:
         raise RuntimeError(
-            f"non-JSON response from {url}: status={response.status} body={text[:200]!r}"
+            f"non-JSON response from {url}: status={response.status_code} body={response.text[:200]!r}"
         ) from exc
 
 
