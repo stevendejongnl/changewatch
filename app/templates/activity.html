@@ -257,5 +257,100 @@
       row.style.display = statusMatch && monMatch ? '' : 'none';
     });
   }
+
+  function _buildRow(e) {
+    const statusClass = String(e.status || '');
+    const name        = String(e.monitor_name || '');
+    const time        = e.ran_at ? String(e.ran_at).slice(11, 19) : '—';
+    const rawVal      = e.error
+      ? String(e.error).slice(0, 80) + (String(e.error).length > 80 ? '…' : '')
+      : (e.last_value ? String(e.last_value) : '—');
+    const dur         = e.duration_ms != null ? String(e.duration_ms) + 'ms' : '—';
+
+    const a = document.createElement('a');
+    a.href  = '/monitors/' + encodeURIComponent(name);
+    a.className = 'neu-raised-sm activity-row';
+    a.dataset.status  = statusClass;
+    a.dataset.monitor = name;
+    a.style.textDecoration = 'none';
+
+    const led = document.createElement('div');
+    led.className = 'led ' + statusClass;
+
+    const tTime = document.createElement('span');
+    tTime.className = 'act-time';
+    tTime.textContent = time;
+
+    const tName = document.createElement('span');
+    tName.className = 'act-name';
+    tName.textContent = name;
+
+    const valCls = statusClass === 'error' ? 'act-value t-err mono'
+                 : statusClass === 'changed' ? 'act-value t-chg mono'
+                 : 'act-value t-2';
+    const tVal = document.createElement('span');
+    tVal.className = valCls;
+    tVal.textContent = rawVal;
+
+    const tDur = document.createElement('span');
+    tDur.className = 'act-dur mono num';
+    tDur.textContent = dur;
+
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + statusClass + ' act-chip';
+    chip.style.cssText = 'padding:3px 8px;font-size:9px';
+    chip.textContent = statusClass;
+
+    const chevron = document.createElement('span');
+    chevron.className = 'act-chevron';
+    chevron.setAttribute('aria-hidden', 'true');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '13');
+    svg.setAttribute('height', '13');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.6');
+    svg.setAttribute('stroke-linecap', 'round');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M9 6l6 6-6 6');
+    svg.appendChild(path);
+    chevron.appendChild(svg);
+
+    a.append(led, tTime, tName, tVal, tDur, chip, chevron);
+    return a;
+  }
+
+  (function () {
+    const liveDot = document.querySelector('.live-dot');
+
+    function setConn(ok) {
+      if (!liveDot) return;
+      liveDot.style.background = ok ? '' : 'var(--ink-4)';
+      liveDot.style.boxShadow  = ok ? '' : 'none';
+    }
+
+    const onFirstPage = !new URLSearchParams(location.search).get('offset');
+
+    const src = new EventSource('/api/events');
+    src.onmessage = (ev) => {
+      if (!onFirstPage) return;
+      let event;
+      try { event = JSON.parse(ev.data); } catch (_) { return; }
+      const feed = document.getElementById('activity-feed');
+      if (!feed) return;
+      const firstGroup = feed.querySelector('.day-group');
+      const row = _buildRow(event);
+      if (firstGroup) {
+        const firstRow = firstGroup.querySelector('.activity-row');
+        firstGroup.insertBefore(row, firstRow || null);
+      } else {
+        feed.prepend(row);
+      }
+    };
+    src.onopen  = () => setConn(true);
+    src.onerror = () => setConn(false);
+    window.addEventListener('beforeunload', () => src.close());
+  })();
 </script>
 {% endblock %}

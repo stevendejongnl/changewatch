@@ -345,3 +345,8 @@ async def test_dashboard_has_eventsource_script(client):
 async def test_dashboard_subtitle_does_not_mention_auto_refresh(client):
     response = await client.get("/")
     assert "auto-refresh" not in response.text
+
+
+async def test_activity_has_eventsource_script(client):
+    response = await client.get("/activity")
+    assert "EventSource" in response.text
