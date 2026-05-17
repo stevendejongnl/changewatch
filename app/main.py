@@ -1,3 +1,4 @@
+import json as _json
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -7,13 +8,14 @@ from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from playwright.async_api import async_playwright
 
 from app.apprise_client import AppriseClient
 from app.db import Database
+from app.events import EventBus, get_event_bus
 from app.git_sync import GitSync
 from app.scheduler import Scheduler, discover_monitors
 
@@ -47,7 +49,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         _git_sync = GitSync(repo_url=MONITORS_REPO_URL, clone_path=MONITORS_DIR, token=MONITORS_REPO_TOKEN)
         await _git_sync.sync()
 
-    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=AppriseClient(), timezone=DISPLAY_TZ)
+    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=AppriseClient(), timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 
     if MONITORS_REPO_URL and _git_sync is not None:
@@ -103,6 +105,26 @@ async def get_git_sync() -> Optional[GitSync]:  # pragma: no cover
 DbDep = Annotated[Database, Depends(get_db)]
 SchedulerDep = Annotated[Optional[Scheduler], Depends(get_scheduler)]
 GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
+EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
+
+
+async def _event_stream(bus: EventBus):
+    queue = bus.subscribe()
+    try:
+        while True:
+            event = await queue.get()
+            yield f"data: {_json.dumps(event)}\n\n"
+    finally:
+        bus.unsubscribe(queue)
+
+
+@app.get("/api/events")
+async def events(bus: EventBusDep):
+    return StreamingResponse(
+        _event_stream(bus),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/healthz")

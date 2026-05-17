@@ -284,3 +284,47 @@ async def test_dashboard_shows_example_price_when_only_monitor(db, tmp_path, mon
         response = await c.get("/")
     app.dependency_overrides.clear()
     assert "example_price" in response.text
+
+
+async def test_api_events_streams_published_event():
+    import asyncio
+    import json
+    from app.events import EventBus, get_event_bus
+    from app.main import _event_stream
+
+    bus = EventBus()
+    app.dependency_overrides[get_event_bus] = lambda: bus
+
+    lines: list[str] = []
+
+    async def consume():
+        async for raw in _event_stream(bus):
+            if raw.startswith("data:"):
+                lines.append(raw)
+                return
+
+    consumer = asyncio.create_task(consume())
+    await asyncio.sleep(0.05)
+    await bus.publish({"monitor_name": "test_mon", "status": "ok", "ran_at": "2026-01-01 00:00:00"})
+    await asyncio.wait_for(consumer, timeout=2.0)
+
+    app.dependency_overrides.clear()
+    assert len(lines) == 1
+    payload = json.loads(lines[0][len("data: "):])
+    assert payload["monitor_name"] == "test_mon"
+    assert payload["status"] == "ok"
+
+
+async def test_api_events_endpoint_returns_streaming_response():
+    from fastapi.responses import StreamingResponse
+    from app.events import EventBus, get_event_bus
+    from app.main import events as events_endpoint
+
+    bus = EventBus()
+    response = await events_endpoint(bus)
+    assert isinstance(response, StreamingResponse)
+    assert response.media_type == "text/event-stream"
+    assert response.headers["cache-control"] == "no-cache"
+    assert response.headers["x-accel-buffering"] == "no"
+    # Clean up: close the generator to avoid resource leak
+    await response.body_iterator.aclose()
