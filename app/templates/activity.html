@@ -179,9 +179,9 @@
 </div>
 
 <!-- Activity stream grouped by date -->
+<div id="activity-feed">
 {% if runs %}
   {% set ns = namespace(current_date='', group_count=0) %}
-  <div id="activity-feed">
   {% for run in runs %}
     {% set run_date = (run.ran_at | localtime)[:10] if run.ran_at else 'unknown' %}
     {% if run_date != ns.current_date %}
@@ -215,12 +215,12 @@
     </a>
   {% endfor %}
   {% if ns.current_date != '' %}</div>{% endif %}
-  </div>
 {% else %}
   <div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
     <div style="font:500 14px var(--sans)">No runs yet</div>
   </div>
 {% endif %}
+</div>
 
 <!-- Pagination -->
 <div class="pagination">
@@ -347,6 +347,7 @@
       } else {
         feed.prepend(row);
       }
+      filterActivity(null, null);
     };
     src.onopen  = () => setConn(true);
     src.onerror = () => setConn(false);
