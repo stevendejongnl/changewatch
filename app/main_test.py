@@ -339,7 +339,7 @@ async def test_dashboard_has_no_meta_refresh(client):
 
 async def test_dashboard_has_eventsource_script(client):
     response = await client.get("/")
-    assert "EventSource" in response.text
+    assert "new EventSource('/api/events')" in response.text
 
 
 async def test_dashboard_subtitle_does_not_mention_auto_refresh(client):

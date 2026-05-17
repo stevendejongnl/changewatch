@@ -339,9 +339,11 @@
     }
 
     const src = new EventSource('/api/events');
-    src.onmessage = () => location.reload();
+    let _reloadTimer;
+    src.onmessage = () => { clearTimeout(_reloadTimer); _reloadTimer = setTimeout(() => location.reload(), 150); };
     src.onopen    = () => setConn(true);
     src.onerror   = () => setConn(false);
+    window.addEventListener('beforeunload', () => src.close());
   })();
 </script>
 {% endblock %}
