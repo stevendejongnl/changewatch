@@ -275,7 +275,7 @@ async def test_runner_publishes_event_on_success(db, browser):
     payload = bus.publish.call_args[0][0]
     assert payload["monitor_name"] == "pub_ok_mon"
     assert payload["status"] == "ok"
-    assert "ran_at" in payload
+    assert len(payload["ran_at"]) == 19
     assert payload["duration_ms"] >= 0
 
 
@@ -300,7 +300,7 @@ async def test_runner_publishes_event_on_error(db, browser):
     assert payload["monitor_name"] == "pub_err_mon"
     assert payload["status"] == "error"
     assert payload["error"] == "boom"
-    assert "ran_at" in payload
+    assert len(payload["ran_at"]) == 19
 
 
 async def test_runner_skips_publish_when_no_bus(db, browser):

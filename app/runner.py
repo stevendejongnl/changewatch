@@ -2,7 +2,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
 from app.db import Database
@@ -85,7 +85,7 @@ class Runner:
                 await self._event_bus.publish({
                     "monitor_name": monitor.name,
                     "status": status,
-                    "ran_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
                     "last_value": last_value,
                     "duration_ms": duration_ms,
                     "error": None,
@@ -104,7 +104,7 @@ class Runner:
                 await self._event_bus.publish({
                     "monitor_name": monitor.name,
                     "status": "error",
-                    "ran_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
                     "last_value": None,
                     "duration_ms": duration_ms,
                     "error": str(exc),
