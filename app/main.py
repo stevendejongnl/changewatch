@@ -113,6 +113,8 @@ async def _event_stream(bus: EventBus):
     try:
         while True:
             event = await queue.get()
+            if "ran_at" in event:
+                event = {**event, "ran_at": _to_local(event["ran_at"])}
             yield f"data: {_json.dumps(event)}\n\n"
     finally:
         bus.unsubscribe(queue)
