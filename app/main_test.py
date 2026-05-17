@@ -303,12 +303,14 @@ async def test_api_events_streams_published_event():
                 lines.append(raw)
                 return
 
-    consumer = asyncio.create_task(consume())
-    await asyncio.sleep(0.05)
-    await bus.publish({"monitor_name": "test_mon", "status": "ok", "ran_at": "2026-01-01 00:00:00"})
-    await asyncio.wait_for(consumer, timeout=2.0)
+    try:
+        consumer = asyncio.create_task(consume())
+        await asyncio.sleep(0.05)
+        await bus.publish({"monitor_name": "test_mon", "status": "ok", "ran_at": "2026-01-01 00:00:00"})
+        await asyncio.wait_for(consumer, timeout=2.0)
+    finally:
+        app.dependency_overrides.clear()
 
-    app.dependency_overrides.clear()
     assert len(lines) == 1
     payload = json.loads(lines[0][len("data: "):])
     assert payload["monitor_name"] == "test_mon"
