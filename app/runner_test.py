@@ -253,3 +253,65 @@ async def test_runner_does_not_mutate_shared_logger_level(db, browser):
     run_id = runs[0]["id"]
     logs = await db.get_run_logs(run_id)
     assert any("this should be captured" in l["message"] for l in logs)
+
+
+async def test_runner_publishes_event_on_success(db, browser):
+    from unittest.mock import AsyncMock
+    from app.events import EventBus
+
+    bus = EventBus()
+    bus.publish = AsyncMock()
+
+    m = Monitor(name="pub_ok_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        pass
+
+    runner = Runner(db=db, browser=browser, event_bus=bus)
+    await runner.run(m)
+
+    bus.publish.assert_called_once()
+    payload = bus.publish.call_args[0][0]
+    assert payload["monitor_name"] == "pub_ok_mon"
+    assert payload["status"] == "ok"
+    assert "ran_at" in payload
+    assert payload["duration_ms"] >= 0
+
+
+async def test_runner_publishes_event_on_error(db, browser):
+    from unittest.mock import AsyncMock
+    from app.events import EventBus
+
+    bus = EventBus()
+    bus.publish = AsyncMock()
+
+    m = Monitor(name="pub_err_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("boom")
+
+    runner = Runner(db=db, browser=browser, event_bus=bus)
+    await runner.run(m)
+
+    bus.publish.assert_called_once()
+    payload = bus.publish.call_args[0][0]
+    assert payload["monitor_name"] == "pub_err_mon"
+    assert payload["status"] == "error"
+    assert payload["error"] == "boom"
+    assert "ran_at" in payload
+
+
+async def test_runner_skips_publish_when_no_bus(db, browser):
+    m = Monitor(name="no_bus_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        pass
+
+    runner = Runner(db=db, browser=browser)  # no event_bus
+    await runner.run(m)  # must not raise
+
+    runs = await db.get_recent_runs("no_bus_mon")
+    assert runs[0]["status"] == "ok"

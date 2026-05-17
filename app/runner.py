@@ -2,6 +2,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
 from app.db import Database
@@ -9,6 +10,7 @@ from app.helpers import Monitor, notify
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.apprise_client import AppriseClient
+    from app.events import EventBus
     from app.influx import InfluxClient
 
 
@@ -37,11 +39,13 @@ class Runner:
         browser: Any,
         apprise: Optional["AppriseClient"] = None,
         influx: Optional["InfluxClient"] = None,
+        event_bus: Optional["EventBus"] = None,
     ) -> None:
         self._db = db
         self._browser = browser
         self._apprise = apprise
         self._influx = influx
+        self._event_bus = event_bus
 
     async def run(self, monitor: Monitor) -> None:
         logger = logging.getLogger(f"changewatch.{monitor.name}.{uuid.uuid4().hex[:8]}")
@@ -77,6 +81,15 @@ class Runner:
                 duration_ms=duration_ms,
             )
             await self._db.write_run_logs(run_id, log_buffer.lines)
+            if self._event_bus is not None:
+                await self._event_bus.publish({
+                    "monitor_name": monitor.name,
+                    "status": status,
+                    "ran_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_value": last_value,
+                    "duration_ms": duration_ms,
+                    "error": None,
+                })
         except Exception as exc:
             duration_ms = int((time.monotonic() - start) * 1000)
             run_id = await self._db.record_run(
@@ -87,6 +100,15 @@ class Runner:
                 duration_ms=duration_ms,
             )
             await self._db.write_run_logs(run_id, log_buffer.lines)
+            if self._event_bus is not None:
+                await self._event_bus.publish({
+                    "monitor_name": monitor.name,
+                    "status": "error",
+                    "ran_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_value": None,
+                    "duration_ms": duration_ms,
+                    "error": str(exc),
+                })
             if self._apprise is not None and monitor.notify_channels:
                 # TODO(user): customize title/body — terse vs rich, every-failure vs transition-only
                 try:
