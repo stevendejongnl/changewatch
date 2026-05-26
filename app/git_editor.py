@@ -37,31 +37,31 @@ class GitEditor:
 
         # git add + commit
         await self._run("git", "add", str(path))
-        await self._run("git", "commit", "-m", f"monitor: update {name}")
+        rc_commit, _, commit_err = await self._run("git", "commit", "-m", f"monitor: update {name}")
+        if rc_commit != 0:
+            # nothing to commit (file unchanged) — treat as ok
+            return SaveResult(status="ok")
 
         # push
         rc, stdout, stderr = await self._run("git", "push")
         if rc == 0:
             return SaveResult(status="ok")
 
-        # push rejected -- try fetch + rebase
-        if "rejected" in stderr or rc != 0:
-            await self._run("git", "fetch", "origin")
+        # rc != 0 — push failed, attempt rebase
+        await self._run("git", "fetch", "origin")
 
-            # detect current branch
-            _, branch_out, _ = await self._run("git", "branch", "--show-current")
-            branch = branch_out.strip() or "main"
+        # detect current branch
+        _, branch_out, _ = await self._run("git", "branch", "--show-current")
+        branch = branch_out.strip() or "main"
 
-            rc2, _, rebase_err = await self._run("git", "rebase", f"origin/{branch}")
-            if rc2 == 0:
-                # rebase ok, retry push
-                rc3, _, _ = await self._run("git", "push")
-                if rc3 == 0:
-                    return SaveResult(status="ok")
+        rc2, _, rebase_err = await self._run("git", "rebase", f"origin/{branch}")
+        if rc2 == 0:
+            # rebase ok, retry push
+            rc3, _, _ = await self._run("git", "push")
+            if rc3 == 0:
+                return SaveResult(status="ok")
 
-            # rebase failed or push still rejected
-            _, diff_out, _ = await self._run("git", "diff", "HEAD")
-            await self._run("git", "rebase", "--abort")
-            return SaveResult(status="conflict", diff=diff_out)
-
-        return SaveResult(status="error", message=stderr)
+        # rebase failed or push still rejected
+        _, diff_out, _ = await self._run("git", "diff", "HEAD")
+        await self._run("git", "rebase", "--abort")
+        return SaveResult(status="conflict", diff=diff_out)

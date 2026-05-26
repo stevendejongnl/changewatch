@@ -95,3 +95,37 @@ async def test_save_without_git_repo_writes_file_only(tmp_path):
     result = await editor.save("plain", "hello")
     assert result.status == "ok"
     assert (tmp_path / "plain.py").read_text() == "hello"
+
+
+async def test_save_returns_conflict_on_merge_conflict(git_repo, tmp_path):
+    bare = tmp_path / "bare.git"
+
+    # Clone a second working copy from the bare remote
+    clone2 = tmp_path / "clone2"
+    proc = await asyncio.create_subprocess_exec(
+        "git", "clone", str(bare), str(clone2),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await proc.communicate()
+    await run_git(clone2, "git", "config", "user.email", "c2@test.com")
+    await run_git(clone2, "git", "config", "user.name", "Clone2")
+
+    # clone2 commits conflict_file.py and pushes
+    (clone2 / "conflict_file.py").write_text("CLONE2_VERSION = True")
+    await run_git(clone2, "git", "add", "conflict_file.py")
+    await run_git(clone2, "git", "commit", "-m", "clone2 adds conflict_file")
+    await run_git(clone2, "git", "push")
+
+    # git_repo also commits the SAME file with different content WITHOUT pushing
+    (git_repo / "conflict_file.py").write_text("GITREPO_VERSION = True")
+    await run_git(git_repo, "git", "add", "conflict_file.py")
+    await run_git(git_repo, "git", "commit", "-m", "gitrepo adds conflict_file")
+
+    # save will: write conflict_file.py, add, commit, push → rejected
+    # fetch → rebase origin/main → conflict (same file modified differently)
+    editor = GitEditor(git_repo)
+    result = await editor.save("conflict_file", "SAVE_ATTEMPT = True")
+
+    assert result.status == "conflict"
+    assert result.diff is not None
