@@ -12,6 +12,9 @@ docs/superpowers/plans/*.md.bak
 k8s/secrets/*.yaml
 !k8s/secrets/*.example.yaml
 
+# Frontend
+frontend/node_modules/
+
 # Editor
 .idea/
 .vscode/
