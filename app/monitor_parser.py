@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Optional
+import json
 import re
 
 
@@ -84,7 +85,7 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
 def generate_monitor(config: MonitorConfig) -> str:
     """Generate a Python monitor source file from a MonitorConfig."""
 
-    channels_repr = repr(config.notify_channels)
+    channels_repr = json.dumps(config.notify_channels)
 
     # Build imports
     if config.record_to_influx:
@@ -94,33 +95,32 @@ def generate_monitor(config: MonitorConfig) -> str:
 
     # Build monitor constructor
     monitor_block = 'monitor = Monitor(\n    name={name},\n    schedule={schedule},\n    url={url},\n    notify_channels={channels_repr},\n)'.format(
-        name=repr(config.name),
-        schedule=repr(config.schedule),
-        url=repr(config.url),
+        name=json.dumps(config.name),
+        schedule=json.dumps(config.schedule),
+        url=json.dumps(config.url),
         channels_repr=channels_repr,
     )
 
     # Build check function body
     body_lines = []
 
-    goto_line = '    await page.goto({url})'.format(url=repr(config.url))
-    body_lines.append(goto_line)
+    body_lines.append('    await page.goto({url})'.format(url=json.dumps(config.url)))
 
     if config.wait_for_network_idle:
         body_lines.append('    await page.wait_for_load_state("networkidle")')
 
-    body_lines.append('    value = await extract_text(page, {selector})'.format(selector=repr(config.selector)))
-    body_lines.append('    prev = await get_last_value(ctx.db, {name})'.format(name=repr(config.name)))
-    body_lines.append('    await set_value(ctx.db, {name}, value)'.format(name=repr(config.name)))
+    body_lines.append('    value = await extract_text(page, {selector})'.format(selector=json.dumps(config.selector)))
+    body_lines.append('    prev = await get_last_value(ctx.db, {name})'.format(name=json.dumps(config.name)))
+    body_lines.append('    await set_value(ctx.db, {name}, value)'.format(name=json.dumps(config.name)))
     body_lines.append('    if prev is not None and value != prev and ctx.apprise:')
     body_lines.append('        await notify(ctx.apprise, title={title}, body=value, tags={channels_repr})'.format(
-        title=repr(config.name + " changed"),
+        title=json.dumps(config.name + " changed"),
         channels_repr=channels_repr,
     ))
 
     if config.record_to_influx:
         body_lines.append('    if ctx.influx:')
-        body_lines.append('        await record_metric(ctx.influx, {name}, value)'.format(name=repr(config.name)))
+        body_lines.append('        await record_metric(ctx.influx, {name}, value)'.format(name=json.dumps(config.name)))
 
     check_fn = "@monitor.check\nasync def check(page, ctx):\n" + "\n".join(body_lines)
 
