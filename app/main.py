@@ -46,12 +46,11 @@ _browser = None
 _git_sync: GitSync | None = None
 _git_editor: GitEditor | None = None
 _apprise: AppriseClient | None = None
-_log_buf: AppLogBuffer | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise, _log_buf
+    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -63,9 +62,9 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         _git_editor = GitEditor(monitors_dir=MONITORS_DIR)
 
     _apprise = AppriseClient()
-    _log_buf = get_log_buffer()
-    _log_buf.setLevel(_logging.INFO)
-    _logging.getLogger().addHandler(_log_buf)
+    _lb = get_log_buffer()
+    _lb.setLevel(_logging.INFO)
+    _logging.getLogger().addHandler(_lb)
     _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 

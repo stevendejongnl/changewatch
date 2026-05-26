@@ -755,7 +755,7 @@ async def test_api_debug_db_stats_returns_expected_keys(client, db):
     response = await client.get("/api/debug/db-stats")
     assert response.status_code == 200
     data = response.json()
-    for key in ("runs", "run_logs", "state", "monitor_config", "db_size_bytes"):
+    for key in ("runs", "run_logs", "state", "monitor_config", "db_size_bytes", "oldest_run", "newest_run"):
         assert key in data, f"missing key: {key}"
 
 
