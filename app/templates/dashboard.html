@@ -115,6 +115,18 @@
     box-shadow: 0 0 6px var(--ok-glow);
   }
 
+  /* ── Paused chip ─────────────────────────────────────────── */
+  .paused-chip {
+    font: 500 9px/1 var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: inset 1px 1px 3px var(--shadow), inset -1px -1px 3px var(--raise);
+  }
+
   /* ── Responsive ─────────────────────────────────────────── */
   @media (max-width: 1100px) {
     .monitor-grid { grid-template-columns: repeat(2, 1fr); }
@@ -206,7 +218,7 @@
 {% if monitors %}
 <div class="monitor-grid" id="monitor-grid">
   {% for m in monitors %}
-  <div class="neu-raised monitor-card" data-status="{{ m.status }}">
+  <div class="neu-raised monitor-card" data-status="{{ m.status }}" data-monitor="{{ m.monitor_name }}">
     <div class="monitor-card-header">
       <div class="monitor-name-block">
         <div class="led {{ m.status }}"></div>
@@ -214,9 +226,13 @@
           <a href="/monitors/{{ m.monitor_name }}" class="monitor-name">{{ m.monitor_name }}</a>
           {% if m.get('schedule') %}
           <div class="monitor-schedule">{{ m.schedule }}</div>
+          <div class="monitor-schedule" style="color:var(--ink-4)">{{ m.schedule | humanize_cron }}</div>
           {% endif %}
         </div>
       </div>
+      {% if m.paused %}
+      <span class="paused-chip">paused</span>
+      {% endif %}
       <div class="run-btn" id="run-wrap-{{ m.monitor_name }}">
         <button class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)"
           onclick="runMonitor('{{ m.monitor_name }}')" title="Run now">
@@ -283,7 +299,7 @@
       const res = await fetch('/monitors/' + name + '/run', { method: 'POST' });
       if (res.ok) {
         btn.style.color = 'var(--ok)';
-        setTimeout(() => location.reload(), 2000);
+        setTimeout(() => { btn.style.color = ''; btn.disabled = false; wrap.classList.remove('loading'); }, 2000);
       } else {
         btn.style.color = 'var(--err)';
         btn.disabled = false;
@@ -330,7 +346,6 @@
       if (!dot || !indicator) return;
       dot.style.background = ok ? '' : 'var(--ink-4)';
       dot.style.boxShadow  = ok ? '' : 'none';
-      // Walk child nodes to find the text node and update it
       indicator.childNodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
           node.textContent = ok ? ' connected' : ' reconnecting…';
@@ -338,9 +353,104 @@
       });
     }
 
+    function updateStatStrip() {
+      const cards = document.querySelectorAll('#monitor-grid .monitor-card');
+      let ok = 0, changed = 0, error = 0, pending = 0;
+      cards.forEach(c => {
+        const s = c.dataset.status;
+        if (s === 'ok') ok++;
+        else if (s === 'changed') changed++;
+        else if (s === 'error') error++;
+        else pending++;
+      });
+      const counts = document.querySelectorAll('.stat-tile .count');
+      if (counts.length >= 4) {
+        [[ok, 0], [changed, 1], [error, 2], [pending, 3]].forEach(([n, i]) => {
+          counts[i].textContent = String(n).padStart(2, '0');
+          counts[i].className = 'count num' + (n === 0 ? ' zero' : '');
+        });
+      }
+    }
+
+    function setText(el, text) {
+      if (el) el.textContent = text;
+    }
+
+    function updateCard(data) {
+      const card = document.querySelector('.monitor-card[data-monitor="' + data.monitor_name + '"]');
+      if (!card) { location.reload(); return; }
+
+      card.dataset.status = data.status;
+
+      const led = card.querySelector('.led');
+      if (led) led.className = 'led ' + data.status;
+
+      const chip = card.querySelector('.chip');
+      if (chip) { chip.className = 'chip ' + data.status; setText(chip, data.status); }
+
+      const well = card.querySelector('.monitor-value-well');
+      if (well) {
+        const valueEl = well.querySelector('.monitor-value');
+        if (data.status === 'error') {
+          const msg = (data.error || '').slice(0, 60) + ((data.error || '').length > 60 ? '…' : '');
+          if (valueEl) {
+            valueEl.className = 'mono t-err';
+            valueEl.style.fontSize = '12px';
+            valueEl.style.lineHeight = '1.4';
+            setText(valueEl, msg);
+          }
+        } else if (data.status === 'changed') {
+          if (valueEl) {
+            valueEl.className = 'mono t-chg monitor-value';
+            valueEl.style.fontSize = '';
+            valueEl.style.lineHeight = '';
+            setText(valueEl, data.last_value || '—');
+          }
+        } else {
+          if (valueEl) {
+            valueEl.className = 'monitor-value' + (data.last_value ? '' : ' t-4');
+            valueEl.style.fontSize = '';
+            valueEl.style.lineHeight = '';
+            setText(valueEl, data.last_value || '—');
+          }
+        }
+      }
+
+      const footer = card.querySelector('.monitor-footer');
+      if (footer) {
+        const timeEl = footer.querySelector('.mono');
+        if (timeEl) setText(timeEl, 'last: ' + (data.ran_at || 'never'));
+        const durEls = footer.querySelectorAll('.mono');
+        if (durEls[1] && data.duration_ms != null) setText(durEls[1], data.duration_ms + 'ms');
+      }
+
+      updateStatStrip();
+    }
+
+    function updatePauseChip(data) {
+      const card = document.querySelector('.monitor-card[data-monitor="' + data.monitor_name + '"]');
+      if (!card) return;
+      const existing = card.querySelector('.paused-chip');
+      if (data.paused && !existing) {
+        const chip = document.createElement('span');
+        chip.className = 'paused-chip';
+        chip.textContent = 'paused';
+        const header = card.querySelector('.monitor-card-header');
+        const runBtn = header && header.querySelector('.run-btn');
+        if (header && runBtn) header.insertBefore(chip, runBtn);
+      } else if (!data.paused && existing) {
+        existing.remove();
+      }
+    }
+
     const src = new EventSource('/api/events');
-    let _reloadTimer;
-    src.onmessage = () => { clearTimeout(_reloadTimer); _reloadTimer = setTimeout(() => location.reload(), 150); };
+    src.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === 'run')    updateCard(data);
+        if (data.event === 'paused') updatePauseChip(data);
+      } catch (_) { location.reload(); }
+    };
     src.onopen    = () => setConn(true);
     src.onerror   = () => setConn(false);
     window.addEventListener('beforeunload', () => src.close());
