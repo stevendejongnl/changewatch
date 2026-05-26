@@ -94,10 +94,18 @@ class Database:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]
 
-    async def get_runs_with_logs(self, monitor_name: str, limit: int = 50) -> list[dict]:
+    async def get_avg_duration(self, monitor_name: str) -> Optional[int]:
         async with self.conn.execute(
-            "SELECT * FROM runs WHERE monitor_name = ? ORDER BY id DESC LIMIT ?",
-            (monitor_name, limit),
+            "SELECT ROUND(AVG(duration_ms)) AS avg FROM runs WHERE monitor_name = ?",
+            (monitor_name,),
+        ) as cur:
+            row = await cur.fetchone()
+        return int(row["avg"]) if row and row["avg"] is not None else None
+
+    async def get_runs_with_logs(self, monitor_name: str, limit: int = 50, offset: int = 0) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT * FROM runs WHERE monitor_name = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            (monitor_name, limit, offset),
         ) as cur:
             run_rows = await cur.fetchall()
         runs = []

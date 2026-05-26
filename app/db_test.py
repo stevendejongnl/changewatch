@@ -243,3 +243,27 @@ async def test_get_all_monitor_states_paused_defaults_to_zero(db):
     states = await db.get_all_monitor_states()
     mon = next(s for s in states if s["monitor_name"] == "mon")
     assert mon["paused"] == 0
+
+
+async def test_get_avg_duration_returns_none_when_no_runs(db):
+    result = await db.get_avg_duration("nonexistent")
+    assert result is None
+
+
+async def test_get_avg_duration_returns_rounded_integer(db):
+    await db.record_run("mon", status="ok", last_value="1", error=None, duration_ms=100)
+    await db.record_run("mon", status="ok", last_value="2", error=None, duration_ms=200)
+    result = await db.get_avg_duration("mon")
+    assert result == 150
+
+
+async def test_get_runs_with_logs_offset_returns_second_page(db):
+    for i in range(5):
+        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=i * 10)
+    page1 = await db.get_runs_with_logs("mon", limit=3, offset=0)
+    page2 = await db.get_runs_with_logs("mon", limit=3, offset=3)
+    assert len(page1) == 3
+    assert len(page2) == 2
+    ids_page1 = {r["id"] for r in page1}
+    ids_page2 = {r["id"] for r in page2}
+    assert ids_page1.isdisjoint(ids_page2)
