@@ -143,6 +143,39 @@
   @media (max-width: 900px) {
     .editor-grid { grid-template-columns: 1fr; }
   }
+  /* Helper reference panel */
+  .helpers-panel { margin-top: 16px; }
+  .helpers-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: transparent; border: 0; cursor: pointer;
+    color: var(--ink-3); font: 500 10px var(--sans); letter-spacing: 0.12em; text-transform: uppercase;
+    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 4px var(--raise);
+    border-radius: 12px; transition: color .12s;
+  }
+  .helpers-toggle:hover { color: var(--ink-2); }
+  .helpers-toggle-icon { transition: transform .2s; }
+  .helpers-toggle.open .helpers-toggle-icon { transform: rotate(180deg); }
+  .helpers-body { display: none; padding: 8px 0 0; }
+  .helpers-body.open { display: block; }
+  .helper-entry {
+    padding: 9px 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  }
+  .helper-entry:last-child { border-bottom: 0; }
+  .helper-sig { font: 11.5px var(--mono); color: var(--accent); margin-bottom: 3px; }
+  .helper-desc { font: 11px var(--sans); color: var(--ink-3); }
+  .helper-btn {
+    flex-shrink: 0; padding: 5px 10px; border-radius: 8px;
+    font: 500 10px var(--sans); color: var(--ink-3); background: var(--bg); border: 0;
+    cursor: pointer; box-shadow: -2px -2px 4px var(--raise), 2px 2px 4px var(--shadow);
+    white-space: nowrap; transition: color .12s;
+  }
+  .helper-btn:hover { color: var(--ink-2); }
+  .import-row {
+    padding: 9px 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px;
+  }
+  .import-line { font: 11px var(--mono); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 
 <script>
@@ -293,6 +326,48 @@
       </div>
     </div>
 
+    <!-- HELPER REFERENCE PANEL -->
+    <div class="helpers-panel">
+      <button class="helpers-toggle" id="helpers-toggle" onclick="toggleHelpers()">
+        Available helpers
+        <svg class="helpers-toggle-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="helpers-body" id="helpers-body">
+        <div class="import-row">
+          <span class="import-line" id="import-line">from app.helpers import Monitor, extract_text, get_last_value, set_value, notify</span>
+          <button class="helper-btn" id="copy-import-btn">Copy import</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">extract_text(page, selector)</div><div class="helper-desc">Wait for CSS selector, return stripped inner text</div></div>
+          <button class="helper-btn" data-snippet='value = await extract_text(page, ".selector")'>Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">extract_json(page, url)</div><div class="helper-desc">Fetch JSON via browser request context</div></div>
+          <button class="helper-btn" data-snippet="data = await extract_json(page, monitor.url)">Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">navigate(page, url)</div><div class="helper-desc">Navigate with auto consent-gate detection</div></div>
+          <button class="helper-btn" data-snippet="await navigate(page, monitor.url)">Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">get_last_value(ctx.db, monitor_name)</div><div class="helper-desc">Read latest persisted value from state table</div></div>
+          <button class="helper-btn" data-snippet="prev = await get_last_value(ctx.db, ctx.monitor_name)">Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">set_value(ctx.db, monitor_name, value)</div><div class="helper-desc">Upsert value into state table</div></div>
+          <button class="helper-btn" data-snippet="await set_value(ctx.db, ctx.monitor_name, value)">Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">notify(ctx.apprise, title, body, tags)</div><div class="helper-desc">Send notification (guard with if ctx.apprise)</div></div>
+          <button class="helper-btn" data-snippet='if ctx.apprise:&#10;    await notify(ctx.apprise, "title", value, tags=["channel"])'>Insert</button>
+        </div>
+        <div class="helper-entry">
+          <div><div class="helper-sig">record_metric(ctx.influx, measurement, value)</div><div class="helper-desc">Write point to InfluxDB (guard with if ctx.influx)</div></div>
+          <button class="helper-btn" data-snippet='if ctx.influx:&#10;    await record_metric(ctx.influx, "measurement", value)'>Insert</button>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /editor-right -->
 </div>
 
@@ -311,4 +386,41 @@ document.querySelectorAll('.channel-checkbox').forEach(function(cb) {
 });
 </script>
 <script src="/static/editor.js?v={{ editor_version }}"></script>
+<script>
+  function toggleHelpers() {
+    var btn = document.getElementById('helpers-toggle');
+    var body = document.getElementById('helpers-body');
+    btn.classList.toggle('open');
+    body.classList.toggle('open');
+  }
+
+  function insertSnippet(snippet) {
+    var ta = document.querySelector('#raw-editor-container textarea.input-layer');
+    if (!ta) {
+      navigator.clipboard && navigator.clipboard.writeText(snippet);
+      return;
+    }
+    var start = ta.selectionStart;
+    var end = ta.selectionEnd;
+    ta.setRangeText(snippet, start, end, 'end');
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    ta.focus();
+  }
+
+  // Wire up Insert buttons via data-snippet attribute (avoids inline onclick with quotes)
+  document.querySelectorAll('.helper-btn[data-snippet]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      insertSnippet(btn.dataset.snippet);
+    });
+  });
+
+  // Wire up copy import button
+  var copyBtn = document.getElementById('copy-import-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+      var text = document.getElementById('import-line').textContent;
+      navigator.clipboard && navigator.clipboard.writeText(text);
+    });
+  }
+</script>
 {% endblock %}
