@@ -1,8 +1,10 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
+from unittest.mock import AsyncMock, MagicMock
 
 from app.db import Database
-from app.main import app, get_db, get_scheduler, get_git_sync, _to_local, _humanize_cron
+from app.git_editor import GitEditor, SaveResult
+from app.main import app, get_db, get_scheduler, get_git_sync, get_git_editor, get_browser, _to_local, _humanize_cron
 from app.scheduler import Scheduler
 
 
@@ -409,3 +411,195 @@ def test_humanize_cron_returns_human_string_for_common_pattern():
 def test_humanize_cron_returns_input_on_invalid_cron():
     result = _humanize_cron("not-a-cron")
     assert result == "not-a-cron"
+
+
+# ── Editor routes ────────────────────────────────────────────────────────────
+
+async def test_get_monitors_new(client):
+    resp = await client.get("/monitors/new")
+    assert resp.status_code == 200
+
+
+async def test_get_monitors_edit(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    source = 'from app.helpers import Monitor\nmonitor = Monitor(name="test", schedule="* * * * *", notify_channels=[])\n'
+    (tmp_path / "test.py").write_text(source)
+    resp = await client.get("/monitors/test/edit")
+    assert resp.status_code == 200
+
+
+async def test_get_monitors_edit_not_found(client):
+    resp = await client.get("/monitors/nonexistent_xyz/edit")
+    assert resp.status_code == 404
+
+
+async def test_api_monitor_source(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    (tmp_path / "mysource.py").write_text("# hello")
+    resp = await client.get("/api/monitors/mysource/source")
+    assert resp.status_code == 200
+    assert resp.json()["source"] == "# hello"
+
+
+async def test_api_monitor_source_not_found(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    resp = await client.get("/api/monitors/no_such_mon/source")
+    assert resp.status_code == 404
+
+
+async def test_api_monitor_save(client):
+    mock_editor = MagicMock()
+    mock_editor.save = AsyncMock(return_value=SaveResult(status="ok"))
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/save", json={"source": "# test"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_save_conflict(client):
+    mock_editor = MagicMock()
+    mock_editor.save = AsyncMock(return_value=SaveResult(status="conflict", diff="--- a\n+++ b"))
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/save", json={"source": "# test"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "conflict"
+        assert resp.json()["diff"] is not None
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_save_no_git_editor(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    app.dependency_overrides[get_git_editor] = lambda: None
+    try:
+        resp = await client.post("/api/monitors/plain/save", json={"source": "# plain"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert (tmp_path / "plain.py").read_text() == "# plain"
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_force_push_no_git_editor(client):
+    app.dependency_overrides[get_git_editor] = lambda: None
+    try:
+        resp = await client.post("/api/monitors/mymon/force-push", json={"source": "# test"})
+        assert resp.status_code == 503
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_force_push_ok(client):
+    mock_editor = MagicMock()
+    mock_editor._run = AsyncMock(return_value=(0, "", ""))
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/force-push", json={"source": "# test"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_force_push_fails(client):
+    mock_editor = MagicMock()
+    mock_editor._run = AsyncMock(return_value=(1, "", "push failed"))
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/force-push", json={"source": "# test"})
+        assert resp.status_code == 500
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_discard_no_git_editor(client):
+    app.dependency_overrides[get_git_editor] = lambda: None
+    try:
+        resp = await client.post("/api/monitors/mymon/discard")
+        assert resp.status_code == 503
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_discard_ok(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    (tmp_path / "mymon.py").write_text("# current source")
+    mock_editor = MagicMock()
+    mock_editor._run = AsyncMock(side_effect=[
+        (0, "", ""),           # git fetch origin
+        (0, "main\n", ""),     # git branch --show-current
+        (0, "", ""),           # git reset --hard origin/main
+    ])
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/discard")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert resp.json()["source"] == "# current source"
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_discard_reset_fails(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    mock_editor = MagicMock()
+    mock_editor._run = AsyncMock(side_effect=[
+        (0, "", ""),           # git fetch origin
+        (0, "main\n", ""),     # git branch --show-current
+        (1, "", "conflict"),   # git reset --hard fails
+    ])
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    try:
+        resp = await client.post("/api/monitors/mymon/discard")
+        assert resp.status_code == 500
+    finally:
+        del app.dependency_overrides[get_git_editor]
+
+
+async def test_api_monitor_dry_run(client):
+    mock_browser = MagicMock()
+    mock_context = AsyncMock()
+    mock_page = AsyncMock()
+    mock_browser.new_context = AsyncMock(return_value=mock_context)
+    mock_context.new_page = AsyncMock(return_value=mock_page)
+    mock_page.close = AsyncMock()
+    mock_context.close = AsyncMock()
+
+    app.dependency_overrides[get_browser] = lambda: mock_browser
+    try:
+        source = (
+            'from app.helpers import Monitor, set_value\n'
+            'monitor = Monitor(name="dry_test", schedule="* * * * *", notify_channels=[])\n'
+            '@monitor.check\n'
+            'async def check(page, ctx):\n'
+            '    await set_value(ctx.db, "dry_test", "val")\n'
+        )
+        resp = await client.post("/api/monitors/dry_test/dry-run", json={"source": source})
+        assert resp.status_code == 200
+        assert "lines" in resp.json()
+    finally:
+        del app.dependency_overrides[get_browser]
+
+
+async def test_api_monitor_dry_run_no_browser(client):
+    app.dependency_overrides[get_browser] = lambda: None
+    try:
+        source = '# minimal'
+        resp = await client.post("/api/monitors/dry_test/dry-run", json={"source": source})
+        assert resp.status_code == 503
+    finally:
+        del app.dependency_overrides[get_browser]
+
+
+async def test_api_monitor_dry_run_invalid_source(client):
+    mock_browser = MagicMock()
+    app.dependency_overrides[get_browser] = lambda: mock_browser
+    try:
+        resp = await client.post("/api/monitors/dry_test/dry-run", json={"source": "x = 1"})
+        assert resp.status_code == 422
+    finally:
+        del app.dependency_overrides[get_browser]

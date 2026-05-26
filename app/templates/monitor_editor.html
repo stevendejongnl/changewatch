@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == "new" %}New Monitor{% else %}Edit {{ monitor_name }}{% endif %} — changewatch{% endblock %}
+{% block topbar %}
+<div class="topbar-left">
+  <div class="topbar-breadcrumb">
+    <a href="/">Monitors</a>
+    <span>/</span>
+    <span>{% if mode == "new" %}New{% else %}{{ monitor_name }}{% endif %}</span>
+  </div>
+  <h1>{% if mode == "new" %}New Monitor{% else %}Edit {{ monitor_name }}{% endif %}</h1>
+</div>
+{% endblock %}
+{% block content %}
+<div id="editor-root"
+     data-mode="{{ mode }}"
+     data-monitor-name="{{ monitor_name }}"
+     data-custom-file="{{ custom_file | lower }}">
+  <textarea id="source-editor" style="display:none;">{{ source }}</textarea>
+</div>
+{% endblock %}

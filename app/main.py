@@ -1,9 +1,11 @@
+import importlib.util
 import json as _json
 import os
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
@@ -13,11 +15,15 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from playwright.async_api import async_playwright
+from pydantic import BaseModel
 
 from app.apprise_client import AppriseClient
 from app.db import Database
 from app.events import EventBus, get_event_bus
+from app.git_editor import GitEditor, SaveResult as _SaveResult
 from app.git_sync import GitSync
+from app.helpers import Monitor
+from app.monitor_parser import parse_monitor
 from app.scheduler import Scheduler, discover_monitors
 
 MONITORS_REPO_URL = os.getenv("MONITORS_REPO_URL", "")
@@ -36,6 +42,7 @@ _db: Database | None = None
 _scheduler: Scheduler | None = None
 _browser = None
 _git_sync: GitSync | None = None
+_git_editor: GitEditor | None = None
 
 
 @asynccontextmanager
@@ -111,10 +118,42 @@ async def get_git_sync() -> Optional[GitSync]:  # pragma: no cover
     return _git_sync
 
 
+async def get_git_editor() -> GitEditor | None:  # pragma: no cover
+    return _git_editor
+
+
+async def get_browser():  # pragma: no cover
+    return _browser
+
+
 DbDep = Annotated[Database, Depends(get_db)]
 SchedulerDep = Annotated[Optional[Scheduler], Depends(get_scheduler)]
 GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
+GitEditorDep = Annotated[GitEditor | None, Depends(get_git_editor)]
+BrowserDep = Annotated[Any, Depends(get_browser)]
 EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
+
+
+class _SaveBody(BaseModel):
+    source: str
+
+
+class _DryRunBody(BaseModel):
+    source: str
+
+
+async def _load_monitor_from_source(source: str, name: str) -> Monitor:
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+        f.write(source)
+        tmp_path = f.name
+    spec = importlib.util.spec_from_file_location(name, tmp_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    Path(tmp_path).unlink(missing_ok=True)
+    monitor = getattr(module, "monitor", None)
+    if monitor is None or not isinstance(monitor, Monitor):
+        raise HTTPException(status_code=422, detail="No valid monitor instance found in source")
+    return monitor
 
 
 async def _event_stream(bus: EventBus):
@@ -211,6 +250,93 @@ async def resume_monitor(name: str, db: DbDep, bus: EventBusDep):
         raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
     await db.set_paused(name, False)
     await bus.publish({"event": "paused", "monitor_name": name, "paused": False})
+
+
+@app.get("/monitors/new", response_class=HTMLResponse)
+async def monitor_new(request: Request):
+    return templates.TemplateResponse(
+        request, "monitor_editor.html", {
+            "mode": "new",
+            "monitor_name": "",
+            "source": "",
+            "notify_channels": [],
+            "custom_file": False,
+        }
+    )
+
+
+@app.get("/monitors/{name}/edit", response_class=HTMLResponse)
+async def monitor_edit(name: str, request: Request):
+    path = MONITORS_DIR / f"{name}.py"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    source = path.read_text()
+    config = parse_monitor(source)
+    custom_file = config is None
+    return templates.TemplateResponse(
+        request, "monitor_editor.html", {
+            "mode": "edit",
+            "monitor_name": name,
+            "source": source,
+            "notify_channels": config.notify_channels if config else [],
+            "custom_file": custom_file,
+        }
+    )
+
+
+@app.get("/api/monitors/{name}/source")
+async def api_monitor_source(name: str):
+    path = MONITORS_DIR / f"{name}.py"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    return {"source": path.read_text()}
+
+
+@app.post("/api/monitors/{name}/save")
+async def api_monitor_save(name: str, body: _SaveBody, git_editor: GitEditorDep):
+    if git_editor is None:
+        # No git editor — write file directly
+        path = MONITORS_DIR / f"{name}.py"
+        path.write_text(body.source)
+        return {"status": "ok"}
+    result = await git_editor.save(name, body.source)
+    return {"status": result.status, "diff": result.diff, "message": result.message}
+
+
+@app.post("/api/monitors/{name}/force-push")
+async def api_monitor_force_push(name: str, body: _SaveBody, git_editor: GitEditorDep):
+    if git_editor is None:
+        raise HTTPException(status_code=503, detail="Git editor not configured")
+    rc, _, stderr = await git_editor._run("git", "push", "--force-with-lease")
+    if rc != 0:
+        raise HTTPException(status_code=500, detail=stderr)
+    return {"status": "ok"}
+
+
+@app.post("/api/monitors/{name}/discard")
+async def api_monitor_discard(name: str, git_editor: GitEditorDep):
+    if git_editor is None:
+        raise HTTPException(status_code=503, detail="Git editor not configured")
+    await git_editor._run("git", "fetch", "origin")
+    _, branch, _ = await git_editor._run("git", "branch", "--show-current")
+    branch = branch.strip() or "main"
+    rc, _, stderr = await git_editor._run("git", "reset", "--hard", f"origin/{branch}")
+    if rc != 0:
+        raise HTTPException(status_code=500, detail=stderr)
+    path = MONITORS_DIR / f"{name}.py"
+    source = path.read_text() if path.exists() else ""
+    return {"status": "ok", "source": source}
+
+
+@app.post("/api/monitors/{name}/dry-run")
+async def api_monitor_dry_run(name: str, body: _DryRunBody, browser: BrowserDep, db: DbDep):
+    if browser is None:
+        raise HTTPException(status_code=503, detail="Browser not available")
+    monitor = await _load_monitor_from_source(body.source, name)
+    from app.runner import Runner
+    runner = Runner(db=db, browser=browser)
+    lines = await runner.run(monitor, dry_run=True)
+    return {"lines": [{"level": level, "message": msg} for level, msg in lines]}
 
 
 @app.get("/monitors/{name}", response_class=HTMLResponse)
