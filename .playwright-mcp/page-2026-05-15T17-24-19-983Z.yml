@@ -1,0 +1,63 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "changewatch" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - text: › activity
+      - heading "Activity" [level=1] [ref=e6]
+    - generic [ref=e7]:
+      - combobox [ref=e8]:
+        - option "All monitors" [selected]
+        - option "daily_weather_amsterdam"
+        - option "ikea_ekbacken_stock"
+      - combobox [ref=e9]:
+        - option "All statuses" [selected]
+        - option "ok"
+        - option "error"
+        - option "changed"
+  - table [ref=e11]:
+    - rowgroup [ref=e12]:
+      - row "Time Monitor Status Value / Error Duration" [ref=e13]:
+        - columnheader "Time" [ref=e14]
+        - columnheader "Monitor" [ref=e15]
+        - columnheader "Status" [ref=e16]
+        - columnheader "Value / Error" [ref=e17]
+        - columnheader "Duration" [ref=e18]
+    - rowgroup [ref=e19]:
+      - row "2026-05-15 19:23:26 ikea_ekbacken_stock ok In stock 654ms" [ref=e20]:
+        - cell "2026-05-15 19:23:26" [ref=e21]
+        - cell "ikea_ekbacken_stock" [ref=e22]:
+          - link "ikea_ekbacken_stock" [ref=e23] [cursor=pointer]:
+            - /url: /monitors/ikea_ekbacken_stock
+        - cell "ok" [ref=e24]:
+          - generic [ref=e25]: ok
+        - cell "In stock" [ref=e26]
+        - cell "654ms" [ref=e27]
+      - row "2026-05-15 19:23:26 daily_weather_amsterdam ok 16°C overcast 1105ms" [ref=e28]:
+        - cell "2026-05-15 19:23:26" [ref=e29]
+        - cell "daily_weather_amsterdam" [ref=e30]:
+          - link "daily_weather_amsterdam" [ref=e31] [cursor=pointer]:
+            - /url: /monitors/daily_weather_amsterdam
+        - cell "ok" [ref=e32]:
+          - generic [ref=e33]: ok
+        - cell "16°C overcast" [ref=e34]
+        - cell "1105ms" [ref=e35]
+      - 'row "2026-05-15 19:23:26 ikea_ekbacken_stock error non-JSON response: status=503 body=b\"Service Unavailable\" 892ms" [ref=e36]':
+        - cell "2026-05-15 19:23:26" [ref=e37]
+        - cell "ikea_ekbacken_stock" [ref=e38]:
+          - link "ikea_ekbacken_stock" [ref=e39] [cursor=pointer]:
+            - /url: /monitors/ikea_ekbacken_stock
+        - cell "error" [ref=e40]:
+          - generic [ref=e41]: error
+        - 'cell "non-JSON response: status=503 body=b\"Service Unavailable\"" [ref=e42]'
+        - cell "892ms" [ref=e43]
+      - row "2026-05-15 19:23:26 daily_weather_amsterdam ok 18°C partly cloudy 1243ms" [ref=e44]:
+        - cell "2026-05-15 19:23:26" [ref=e45]
+        - cell "daily_weather_amsterdam" [ref=e46]:
+          - link "daily_weather_amsterdam" [ref=e47] [cursor=pointer]:
+            - /url: /monitors/daily_weather_amsterdam
+        - cell "ok" [ref=e48]:
+          - generic [ref=e49]: ok
+        - cell "18°C partly cloudy" [ref=e50]
+        - cell "1243ms" [ref=e51]

@@ -1,0 +1,71 @@
+<h2>Full design summary</h2>
+<p class="subtitle">Everything we're building — approve or flag anything to change</p>
+
+<div class="section">
+  <h3>Schema changes</h3>
+  <p>New table <code>run_logs</code> — one row per log line emitted during a run:</p>
+  <div style="background:#0f1117;border-radius:4px;padding:0.75rem;font-family:monospace;font-size:0.75rem;color:#94a3b8;margin-top:0.5rem;line-height:1.8">
+    <span style="color:#60a5fa">CREATE TABLE</span> run_logs (<br>
+    &nbsp;&nbsp;id <span style="color:#fde68a">INTEGER PRIMARY KEY AUTOINCREMENT</span>,<br>
+    &nbsp;&nbsp;run_id <span style="color:#fde68a">INTEGER NOT NULL</span> <span style="color:#60a5fa">REFERENCES</span> runs(id),<br>
+    &nbsp;&nbsp;level <span style="color:#fde68a">TEXT NOT NULL</span>,<span style="color:#475569">  -- INFO / WARNING / ERROR</span><br>
+    &nbsp;&nbsp;message <span style="color:#fde68a">TEXT NOT NULL</span>,<br>
+    &nbsp;&nbsp;logged_at <span style="color:#fde68a">TEXT NOT NULL</span> <span style="color:#60a5fa">DEFAULT</span> (datetime('now'))<br>
+    );
+  </div>
+</div>
+
+<div class="section">
+  <h3>Log capture in Runner</h3>
+  <p>Before calling <code>monitor.fn(page, ctx)</code>, attach a custom <code>logging.Handler</code> to the monitor's logger that buffers records. After the run completes (ok or error), flush buffered lines to <code>run_logs</code> using the newly inserted <code>run_id</code>.</p>
+</div>
+
+<div class="section">
+  <h3>New routes</h3>
+  <div style="display:flex;flex-direction:column;gap:0.4rem;font-family:monospace;font-size:0.78rem;margin-top:0.4rem">
+    <div style="display:flex;gap:1rem;padding:0.4rem 0.6rem;background:#1e293b;border-radius:4px">
+      <span style="color:#60a5fa;min-width:3rem">GET</span>
+      <span style="color:#f8fafc">/monitors/{name}</span>
+      <span style="color:#64748b">— detail page: last 50 runs + expandable logs per run</span>
+    </div>
+    <div style="display:flex;gap:1rem;padding:0.4rem 0.6rem;background:#1e293b;border-radius:4px">
+      <span style="color:#60a5fa;min-width:3rem">GET</span>
+      <span style="color:#f8fafc">/activity</span>
+      <span style="color:#64748b">— global feed: last 50 runs across all monitors, filterable</span>
+    </div>
+    <div style="display:flex;gap:1rem;padding:0.4rem 0.6rem;background:#1e293b;border-radius:4px">
+      <span style="color:#60a5fa;min-width:3rem">GET</span>
+      <span style="color:#f8fafc">/api/monitors/{name}/runs</span>
+      <span style="color:#64748b">— JSON: runs + logs, used by poll-after-trigger</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Dashboard change</h3>
+  <p>Monitor names become links: <code>&lt;a href="/monitors/{{ m.monitor_name }}"&gt;</code>. Add an "Activity" link in the header.</p>
+</div>
+
+<div class="section">
+  <h3>Run now → poll flow</h3>
+  <p>Detail page: click "Run now" → <code>POST /monitors/{name}/run</code> → JS polls <code>GET /api/monitors/{name}/runs</code> every second until a new run_id appears → re-renders the top row with status + logs.</p>
+</div>
+
+<div class="section">
+  <h3>New templates</h3>
+  <ul style="margin-left:1.25rem;line-height:2">
+    <li><code>templates/monitor_detail.html</code> — detail page</li>
+    <li><code>templates/activity.html</code> — global feed</li>
+  </ul>
+</div>
+
+<div style="margin-top:1rem;display:flex;gap:0.5rem">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Approved — write the spec</h3><p>Save design doc and move to implementation plan</p></div>
+  </div>
+  <div class="option" data-choice="change" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✎</div>
+    <div class="content"><h3>Change something</h3><p>Tell me what in the terminal</p></div>
+  </div>
+</div>

@@ -1,0 +1,712 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Ga door naar de hoofdinhoud":
+      - /url: "#hnf-content"
+      - generic:
+        - generic: Ga door naar de hoofdinhoud
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - button "Wijzig taal of land/regio, huidige taal is Nederlands" [ref=e7] [cursor=pointer]:
+          - generic:
+            - img
+            - generic: NLNederlands
+        - link "Aanbiedingen die je niet mag missen" [ref=e10] [cursor=pointer]:
+          - /url: https://www.ikea.com/nl/nl/offers/
+          - img [ref=e11]
+          - generic [ref=e14]: Aanbiedingen die je niet mag missen
+        - generic [ref=e15]:
+          - button "Vul je postcode in" [ref=e17] [cursor=pointer]:
+            - generic:
+              - img
+              - generic: Vul je postcode in
+          - button "Selecteer winkel" [ref=e18] [cursor=pointer]:
+            - generic:
+              - img
+              - generic: Selecteer winkel
+      - generic [ref=e20]:
+        - link "IKEA Startpagina" [ref=e22] [cursor=pointer]:
+          - /url: https://www.ikea.com/nl/nl/
+        - navigation "Open het navigatiemenu" [ref=e25]:
+          - button "Producten" [ref=e26] [cursor=pointer]
+          - button "Ruimtes" [ref=e27] [cursor=pointer]
+          - button "Koopjes" [ref=e28] [cursor=pointer]
+          - button "Ontwerp" [ref=e29] [cursor=pointer]
+          - button "Services" [ref=e30] [cursor=pointer]
+        - search [ref=e36]:
+          - generic [ref=e37]:
+            - img
+            - combobox "Zoek product" [ref=e38]
+        - navigation "Shopping links" [ref=e39]:
+          - list [ref=e40]:
+            - listitem [ref=e41]:
+              - link "Hej! Log in" [ref=e43] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/profile/login
+                - generic:
+                  - img
+                  - generic: Hej! Log in
+            - listitem [ref=e44]:
+              - link "Boodschappenlijstje" [ref=e46] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/favourites/
+                - generic:
+                  - img
+                  - generic: Boodschappenlijstje
+            - listitem [ref=e47]:
+              - link "Winkelwagen" [ref=e49] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/shoppingcart/
+                - generic:
+                  - img
+                  - generic: Winkelwagen
+    - generic:
+      - complementary "Zwevende actieknoppen":
+        - button "Start Chat" [ref=e51] [cursor=pointer]:
+          - img [ref=e52]
+  - main [ref=e55]:
+    - generic [ref=e57]:
+      - navigation "Kruimels" [ref=e60]:
+        - list [ref=e61]:
+          - listitem [ref=e62]:
+            - link "IKEA vestigingen" [ref=e63] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/stores/
+            - text: ›
+          - listitem [ref=e64]:
+            - generic [ref=e65]: Amsterdam
+      - article [ref=e67]:
+        - heading "Welkom bij IKEA Amsterdam" [level=1] [ref=e73]
+        - link "Webpage in English" [ref=e78] [cursor=pointer]:
+          - /url: https://www.ikea.com/nl/en/stores/amsterdam/
+          - generic [ref=e80]: Webpage in English
+        - paragraph [ref=e84]:
+          - strong [ref=e85]: IKEA Amsterdam
+          - text: Hullenbergweg 2
+          - text: 1101 BL Amsterdam Zuidoost
+        - generic [ref=e89]:
+          - generic [ref=e93]:
+            - paragraph [ref=e94]:
+              - strong [ref=e95]: Openingstijden
+              - text: Ma - wo 10:00-20:00 uur
+              - text: Do - vr 10:00-21:00 uur
+              - text: Za 10:00-20:00 uur
+              - text: Zo 10:00-18:00 uur
+            - paragraph [ref=e96]
+            - paragraph [ref=e97]:
+              - strong [ref=e98]: Aangepaste openingstijden
+              - text: "3 april, Goede vrijdag: 10 - 19 uur"
+              - text: 5 april, 1
+              - superscript [ref=e99]: e
+              - text: "Paasdag: Gesloten"
+              - text: 6 april, 2
+              - superscript [ref=e100]: e
+              - text: "Paasdag: 10 - 18 uur"
+              - text: "27 april, Koningsdag: Gesloten"
+              - text: "4 mei, Dodenherdenking: 10 - 19 uur"
+              - text: "5 mei, Bevrijdingsdag: 10 - 20 uur"
+              - text: "14 mei, Hemelvaartsdag: 10 - 18 uur"
+              - text: 24 mei, 1
+              - superscript [ref=e101]: e
+              - text: "Pinksterdag: 10 - 18 uur"
+              - text: 25 mei, 2
+              - superscript [ref=e102]: e
+              - text: "Pinksterdag: 10 - 18 uur"
+            - paragraph [ref=e103]
+          - generic [ref=e107]:
+            - paragraph [ref=e108]:
+              - strong [ref=e109]: Bestelling ophalen
+              - text: Ma - wo 07:00-21:00 uur
+              - text: Do - vr 07:00-22:00 uur
+              - text: Za 07:00-21:00 uur
+              - text: Zo 07:00-19:00 uur
+            - paragraph [ref=e110]:
+              - strong [ref=e111]: Småland*
+              - text: Ma - don 14:00-19:30 uur
+              - text: Vr 14:00-20:30 uur
+              - text: Za 10:00-19:30 uur
+              - text: Zo 10:00-18:00 uur
+            - paragraph [ref=e112]:
+              - superscript [ref=e113]: "*Het kan incidenteel voorkomen dat de openingstijden van Småland afwijken, of dat Småland gesloten is."
+              - superscript [ref=e114]: Småland is een speelplek voor kinderen met een lengte tussen 95 en 130 cm
+          - generic [ref=e118]:
+            - paragraph [ref=e119]:
+              - strong [ref=e120]: Zweeds Restaurant*
+              - text: Ma - wo 09:30-19:30 uur
+              - text: Do- vr 09:30-20:30 uur
+              - text: Za 09:30-19:30 uur
+              - text: Zo 09:30-17:30 uur
+            - paragraph [ref=e121]:
+              - superscript [ref=e122]: "*Het kan incidenteel voorkomen dat de sluitingstijden van het Zweedse Restaurant afwijken."
+            - paragraph [ref=e123]
+        - separator [ref=e126]
+        - generic [ref=e131]:
+          - heading "Laatste kans, MALM fans" [level=2] [ref=e134]
+          - link "40 tot 60% korting op alle MALM ladekasten.* Alleen in de winkel, zolang de voorraad strekt. Daarna zeggen we voorgoed vaarwel. * M.u.v. de kleur wit. A black-brown MALM chest of 6 drawers" [ref=e136] [cursor=pointer]:
+            - /url: https://www.ikea.com/nl/nl/p/solvinden-led-lichtsnoer-met-24-lampjes-op-zonnecellen-globe-oranje-roze-20615173/
+            - generic [ref=e137]:
+              - generic [ref=e140]:
+                - generic [ref=e143]: 40 tot 60% korting op alle MALM ladekasten.* Alleen in de winkel, zolang de voorraad strekt. Daarna zeggen we voorgoed vaarwel. * M.u.v. de kleur wit.
+                - img [ref=e145]
+              - img "A black-brown MALM chest of 6 drawers" [ref=e150]
+        - separator [ref=e153]
+        - generic [ref=e158]:
+          - heading "Bekijk alle aanbiedingen bij IKEA Amsterdam" [level=2] [ref=e161]
+          - generic [ref=e164]:
+            - link "Lijst overslaan" [ref=e165] [cursor=pointer]:
+              - /url: "#pub__-carousel__f97daa64-d4df-11eb-982e-cb9de6e30378-skip-btn"
+            - list [ref=e167]:
+              - listitem [ref=e168]:
+                - link "Shop nieuwe IKEA producten We hebben weer een mooie selectie aan nieuwe producten in ons assortiment. Bekijk ze hier! A green PELARKAKTUS plate in the dining room" [ref=e170] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/new/
+                  - generic [ref=e171]:
+                    - generic [ref=e174]:
+                      - generic [ref=e176]:
+                        - generic [ref=e177]: Shop nieuwe IKEA producten
+                        - generic [ref=e178]: We hebben weer een mooie selectie aan nieuwe producten in ons assortiment. Bekijk ze hier!
+                      - img [ref=e180]
+                    - img "A green PELARKAKTUS plate in the dining room" [ref=e185]
+              - listitem [ref=e186]:
+                - link "Bekijk alle IKEA Family aanbiedingen En ontvang korting op verschillende producten uit ons assortiment. A light, bright living room with a combination of KIVIK seating, a STOENSE rug, a wall-hung TV and a big, leafy plant." [ref=e188] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/offers/family-offers/
+                  - generic [ref=e189]:
+                    - generic [ref=e192]:
+                      - generic [ref=e194]:
+                        - generic [ref=e195]: Bekijk alle IKEA Family aanbiedingen
+                        - generic [ref=e196]: En ontvang korting op verschillende producten uit ons assortiment.
+                      - img [ref=e198]
+                    - img "A light, bright living room with a combination of KIVIK seating, a STOENSE rug, a wall-hung TV and a big, leafy plant." [ref=e203]
+              - listitem [ref=e204]:
+                - link "Nieuw verlaagde prijs Nu 3.300 producten in prijs verlaagd. A grey-blue RÅSKOG trolley with lid" [ref=e206] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/lower-price/
+                  - generic [ref=e207]:
+                    - generic [ref=e210]:
+                      - generic [ref=e212]:
+                        - generic [ref=e213]: Nieuw verlaagde prijs
+                        - generic [ref=e214]: Nu 3.300 producten in prijs verlaagd.
+                      - img [ref=e216]
+                    - img "A grey-blue RÅSKOG trolley with lid" [ref=e221]
+              - listitem [ref=e222]:
+                - link "Pak je kans bij IKEA Amsterdam Vind hier de laatste aanbiedingen uit ons assortiment. Aanbieding, IKEA, IKEA Amsterdam" [ref=e224] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/amsterdam/aanbiedingen-pub3b099a2e/
+                  - generic [ref=e225]:
+                    - generic [ref=e228]:
+                      - generic [ref=e230]:
+                        - generic [ref=e231]: Pak je kans bij IKEA Amsterdam
+                        - generic [ref=e232]: Vind hier de laatste aanbiedingen uit ons assortiment.
+                      - img [ref=e234]
+                    - img "Aanbieding, IKEA, IKEA Amsterdam" [ref=e239]
+        - separator [ref=e246]
+        - generic [ref=e252]:
+          - heading "Bekijk events en activiteiten in IKEA Amsterdam" [level=2] [ref=e253]
+          - generic [ref=e254]:
+            - paragraph [ref=e256]: Het hele jaar door bieden we diverse events en activiteiten en events aan. Bijvoorbeeld workshops over de inrichting van het huis of activiteiten voor kinderen. Houdt onze event pagina in de gaten!
+            - link "Bekijk events en activiteiten" [ref=e257] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/stores/events/ikea-amsterdam/
+              - generic [ref=e259]: Bekijk events en activiteiten
+        - separator [ref=e262]
+        - generic [ref=e266]:
+          - generic [ref=e270]:
+            - heading "Betaalmogelijkheden" [level=3] [ref=e271]
+            - paragraph [ref=e272]: Je kan in de winkel op verschillende manieren betalen. Bij de zelf-scan kassa's kan je betalen met contant geld* of een debit- of creditcard. Je kan ook betalen met een IKEA cadeau- of tegoedkaart. Het is niet mogelijk om in termijnen te betalen.
+            - list [ref=e273]:
+              - listitem [ref=e274]: We accepteren maximaal 200,- biljetten
+              - listitem [ref=e275]: Bij de kassa's kan je zien met welke bankbiljetten je kan betalen. We accepteren maximaal 2.999.- aan contant geld per transactie.
+          - generic [ref=e277]:
+            - generic [ref=e279]:
+              - heading "Gevonden voorwerpen" [level=3] [ref=e280]
+              - paragraph [ref=e281]: Ben je iets verloren? We helpen je graag om het voorwerp terug te vinden. Alle voorwerpen die we vinden, plaatsen we op de website van iLost. Via de link hieronder kan je kijken of je voorwerp gevonden is.
+            - link "Gevonden voorwerpen - Opent in een nieuw tabblad of venster" [ref=e285] [cursor=pointer]:
+              - /url: https://ilost.co/nl/org/ikea?country=nl&amp=&location=1159
+              - generic [ref=e287]: Gevonden voorwerpen
+          - generic [ref=e291]:
+            - heading "Toegankelijkheid" [level=3] [ref=e292]
+            - paragraph [ref=e293]: Onze winkel is volledig toegankelijk voor rolstoelen en scootmobielen. Zo zijn de gangpaden breed en zijn er speciale parkeerplaatsen voor mindervaliden dichtbij de ingang. Ook zijn er rolstoeltoiletten aanwezig en is er de mogelijkheid om een rolstoel te lenen bij de ingang van de winkel.
+        - separator [ref=e296]
+        - generic [ref=e300]:
+          - generic [ref=e302]:
+            - group [ref=e304]:
+              - generic [ref=e308]:
+                - img "Bus, metro, tram"
+            - generic [ref=e310]:
+              - heading "Met het OV naar IKEA Amsterdam" [level=4] [ref=e311]
+              - paragraph [ref=e312]: Pak hiervoor de metro 50 of 54 richting Gein, en stap uit bij halte Bullewijk. (uitstappen aan de kant van het Bullewijkpad).
+          - generic [ref=e314]:
+            - group [ref=e316]:
+              - generic [ref=e320]:
+                - img "Fiets, fietsen, elektrische fiets"
+            - generic [ref=e322]:
+              - heading "Met de fiets kan ook" [level=4] [ref=e323]
+              - paragraph [ref=e324]: Kom op de fiets naar IKEA Amsterdam, vanaf het centrum van Amsterdam ben je ongeveer 30 minuten onderweg.
+          - generic [ref=e326]:
+            - group [ref=e328]:
+              - generic [ref=e332]:
+                - img "Auto, elektrische auto"
+            - generic [ref=e334]:
+              - heading "Ook met de auto ben je welkom" [level=4] [ref=e335]
+              - paragraph [ref=e336]: We hebben in de parkeergarage oplaadpunten voor je elektrische auto.
+        - separator [ref=e339]
+        - generic [ref=e343]:
+          - group [ref=e347]:
+            - generic [ref=e351]:
+              - img "IKEA medewerkers in de winkel"
+          - generic [ref=e353]:
+            - generic [ref=e355]:
+              - heading "Vacatures" [level=2] [ref=e356]
+              - paragraph [ref=e357]: Iedere IKEA medewerker heeft zijn of haar eigen motivatie om bij IKEA te werken. Een persoonlijke missie om jezelf, IKEA en de wereld om je heen te verbeteren. Zo’n persoonlijke missie wordt in Zweden een Uppdrag genoemd.
+              - paragraph [ref=e358]: Heb jij ook ambities om bij IKEA te gaan werken? Klik op de button hieronder en filter op land en plaats om direct de openstaande vacatures bij IKEA Amsterdam te bekijken.
+            - link "Bekijk de vacatures" [ref=e362] [cursor=pointer]:
+              - /url: https://jobs.ikea.com/nl/jobs-zoeken/Nederland/22908/2/2750405/52x25/5x75/25/2?_gl=1*1bfjum2*_ga*MjEyNzA0MDIyNS4xNzI5NTk0MDA5*_ga_S4EX53B760*MTczMDgxMDExMy43LjEuMTczMDgxMDI5NC4wLjAuMTU0NTM1NDMwNA
+              - generic [ref=e364]: Bekijk de vacatures
+        - separator [ref=e367]
+        - generic [ref=e372]:
+          - heading "Planservices bij IKEA Amsterdam" [level=2] [ref=e375]
+          - generic [ref=e378]:
+            - link "Lijst overslaan" [ref=e379] [cursor=pointer]:
+              - /url: "#pub__-carousel__e09352a0-1c53-11f0-b174-29607916fe44-skip-btn"
+            - list [ref=e381]:
+              - listitem [ref=e382]:
+                - link "Onze keukenspecialisten staan voor je klaar Met onze keukenspecialisten bespreek je elke stap die leidt tot je nieuwe keuken. Van de ruimte die je hebt, je kookwensen tot de stijl die je mooi vindt. Boek nu je afspraak. Keukenspecialist, keukenplanservice, ontwerpen, eigen keukenontwerpen." [ref=e384] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/kitchen-planning/
+                  - generic [ref=e385]:
+                    - generic [ref=e388]:
+                      - generic [ref=e390]:
+                        - generic [ref=e391]: Onze keukenspecialisten staan voor je klaar
+                        - generic [ref=e392]: Met onze keukenspecialisten bespreek je elke stap die leidt tot je nieuwe keuken. Van de ruimte die je hebt, je kookwensen tot de stijl die je mooi vindt. Boek nu je afspraak.
+                      - img [ref=e394]
+                    - img "Keukenspecialist, keukenplanservice, ontwerpen, eigen keukenontwerpen." [ref=e399]
+              - listitem [ref=e400]:
+                - link "Advies & planservice kledingkasten Boek nu je afspraak met een van onze kastenexperts en plan samen je droomkast. Dit kan zowel plaatsvinden bij IKEA Amsterdam als online. Pax wardrobe, pax kledingkast, kast ontwerpen, eigen kast ontwerpen." [ref=e402] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/appointment/bedroom/timeslots/
+                  - generic [ref=e403]:
+                    - generic [ref=e406]:
+                      - generic [ref=e408]:
+                        - generic [ref=e409]: Advies & planservice kledingkasten
+                        - generic [ref=e410]: Boek nu je afspraak met een van onze kastenexperts en plan samen je droomkast. Dit kan zowel plaatsvinden bij IKEA Amsterdam als online.
+                      - img [ref=e412]
+                    - img "Pax wardrobe, pax kledingkast, kast ontwerpen, eigen kast ontwerpen." [ref=e417]
+              - listitem [ref=e418]:
+                - link "Verhuurservice Heb je geen auto, of maar een kleintje? Geen probleem. Bij onze winkels kan je een bus of aanhanger huren. Met een speciale prijs voor IKEA Family leden. Moving, verhuizen, plattedozen." [ref=e420] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/een-bus-of-aanhangwagen-huren-pub6b24e9e0/
+                  - generic [ref=e421]:
+                    - generic [ref=e424]:
+                      - generic [ref=e426]:
+                        - generic [ref=e427]: Verhuurservice
+                        - generic [ref=e428]: Heb je geen auto, of maar een kleintje? Geen probleem. Bij onze winkels kan je een bus of aanhanger huren. Met een speciale prijs voor IKEA Family leden.
+                      - img [ref=e430]
+                    - img "Moving, verhuizen, plattedozen." [ref=e435]
+        - separator [ref=e438]
+        - generic [ref=e442]:
+          - group [ref=e446]:
+            - generic [ref=e450]:
+              - img "Business, IKEA for business, furniture, IKEA for business network"
+          - generic [ref=e452]:
+            - generic [ref=e454]:
+              - heading "IKEA for Business Amsterdam" [level=2] [ref=e455]
+              - heading "Jouw bedrijf. Op jouw manier." [level=3] [ref=e456]
+              - paragraph [ref=e457]: Of je nu een restaurant, een kantoor of een stijlvolle winkel wil gaan inrichten, IKEA for Business Amsterdam helpt je graag op een manier die bij jou past. Met een IKEA for Business lidmaatschap kunnen we je nog beter van dienst zijn. Als we weten waar je behoefte aan hebt of waar juist de uitdagingen zitten, kunnen we je helpen je werkomgeving inspirerend in te richten.
+              - paragraph [ref=e458]: Inschrijven is gratis. Als lid van het IKEA for Business netwerk geniet je van diverse voordelen, kunnen we je snel en doeltreffend helpen en ontvang je relevante aanbiedingen binnen jouw sector.
+              - paragraph [ref=e459]: Benieuwd naar meer voordelen van het IKEA for Business lidmaatschap of wil je met ons in contact komen? Mail ons dan op business.amsterdam.nl@ikea.com.
+              - paragraph [ref=e460]: Direct een afspraak maken? Klik op de onderstaande knop.
+            - link "Afspraak maken - Opent in een nieuw tabblad of venster" [ref=e464] [cursor=pointer]:
+              - /url: https://forms.office.com/e/Xti8mHP3ms?origin=lprLink
+              - generic [ref=e466]: Afspraak maken
+            - link "Meer info" [ref=e470] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/stores/amsterdam/ikea-for-business-amsterdam-pube9b5d740/
+              - generic [ref=e472]: Meer info
+        - separator [ref=e475]
+        - generic [ref=e480]:
+          - heading "Elke stap telt" [level=2] [ref=e483]
+          - generic [ref=e486]:
+            - link "Lijst overslaan" [ref=e487] [cursor=pointer]:
+              - /url: "#pub__-carousel__a8d3cf00-25bf-11f0-90fd-cf1d370468ce-skip-btn"
+            - list [ref=e489]:
+              - listitem [ref=e490]:
+                - link "Tweedekanshoek Bekijk het aanbod van de Tweedekanshoek Tweedekanshoek, koopjeshoek, IKEA" [ref=e492] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/campaigns/tweedekanshoek-online-pubebfe3f30/?store=088#/amsterdam
+                  - generic [ref=e493]:
+                    - generic [ref=e496]:
+                      - generic [ref=e498]:
+                        - generic [ref=e499]: Tweedekanshoek
+                        - generic [ref=e500]: Bekijk het aanbod van de Tweedekanshoek
+                      - img [ref=e502]
+                    - img "Tweedekanshoek, koopjeshoek, IKEA" [ref=e507]
+              - listitem [ref=e508]:
+                - link "Je oude IKEA product is geld en een tweede leven waard Met de Terugkoopservice kopen wij gebruikte IKEA producten terug, die we doorverkopen in de Tweedekanshoek. Ontdek snel wat je product waard is. IKEA Family leden krijgen 15% extra terugkoopwaarde! Een witte KALLAX-inzet met 2 laden" [ref=e510] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/circular/buy-back/
+                  - generic [ref=e511]:
+                    - generic [ref=e514]:
+                      - generic [ref=e516]:
+                        - generic [ref=e517]: Je oude IKEA product is geld en een tweede leven waard
+                        - generic [ref=e518]: Met de Terugkoopservice kopen wij gebruikte IKEA producten terug, die we doorverkopen in de Tweedekanshoek. Ontdek snel wat je product waard is. IKEA Family leden krijgen 15% extra terugkoopwaarde!
+                      - img [ref=e520]
+                    - img "Een witte KALLAX-inzet met 2 laden" [ref=e525]
+              - listitem [ref=e526]:
+                - link "Retour & recycleservice Met de milieuvriendelijke IKEA retourservice nemen we je oude matras of keuken mee wanneer we de nieuwe leveren. Retourservice oude matras, recycling, recycleservice" [ref=e528] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/removal/
+                  - generic [ref=e529]:
+                    - generic [ref=e532]:
+                      - generic [ref=e534]:
+                        - generic [ref=e535]: Retour & recycleservice
+                        - generic [ref=e536]: Met de milieuvriendelijke IKEA retourservice nemen we je oude matras of keuken mee wanneer we de nieuwe leveren.
+                      - img [ref=e538]
+                    - img "Retourservice oude matras, recycling, recycleservice" [ref=e543]
+        - generic [ref=e546]:
+          - heading "Veelgestelde vragen" [level=3] [ref=e547]:
+            - strong [ref=e548]: Veelgestelde vragen
+          - paragraph [ref=e549]: Heb je een vraag? Typ je zoekterm in de zoekbalk hieronder of bekijk hieronder de meestgestelde vragen. Voor montagehandleidingen, specifieke producten of artikelnummers, gebruik je de zoekbalk bovenaan onze website
+        - generic [ref=e556]:
+          - img [ref=e558]
+          - searchbox "Search" [ref=e561]
+        - generic [ref=e565]:
+          - link "Skip listing" [ref=e566] [cursor=pointer]:
+            - /url: "#undefined-carousel__FAQList_FAQ_NL_502_Vestigingen_Dynamic-skip-btn"
+          - list [ref=e568]:
+            - listitem [ref=e569]:
+              - generic [ref=e570]:
+                - generic [ref=e571]:
+                  - link "Wanneer kan ik ontbijten bij IKEA?" [ref=e572] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/15821f95-3b5f-4d0e-b7fc-3f9b6d3g6733.html
+                    - heading "Wanneer kan ik ontbijten bij IKEA?" [level=3] [ref=e573]
+                  - paragraph [ref=e574]: In elke vestiging kan je genieten van een fijn Zweeds ontbijt. Je vindt deze informatie op de vestigingspagina op IKEA.nl.
+                - generic [ref=e575]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e576]:
+              - generic [ref=e577]:
+                - generic [ref=e578]:
+                  - link "Wat staat er op het menu in het restaurant?" [ref=e579] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/e78gccg3-617c-4ffb-8cb6-ed9fee377f95.html
+                    - heading "Wat staat er op het menu in het restaurant?" [level=3] [ref=e580]
+                  - paragraph [ref=e581]: Bij IKEA bieden we een moderne smaak van Zweden met eerlijk, betaalbaar en smakelijk eten. Van een Zweeds ontbijt tot Zweedse...
+                - generic [ref=e582]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e583]:
+              - generic [ref=e584]:
+                - generic [ref=e585]:
+                  - link "Kan ik mijn elektrische of hybride auto ook opladen bij IKEA?" [ref=e586] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/66bcc155-34db-4716-9fgg-0fd3ef5g38ee.html
+                    - heading "Kan ik mijn elektrische of hybride auto ook opladen bij IKEA?" [level=3] [ref=e587]
+                  - paragraph [ref=e588]: Dat kan! Bij elke IKEA vestiging vind je minimaal vier oplaadpunten voor elektrische en hybride voertuigen. In sommige vestigingen zelfs meer.
+                - generic [ref=e589]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e590]:
+              - generic [ref=e591]:
+                - generic [ref=e592]:
+                  - link "Wat voor parkeerplekken heeft IKEA?" [ref=e593] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/g1f40fef-f018-4541-95bb-g3567d6g124d.html
+                    - heading "Wat voor parkeerplekken heeft IKEA?" [level=3] [ref=e594]
+                  - paragraph [ref=e595]: Bij alle IKEA vestigingen kan je gratis parkeren. Het parkeerterrein van de winkel is alleen open wanneer de winkel open is....
+                - generic [ref=e596]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e597]:
+              - generic [ref=e598]:
+                - generic [ref=e599]:
+                  - link "Zijn er in de winkel rolstoelen beschikbaar?" [ref=e600] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/9d758c33-27b9-4c3f-g906-575b11d1282e.html
+                    - heading "Zijn er in de winkel rolstoelen beschikbaar?" [level=3] [ref=e601]
+                  - paragraph [ref=e602]: Je bent van harte welkom! Je vindt bij elke IKEA vestiging een aantal rolstoelen bij de ingang; het zijn voornamelijk duwstoelen....
+                - generic [ref=e603]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e604]:
+              - generic [ref=e605]:
+                - generic [ref=e606]:
+                  - link "Wat zijn de kleurcodes van de verf die IKEA gebruikt?" [ref=e607] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/g857f722-90f7-4022-g9ef-bedgg7c4134f.html
+                    - heading "Wat zijn de kleurcodes van de verf die IKEA gebruikt?" [level=3] [ref=e608]
+                  - paragraph [ref=e609]: IKEA biedt graag inspiratie voor verschillende manieren van wonen. Als interieurexperts kunnen we ons heel goed voorstellen dat je graag de...
+                - generic [ref=e610]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e611]:
+              - generic [ref=e612]:
+                - generic [ref=e613]:
+                  - link "Waar vind ik informatie over de IKEA vestigingen?" [ref=e614] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/e94c2257-059d-4896-99b0-8ffefg727745.html
+                    - heading "Waar vind ik informatie over de IKEA vestigingen?" [level=3] [ref=e615]
+                  - paragraph [ref=e616]: In Nederland zijn er 14 IKEA vestigingen (13 volledige winkels en 1 Plan and Order Point). Elke IKEA vestiging heeft zijn...
+                - generic [ref=e617]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e618]:
+              - generic [ref=e619]:
+                - generic [ref=e620]:
+                  - link "Zijn honden toegestaan in een IKEA vestiging?" [ref=e621] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/c41e56e2-2481-4000-9453-92f99bg5g6cd.html
+                    - heading "Zijn honden toegestaan in een IKEA vestiging?" [level=3] [ref=e622]
+                  - paragraph [ref=e623]: Alleen blindengeleidehonden en assistentiehonden (mits ze een officieel hesje van hulphond of assistentiehond dragen) mogen binnenkomen.
+                - generic [ref=e624]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e625]:
+              - generic [ref=e626]:
+                - generic [ref=e627]:
+                  - link "Kan ik online een product uit de Tweedekanshoek bestellen?" [ref=e628] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/884f84f2-dc6f-4bc6-b45e-cb5594g3b069.html
+                    - heading "Kan ik online een product uit de Tweedekanshoek bestellen?" [level=3] [ref=e629]
+                  - paragraph [ref=e630]: Dat kan! De Tweedekanshoek is de plek voor een mooie vondst voor een net zo mooie prijs. De winkels hebben sinds...
+                - generic [ref=e631]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+            - listitem [ref=e632]:
+              - generic [ref=e633]:
+                - generic [ref=e634]:
+                  - link "Verkoopt IKEA ook showmodellen?" [ref=e635] [cursor=pointer]:
+                    - /url: https://www.ikea.com/nl/nl/customer-service/knowledge/articles/ec6g619b-2ddc-496e-g64e-c85908582d5d.html
+                    - heading "Verkoopt IKEA ook showmodellen?" [level=3] [ref=e636]
+                  - paragraph [ref=e637]: Showmodellen die in onze showrooms gebruikt zijn, kunnen meestal nog prima een tweede ronde mee. Daarom verkopen we deze met interessante...
+                - generic [ref=e638]:
+                  - button:
+                    - generic:
+                      - generic: Lees meer
+  - contentinfo [ref=e644]:
+    - generic [ref=e645]:
+      - heading "Voettekst" [level=2] [ref=e646]
+      - generic [ref=e647]:
+        - generic [ref=e648]:
+          - generic [ref=e649]:
+            - heading "Word IKEA Family lid" [level=3] [ref=e650]
+            - paragraph [ref=e652]: Als IKEA Family lid profiteer je van heel veel voordelen, zoals kortingen op veel producten en gratis toegang tot workshops en evenementen.
+            - paragraph [ref=e653]:
+              - link "Lees meer >>" [ref=e654] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/ikea-family/
+            - link "Word lid of log in" [ref=e655] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/profile/login
+              - generic:
+                - generic: Word lid of log in
+          - generic [ref=e656]:
+            - heading "Word IKEA for Business Netwerk lid" [level=3] [ref=e657]
+            - paragraph [ref=e659]: Profiteer van een aantal unieke voordelen en services die je ondersteunen als zakelijke klant.
+            - paragraph [ref=e660]:
+              - link "Lees meer >>" [ref=e661] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/ikea-business/network/
+            - link "Word lid of log in" [ref=e662] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/business-profile/register-network/
+              - generic:
+                - generic: Word lid of log in
+        - list [ref=e664]:
+          - listitem [ref=e665]:
+            - heading "Klantenservice" [level=3] [ref=e666]:
+              - generic: Klantenservice
+            - list "Klantenservice Klantenservice Mijn bestellingen Ruilen en retourneren Transport en bezorging Voorraadinformatie Services Garantie Probleem melden productveiligheid Product- en veiligheidswaarschuwingen Montageservice Onderhoud & reparatie" [ref=e667]:
+              - listitem [ref=e668]:
+                - link "Klantenservice" [ref=e669] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/
+              - listitem [ref=e670]:
+                - link "Mijn bestellingen" [ref=e671] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/purchases/lookup/
+              - listitem [ref=e672]:
+                - link "Ruilen en retourneren" [ref=e673] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/returns-claims/
+              - listitem [ref=e674]:
+                - link "Transport en bezorging" [ref=e675] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/delivery/
+              - listitem [ref=e676]:
+                - link "Voorraadinformatie" [ref=e677] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/stock-availability/
+              - listitem [ref=e678]:
+                - link "Services" [ref=e679] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/
+              - listitem [ref=e680]:
+                - link "Garantie" [ref=e681] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/returns-claims/guarantee/
+              - listitem [ref=e682]:
+                - link "Probleem melden productveiligheid" [ref=e683] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/support/a/2RO01uvzZHA4KG2xONqX8V/
+              - listitem [ref=e684]:
+                - link "Product- en veiligheidswaarschuwingen" [ref=e685] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/product-support/recalls/
+              - listitem [ref=e686]:
+                - link "Montageservice" [ref=e687] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/assembly/
+              - listitem [ref=e688]:
+                - link "Onderhoud & reparatie" [ref=e689] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/circular/repair/
+          - listitem [ref=e690]:
+            - heading "Over IKEA" [level=3] [ref=e691]:
+              - generic: Over IKEA
+            - list "Over IKEA Dit is IKEA Het IKEA concept Duurzaamheid Wooninspiratie IKEA Nieuws IKEA Series Catalogus & brochures Campagnes Werken bij IKEA Pers" [ref=e692]:
+              - listitem [ref=e693]:
+                - link "Dit is IKEA" [ref=e694] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/
+              - listitem [ref=e695]:
+                - link "Het IKEA concept" [ref=e696] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/about-us/visie-and-bedrijfsconcept-pub9cd02291/
+              - listitem [ref=e697]:
+                - link "Duurzaamheid" [ref=e698] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/sustainable-everyday/
+              - listitem [ref=e699]:
+                - link "Wooninspiratie" [ref=e700] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ideas/
+              - listitem [ref=e701]:
+                - link "IKEA Nieuws" [ref=e702] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/new/
+              - listitem [ref=e703]:
+                - link "IKEA Series" [ref=e704] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/series-series/
+              - listitem [ref=e705]:
+                - link "Catalogus & brochures" [ref=e706] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/new/ikea-catalogus-pub4c91e7d0/
+              - listitem [ref=e707]:
+                - link "Campagnes" [ref=e708] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/campaigns/
+              - listitem [ref=e709]:
+                - link "Werken bij IKEA" [ref=e710] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/work-with-us/
+              - listitem [ref=e711]:
+                - link "Pers" [ref=e712] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/newsroom/
+          - listitem [ref=e713]:
+            - heading "Winkelen bij IKEA" [level=3] [ref=e714]:
+              - generic: Winkelen bij IKEA
+            - list "Winkelen bij IKEA Openingstijden Alle vestigingen Alle producten Aanbiedingen Zweeds restaurant Zweedse delicatessen IKEA App Cadeaukaart Planners" [ref=e715]:
+              - listitem [ref=e716]:
+                - link "Openingstijden" [ref=e717] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/
+              - listitem [ref=e718]:
+                - link "Alle vestigingen" [ref=e719] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/
+              - listitem [ref=e720]:
+                - link "Alle producten" [ref=e721] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/producten-products/
+              - listitem [ref=e722]:
+                - link "Aanbiedingen" [ref=e723] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/offers/
+              - listitem [ref=e724]:
+                - link "Zweeds restaurant" [ref=e725] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/food/
+              - listitem [ref=e726]:
+                - link "Zweedse delicatessen" [ref=e727] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/zweedse-delicatessen-fb001/
+              - listitem [ref=e728]:
+                - link "IKEA App" [ref=e729] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/mobile-apps/
+              - listitem [ref=e730]:
+                - link "Cadeaukaart" [ref=e731] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/gift-cards/
+              - listitem [ref=e732]:
+                - link "Planners" [ref=e733] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/planners/
+          - listitem [ref=e734]:
+            - heading "IKEA Family & Business" [level=3] [ref=e735]:
+              - generic: IKEA Family & Business
+            - list "IKEA Family & Business Log in Meld je aan Over IKEA Family Voordelen Activiteiten & evenementen IKEA for Business Interieuradvies voor bedrijven" [ref=e736]:
+              - listitem [ref=e737]:
+                - link "Log in" [ref=e738] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/profile/login
+              - listitem [ref=e739]:
+                - link "Meld je aan" [ref=e740] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/profile/signup/family/
+              - listitem [ref=e741]:
+                - link "Over IKEA Family" [ref=e742] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-family/
+              - listitem [ref=e743]:
+                - link "Voordelen" [ref=e744] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-family/benefits/
+              - listitem [ref=e745]:
+                - link "Activiteiten & evenementen" [ref=e746] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/events/
+              - listitem [ref=e747]:
+                - link "IKEA for Business" [ref=e748] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-business/
+              - listitem [ref=e749]:
+                - link "Interieuradvies voor bedrijven" [ref=e750] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-business/interieur-design-service-voor-je-bedrijf-pub64008730/
+        - generic [ref=e751]:
+          - generic [ref=e752]:
+            - list [ref=e754]:
+              - listitem [ref=e755]:
+                - link "Volg IKEA op Volg IKEA op Facebook" [ref=e756] [cursor=pointer]:
+                  - /url: https://www.facebook.com/IKEANederland/
+                  - img [ref=e757]
+              - listitem [ref=e759]:
+                - link "Volg IKEA op Volg IKEA op Instagram" [ref=e760] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ikeanederland/
+                  - img [ref=e761]
+              - listitem [ref=e763]:
+                - link "Volg IKEA op Volg IKEA op Pinterest" [ref=e764] [cursor=pointer]:
+                  - /url: https://www.pinterest.com/ikeanederland/
+                  - img [ref=e765]
+              - listitem [ref=e767]:
+                - link "Volg IKEA op Volg IKEA op Youtube" [ref=e768] [cursor=pointer]:
+                  - /url: https://www.youtube.com/user/IKEAnederland
+                  - img [ref=e769]
+            - list [ref=e772]:
+              - listitem [ref=e773]:
+                - link "iDeal" [ref=e774] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "iDeal" [ref=e775]
+              - listitem [ref=e776]:
+                - link "Mastercard" [ref=e777] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Mastercard" [ref=e778]
+              - listitem [ref=e779]:
+                - link "Visa" [ref=e780] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Visa" [ref=e781]
+              - listitem [ref=e782]:
+                - link "Klarna" [ref=e783] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Klarna" [ref=e784]
+              - listitem [ref=e785]:
+                - link "IKEA cadeaukaart" [ref=e786] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "IKEA cadeaukaart" [ref=e787]
+              - listitem [ref=e788]:
+                - link "Amercian Express" [ref=e789] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Amercian Express" [ref=e790]
+              - listitem [ref=e791]:
+                - link "Paypal" [ref=e792] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Paypal" [ref=e793]
+              - listitem [ref=e794]:
+                - link "Apple Pay" [ref=e795] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Apple Pay" [ref=e796]
+              - listitem [ref=e797]:
+                - link "Google Pay" [ref=e798] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Google Pay" [ref=e799]
+              - listitem [ref=e800]:
+                - link "Betaal in 3 keer met Oney" [ref=e801] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Betaal in 3 keer met Oney" [ref=e802]
+          - button "Wijzig taal of land/regio, huidige taal is Nederlands" [ref=e805] [cursor=pointer]:
+            - generic:
+              - img
+              - generic:
+                - generic:
+                  - generic: NLNederlands
+      - generic [ref=e806]:
+        - paragraph [ref=e808]: © Inter IKEA Systems B.V 1999-2026
+        - list [ref=e810]:
+          - listitem [ref=e811]:
+            - link "Privacybeleid" [ref=e812] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/privacy-policy/
+          - listitem [ref=e813]:
+            - link "Cookies" [ref=e814] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/cookie-policy/
+          - listitem [ref=e815]:
+            - link "Cookie-instellingen" [ref=e816] [cursor=pointer]:
+              - /url: "javascript: { if(window.ikea.cookieConsent) { ikea.cookieConsent.togglePreferenceCenter() } }"
+          - listitem [ref=e817]:
+            - link "Algemene voorwaarden" [ref=e818] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/terms-conditions/algemene-verkoopvoorwaarden-pub7d95221d/
+          - listitem [ref=e819]:
+            - link "Gebruikersvoorwaarden" [ref=e820] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/terms-conditions/gebruikersvoorwaarden-pub92fe171d/
+          - listitem [ref=e821]:
+            - link "Responsible Disclosure Program" [ref=e822] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/responsible-disclosure/
+          - listitem [ref=e823]:
+            - link "Verklaring digitale toegankelijkheid" [ref=e824] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/accessibility/

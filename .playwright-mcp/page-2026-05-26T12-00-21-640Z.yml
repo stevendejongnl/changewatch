@@ -1,0 +1,84 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - link "Monitors" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e8]
+    - link "Activity" [ref=e11] [cursor=pointer]:
+      - /url: /activity
+      - img [ref=e12]
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - link "monitors" [ref=e19] [cursor=pointer]:
+            - /url: /
+          - generic [ref=e20]: ›
+          - link "example_price" [ref=e21] [cursor=pointer]:
+            - /url: /monitors/example_price
+          - generic [ref=e22]: ›
+          - generic [ref=e23]: edit
+        - heading "Adjust monitor" [level=1] [ref=e24]
+        - generic [ref=e25]: Adjust the Python monitor file
+      - generic [ref=e26]:
+        - link "Cancel" [ref=e27] [cursor=pointer]:
+          - /url: /monitors/example_price
+        - button "Save & deploy" [ref=e28] [cursor=pointer]
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - button "Form" [ref=e33] [cursor=pointer]
+          - button "Raw" [ref=e34] [cursor=pointer]
+        - generic [ref=e35]:
+          - generic [ref=e36]:
+            - generic [ref=e37]: 1 · Basics
+            - generic [ref=e38]:
+              - generic [ref=e39]: Name
+              - textbox "Name" [ref=e40]:
+                - /placeholder: my_monitor
+                - text: example_price
+            - generic [ref=e41]:
+              - generic [ref=e42]: URL
+              - textbox "URL" [ref=e43]:
+                - /placeholder: https://example.com
+                - text: https://example.com
+            - generic [ref=e44]:
+              - generic [ref=e45]: Schedule (cron)
+              - textbox "Schedule (cron)" [ref=e46]:
+                - /placeholder: "*/30 * * * *"
+                - text: "*/30 * * * *"
+              - generic [ref=e47]:
+                - button "5 min" [ref=e48] [cursor=pointer]
+                - button "15 min" [ref=e49] [cursor=pointer]
+                - button "30 min" [ref=e50] [cursor=pointer]
+                - button "hourly" [ref=e51] [cursor=pointer]
+                - button "daily" [ref=e52] [cursor=pointer]
+            - generic [ref=e53]:
+              - generic [ref=e54]: CSS selector
+              - textbox "CSS selector" [ref=e55]:
+                - /placeholder: ".price, #stock-count"
+                - text: h1
+          - generic [ref=e56]:
+            - generic [ref=e57]: 2 · Advanced
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - generic [ref=e60]: Record to InfluxDB
+                - generic [ref=e61]: Write extracted value as a metric
+              - generic [ref=e62]:
+                - checkbox
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: Wait for network idle
+                - generic [ref=e68]: Useful for JS-heavy pages
+              - generic [ref=e69]:
+                - checkbox
+      - generic [ref=e72]:
+        - generic [ref=e74]:
+          - img [ref=e75]
+          - text: monitors/example_price.py
+        - generic [ref=e78]: "from app.helpers import Monitor, extract_text, get_last_value, set_value, notify monitor = Monitor( name=\"example_price\", schedule=\"*/30 * * * *\", url=\"https://example.com\", notify_channels=[], ) @monitor.check async def check(page, ctx): await page.goto(\"https://example.com\") value = await extract_text(page, \"h1\") prev = await get_last_value(ctx.db, \"example_price\") await set_value(ctx.db, \"example_price\", value)"
+        - generic [ref=e79]:
+          - generic [ref=e80]: Dry run
+          - generic [ref=e81]: Run the monitor once without saving or sending notifications.
+          - button "Run dry-run" [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+            - text: Run dry-run

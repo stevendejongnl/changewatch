@@ -1,0 +1,19 @@
+<h2>How deep should the logs go?</h2>
+<p class="subtitle">The runs table already has status, error, duration, last value — what else do you need?</p>
+
+<div class="options">
+  <div class="option" data-choice="runs-only" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Run history is enough</h3>
+      <p>Show the existing runs table data — status, error message, duration, last value, timestamp. No extra capture needed.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="capture-logs" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Capture Python log output too</h3>
+      <p>Store ctx.logger output (INFO, WARNING, etc.) per run in the DB so you can see what the monitor actually printed during a run.</p>
+    </div>
+  </div>
+</div>

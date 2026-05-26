@@ -1,0 +1,31 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - link "Monitors" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e8]
+    - link "Activity" [ref=e11] [cursor=pointer]:
+      - /url: /activity
+      - img [ref=e12]
+    - generic "Notifications" [ref=e14]:
+      - img [ref=e15]
+    - generic "Sign out" [ref=e18]:
+      - img [ref=e19]
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - heading "Activity" [level=1] [ref=e25]
+        - generic [ref=e26]: Every run, across every monitor
+      - generic [ref=e28]: Live
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - button "All" [ref=e33] [cursor=pointer]
+          - button "Errors" [ref=e34] [cursor=pointer]
+          - button "Changes" [ref=e35] [cursor=pointer]
+          - button "OK" [ref=e36] [cursor=pointer]
+        - generic [ref=e37]:
+          - img [ref=e38]
+          - combobox [ref=e41] [cursor=pointer]:
+            - option "All monitors" [selected]
+        - generic [ref=e42]: showing 0 events
+      - generic [ref=e44]: No runs yet

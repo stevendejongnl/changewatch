@@ -1,0 +1,73 @@
+<h2>Per-monitor detail page — <code>/monitors/{name}</code></h2>
+<p class="subtitle">Linked from the monitor name on the dashboard. Does this layout feel right?</p>
+
+<div class="mockup">
+  <div class="mockup-header">changewatch › daily_weather_amsterdam</div>
+  <div class="mockup-body" style="padding:1.25rem;font-family:system-ui,sans-serif;font-size:0.8rem;color:#e2e8f0">
+
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span style="font-size:1rem;font-weight:600;color:#f8fafc">daily_weather_amsterdam</span>
+        <span style="background:#7f1d1d;color:#fca5a5;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600">error</span>
+        <span style="color:#64748b;font-size:0.72rem">runs at 0 8 * * *</span>
+      </div>
+      <button style="background:#334155;border:none;color:#e2e8f0;padding:0.35rem 0.9rem;border-radius:4px;cursor:pointer;font-size:0.75rem">▶ Run now</button>
+    </div>
+
+    <!-- Run history table -->
+    <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+      <thead>
+        <tr style="border-bottom:1px solid #1e293b;color:#94a3b8">
+          <th style="text-align:left;padding:0.4rem 0.6rem;font-weight:500">Time</th>
+          <th style="text-align:left;padding:0.4rem 0.6rem;font-weight:500">Status</th>
+          <th style="text-align:left;padding:0.4rem 0.6rem;font-weight:500">Duration</th>
+          <th style="text-align:left;padding:0.4rem 0.6rem;font-weight:500">Value</th>
+          <th style="text-align:left;padding:0.4rem 0.6rem;font-weight:500">Error / Logs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Error run — expanded logs -->
+        <tr style="background:#1e293b">
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8;white-space:nowrap">08:00:03 today</td>
+          <td style="padding:0.5rem 0.6rem"><span style="background:#7f1d1d;color:#fca5a5;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">error</span></td>
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8">1 204ms</td>
+          <td style="padding:0.5rem 0.6rem;color:#64748b">—</td>
+          <td style="padding:0.5rem 0.6rem">
+            <span style="color:#fca5a5;font-size:0.72rem">non-JSON response from https://api.open-meteo…: status=503 body=b''</span>
+            <div style="margin-top:0.5rem;background:#0f1117;border-radius:4px;padding:0.5rem;font-family:monospace;font-size:0.7rem;color:#94a3b8;line-height:1.6">
+              <div><span style="color:#64748b">08:00:02</span> <span style="color:#60a5fa">INFO</span>  Starting weather check</div>
+              <div><span style="color:#64748b">08:00:03</span> <span style="color:#f87171">ERROR</span> non-JSON response: status=503 body=b''</div>
+            </div>
+          </td>
+        </tr>
+        <!-- OK run collapsed -->
+        <tr style="border-bottom:1px solid #1e293b;cursor:pointer" title="click to expand logs">
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8;white-space:nowrap">08:00:01 yesterday</td>
+          <td style="padding:0.5rem 0.6rem"><span style="background:#14532d;color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">ok</span></td>
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8">843ms</td>
+          <td style="padding:0.5rem 0.6rem">14.2°C (Bewolkt ☁️)</td>
+          <td style="padding:0.5rem 0.6rem;color:#475569;font-size:0.72rem">▶ 2 log lines</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e293b;cursor:pointer" title="click to expand logs">
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8;white-space:nowrap">08:00:00 2 days ago</td>
+          <td style="padding:0.5rem 0.6rem"><span style="background:#14532d;color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">ok</span></td>
+          <td style="padding:0.5rem 0.6rem;color:#94a3b8">791ms</td>
+          <td style="padding:0.5rem 0.6rem">11.8°C (Helder ☀️)</td>
+          <td style="padding:0.5rem 0.6rem;color:#475569;font-size:0.72rem">▶ 2 log lines</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:1rem;display:flex;gap:0.5rem">
+  <div class="option" data-choice="good" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Looks good</h3><p>Move on to the global feed layout</p></div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✎</div>
+    <div class="content"><h3>Needs tweaking</h3><p>Tell me what to change in the terminal</p></div>
+  </div>
+</div>

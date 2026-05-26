@@ -1,0 +1,83 @@
+<h2>Global activity feed — <code>/activity</code></h2>
+<p class="subtitle">All monitors' runs in one chronological stream. Linked from the dashboard header.</p>
+
+<div class="mockup">
+  <div class="mockup-header">changewatch › activity</div>
+  <div class="mockup-body" style="padding:1.25rem;font-family:system-ui,sans-serif;font-size:0.8rem;color:#e2e8f0">
+
+    <!-- Header + filters -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <span style="font-size:1rem;font-weight:600;color:#f8fafc">Activity</span>
+      <div style="display:flex;gap:0.5rem">
+        <select style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.72rem">
+          <option>All monitors</option>
+          <option>daily_weather_amsterdam</option>
+          <option>ikea_ekbacken_stock</option>
+        </select>
+        <select style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.72rem">
+          <option>All statuses</option>
+          <option>error</option>
+          <option>ok</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Feed rows -->
+    <div style="display:flex;flex-direction:column;gap:0.3rem">
+
+      <div style="display:grid;grid-template-columns:10rem 8rem 1fr 5rem;align-items:start;padding:0.5rem 0.6rem;background:#1e293b;border-radius:4px;gap:0.5rem">
+        <span style="color:#94a3b8;white-space:nowrap">today 08:00:03</span>
+        <a href="#" style="color:#93c5fd;text-decoration:none;font-size:0.78rem">daily_weather…</a>
+        <div>
+          <span style="background:#7f1d1d;color:#fca5a5;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">error</span>
+          <span style="color:#fca5a5;font-size:0.72rem;margin-left:0.5rem">non-JSON response: status=503</span>
+        </div>
+        <span style="color:#64748b;text-align:right">1 204ms</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:10rem 8rem 1fr 5rem;align-items:start;padding:0.5rem 0.6rem;border-bottom:1px solid #1e293b;gap:0.5rem">
+        <span style="color:#94a3b8;white-space:nowrap">yesterday 09:15:00</span>
+        <a href="#" style="color:#93c5fd;text-decoration:none;font-size:0.78rem">ikea_ekbacken…</a>
+        <div>
+          <span style="background:#78350f;color:#fde68a;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">changed</span>
+          <span style="color:#fde68a;font-size:0.72rem;margin-left:0.5rem">Out of stock → In stock</span>
+        </div>
+        <span style="color:#64748b;text-align:right">2 341ms</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:10rem 8rem 1fr 5rem;align-items:start;padding:0.5rem 0.6rem;border-bottom:1px solid #1e293b;gap:0.5rem">
+        <span style="color:#94a3b8;white-space:nowrap">yesterday 08:00:01</span>
+        <a href="#" style="color:#93c5fd;text-decoration:none;font-size:0.78rem">daily_weather…</a>
+        <div>
+          <span style="background:#14532d;color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">ok</span>
+          <span style="color:#94a3b8;font-size:0.72rem;margin-left:0.5rem">14.2°C (Bewolkt ☁️)</span>
+        </div>
+        <span style="color:#64748b;text-align:right">843ms</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:10rem 8rem 1fr 5rem;align-items:start;padding:0.5rem 0.6rem;border-bottom:1px solid #1e293b;gap:0.5rem">
+        <span style="color:#94a3b8;white-space:nowrap">2 days ago 08:00</span>
+        <a href="#" style="color:#93c5fd;text-decoration:none;font-size:0.78rem">daily_weather…</a>
+        <div>
+          <span style="background:#14532d;color:#86efac;padding:0.1rem 0.4rem;border-radius:4px;font-size:0.7rem;font-weight:600">ok</span>
+          <span style="color:#94a3b8;font-size:0.72rem;margin-left:0.5rem">11.8°C (Helder ☀️)</span>
+        </div>
+        <span style="color:#64748b;text-align:right">791ms</span>
+      </div>
+
+    </div>
+
+    <div style="margin-top:0.75rem;text-align:center;color:#475569;font-size:0.72rem">showing last 50 runs — <a href="#" style="color:#93c5fd">load more</a></div>
+  </div>
+</div>
+
+<div style="margin-top:1rem;display:flex;gap:0.5rem">
+  <div class="option" data-choice="good" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Looks good</h3><p>Ready to see the full design summary</p></div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✎</div>
+    <div class="content"><h3>Needs tweaking</h3><p>Tell me what to change in the terminal</p></div>
+  </div>
+</div>

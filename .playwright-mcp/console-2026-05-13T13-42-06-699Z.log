@@ -1,0 +1,9 @@
+[     274ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://cdn.cookielaw.org/scripttemplates/otSDKStub.js:0
+[     276ms] false
+[     639ms] [ERROR] TypeError: Cannot read properties of undefined (reading 'prototype')
+    at n (https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:1:190)
+    at https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:1:45409 @ https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:0
+[   29940ms] [ERROR] Access to fetch at 'https://ww8.ikea.com/ext/ikeastorelocator/api?countryCodes=nl' from origin 'https://www.ikea.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.ikea.com/nl/nl/stores/amsterdam/:0
+[   29940ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ww8.ikea.com/ext/ikeastorelocator/api?countryCodes=nl:0
+[   60489ms] [ERROR] Access to fetch at 'https://api.ingka.ikea.com/cia/stores/ru/nl' from origin 'https://www.ikea.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.ikea.com/nl/nl/stores/amsterdam/:0
+[   60489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.ingka.ikea.com/cia/stores/ru/nl:0

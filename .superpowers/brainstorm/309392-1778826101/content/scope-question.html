@@ -1,0 +1,26 @@
+<h2>What's the shape of this debug page?</h2>
+<p class="subtitle">This determines the whole navigation structure</p>
+
+<div class="options">
+  <div class="option" data-choice="per-monitor" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Per-monitor detail page</h3>
+      <p>Click a monitor on the dashboard → opens a detail page showing its run history, errors, and a "Run now" button with live output</p>
+    </div>
+  </div>
+  <div class="option" data-choice="global-feed" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Global activity feed</h3>
+      <p>One page showing all monitors' runs mixed together — a chronological log of everything that happened across the whole system</p>
+    </div>
+  </div>
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both</h3>
+      <p>Dashboard links to per-monitor detail pages, plus a separate global feed/log view</p>
+    </div>
+  </div>
+</div>

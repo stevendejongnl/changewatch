@@ -591,6 +591,7 @@
       }
     });
     if (customFile) {
+      tabForm.style.display = "none";
       panelForm.style.display = "none";
       panelRaw.style.display = "";
       tabRaw.classList.add("active");

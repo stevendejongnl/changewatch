@@ -1,0 +1,50 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - heading "Monitors" [level=1] [ref=e7]
+      - generic [ref=e8]: 1 monitors · auto-refresh every 30s
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "00"
+          - generic [ref=e15]: healthy
+        - generic [ref=e18]:
+          - generic [ref=e19]: "00"
+          - generic [ref=e20]: changed
+        - generic [ref=e23]:
+          - generic [ref=e24]: "00"
+          - generic [ref=e25]: failing
+        - generic [ref=e28]:
+          - generic [ref=e29]: "01"
+          - generic [ref=e30]: pending
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - button "All" [ref=e33] [cursor=pointer]
+          - button "Failing" [ref=e34] [cursor=pointer]
+          - button "Changed" [ref=e35] [cursor=pointer]
+          - button "Healthy" [ref=e36] [cursor=pointer]
+        - generic [ref=e37]: connected
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - link "example_price" [ref=e45] [cursor=pointer]:
+            - /url: /monitors/example_price
+          - button "Run now" [ref=e47] [cursor=pointer]:
+            - img [ref=e49]
+        - generic [ref=e51]:
+          - generic [ref=e52]: Last value
+          - generic [ref=e53]: waiting for first run
+        - generic [ref=e54]:
+          - generic [ref=e55]: "last: never"
+          - generic [ref=e56]: pending
+  - generic [ref=e58]:
+    - link "Monitors" [ref=e59] [cursor=pointer]:
+      - /url: /
+      - img [ref=e61]
+      - text: Monitors
+    - link "Activity" [ref=e64] [cursor=pointer]:
+      - /url: /activity
+      - img [ref=e66]
+      - text: Activity
+    - generic [ref=e68] [cursor=pointer]:
+      - img [ref=e70]
+      - text: Alerts

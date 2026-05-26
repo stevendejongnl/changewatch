@@ -23,7 +23,7 @@ from app.events import EventBus, get_event_bus
 from app.git_editor import GitEditor, SaveResult as _SaveResult
 from app.git_sync import GitSync
 from app.helpers import Monitor
-from app.monitor_parser import parse_monitor
+from app.monitor_parser import generate_monitor, parse_monitor
 from app.scheduler import Scheduler, discover_monitors
 
 MONITORS_REPO_URL = os.getenv("MONITORS_REPO_URL", "")
@@ -256,6 +256,11 @@ async def resume_monitor(name: str, db: DbDep, bus: EventBusDep):
     await bus.publish({"event": "paused", "monitor_name": name, "paused": False})
 
 
+def _available_channels() -> list[str]:
+    prefix = "APPRISE_URL_"
+    return sorted(key[len(prefix):].lower() for key in os.environ if key.startswith(prefix))
+
+
 @app.get("/monitors/new", response_class=HTMLResponse)
 async def monitor_new(request: Request):
     return templates.TemplateResponse(
@@ -263,7 +268,8 @@ async def monitor_new(request: Request):
             "mode": "new",
             "monitor_name": "",
             "source": "",
-            "notify_channels": [],
+            "available_channels": _available_channels(),
+            "selected_channels": [],
             "custom_file": False,
         }
     )
@@ -276,13 +282,17 @@ async def monitor_edit(name: str, request: Request):
         raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
     source = path.read_text()
     config = parse_monitor(source)
-    custom_file = config is None
+    if config is None:
+        custom_file = True
+    else:
+        custom_file = source.strip() != generate_monitor(config).strip()
     return templates.TemplateResponse(
         request, "monitor_editor.html", {
             "mode": "edit",
             "monitor_name": name,
             "source": source,
-            "notify_channels": config.notify_channels if config else [],
+            "available_channels": _available_channels(),
+            "selected_channels": config.notify_channels if config else [],
             "custom_file": custom_file,
         }
     )

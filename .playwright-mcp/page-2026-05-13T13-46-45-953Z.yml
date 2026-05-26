@@ -1,0 +1,699 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Ga door naar de hoofdinhoud":
+      - /url: "#hnf-content"
+      - generic:
+        - generic: Ga door naar de hoofdinhoud
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - button "Wijzig taal of land/regio, huidige taal is Nederlands" [ref=e7] [cursor=pointer]:
+          - generic:
+            - img
+            - generic: NLNederlands
+        - link "Bestellen & Ophalen? Nu met gratis kaneelbroodje!" [ref=e10] [cursor=pointer]:
+          - /url: https://www.ikea.com/nl/nl/customer-service/services/click-collect/
+          - img [ref=e11]
+          - generic [ref=e13]: Bestellen & Ophalen? Nu met gratis kaneelbroodje!
+        - generic [ref=e14]:
+          - button "Vul je postcode in" [ref=e16] [cursor=pointer]:
+            - generic:
+              - img
+              - generic: Vul je postcode in
+          - button "IKEA Amsterdam - Selecteer winkel" [ref=e931] [cursor=pointer]:
+            - generic:
+              - img
+              - generic: IKEA Amsterdam
+      - generic [ref=e19]:
+        - link "IKEA Startpagina" [ref=e21] [cursor=pointer]:
+          - /url: https://www.ikea.com/nl/nl/
+        - navigation "Open het navigatiemenu" [ref=e24]:
+          - button "Producten" [ref=e25] [cursor=pointer]
+          - button "Ruimtes" [ref=e26] [cursor=pointer]
+          - button "Koopjes" [ref=e27] [cursor=pointer]
+          - button "Ontwerp" [ref=e28] [cursor=pointer]
+          - button "Services" [ref=e29] [cursor=pointer]
+        - search [ref=e35]:
+          - generic [ref=e36]:
+            - img
+            - combobox "Zoek product" [ref=e37]
+        - navigation "Shopping links" [ref=e38]:
+          - list [ref=e39]:
+            - listitem [ref=e40]:
+              - link "Hej! Log in" [ref=e42] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/profile/login
+                - generic:
+                  - img
+                  - generic: Hej! Log in
+            - listitem [ref=e43]:
+              - link "Boodschappenlijstje" [ref=e45] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/favourites/
+                - generic:
+                  - img
+                  - generic: Boodschappenlijstje
+            - listitem [ref=e46]:
+              - link "Winkelwagen" [ref=e48] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/shoppingcart/
+                - generic:
+                  - img
+                  - generic: Winkelwagen
+    - generic:
+      - complementary "Zwevende actieknoppen":
+        - button "Start Chat" [ref=e653] [cursor=pointer]:
+          - img [ref=e654]
+  - main [ref=e50]:
+    - generic [ref=e51]:
+      - generic [ref=e53]:
+        - navigation "Kruimels" [ref=e55]:
+          - list [ref=e56]:
+            - listitem [ref=e57]:
+              - link "Producten" [ref=e58] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/cat/producten-products/
+              - text: ›
+            - listitem [ref=e59]:
+              - link "Keukens & apparatuur" [ref=e60] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/cat/keukens-apparatuur-ka001/
+              - text: ›
+            - listitem [ref=e61]:
+              - link "Aanrechtbladen" [ref=e62] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/cat/aanrechtbladen-werkbladen-24264/
+              - text: ›
+            - listitem [ref=e63]:
+              - link "Standaard aanrechtbladen" [ref=e64] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/cat/standaard-werkbladen-700419/
+              - text: ›
+            - listitem [ref=e65]:
+              - link "Kant-en-klare laminaat aanrechtbladen" [ref=e66] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/cat/kunststof-aanrechtbladen-33546/
+              - text: ›
+            - listitem [ref=e67]:
+              - generic [ref=e68]: EKBACKEN Werkblad
+        - generic [ref=e69]:
+          - img [ref=e70]
+          - 'link "IKEA Family aanbieding: alle UPPDATERA ladeinrichting 2+1 gratis" [ref=e75] [cursor=pointer]':
+            - /url: https://www.ikea.com/nl/nl/cat/uppdatera-serie-54968/?itm_campaign=uppdatera&itm_element=pagemessage&itm_content=pagemessage
+      - generic [ref=e76]:
+        - generic [ref=e78]:
+          - generic [ref=e79]: 11 EKBACKEN afbeeldingen
+          - link "Beelden overslaan" [ref=e80] [cursor=pointer]:
+            - /url: "#pipf-skip-images"
+            - generic:
+              - generic: Beelden overslaan
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - button "Selecteer productfoto 1 van 11, Een EKBACKEN laminaat werkblad in beige. Het is rechthoekig, met rechte randen, en heeft een moderne uitstraling. De bovenkant is glad en klaar om op maat te worden gesneden." [ref=e84] [cursor=pointer]:
+                - img "Een EKBACKEN laminaat werkblad in beige. Het is rechthoekig, met rechte randen, en heeft een moderne uitstraling. De bovenkant is glad en klaar om op maat te worden gesneden." [ref=e86]
+              - button "Selecteer productfoto 2 van 11, Close-up van een strakke, lichtgekleurde houten oppervlakte, glad en modern." [ref=e87] [cursor=pointer]:
+                - img "Close-up van een strakke, lichtgekleurde houten oppervlakte, glad en modern." [ref=e89]
+              - button "Selecteer productfoto 3 van 11, Schoon, glad licht houten werkblad; Hoogwaardig, afveegbaar oppervlak." [ref=e90] [cursor=pointer]:
+                - img "Schoon, glad licht houten werkblad; Hoogwaardig, afveegbaar oppervlak." [ref=e92]
+              - button "Selecteer productfoto 4 van 11, Modern keukenblad met laminaat, lichte houten rand, gemakkelijk schoon te maken." [ref=e93] [cursor=pointer]:
+                - img "Modern keukenblad met laminaat, lichte houten rand, gemakkelijk schoon te maken." [ref=e95]
+              - button "Selecteer productfoto 5 van 11, Moderne keuken met een lichtaanrecht, roestvrijstalen spoelbak, verse groenten, kleurrijke achterwand, kraan en kruiden." [ref=e96] [cursor=pointer]:
+                - img "Moderne keuken met een lichtaanrecht, roestvrijstalen spoelbak, verse groenten, kleurrijke achterwand, kraan en kruiden." [ref=e98]
+              - button "Selecteer productfoto 6 van 11, Moderne keuken met roestvrijstalen spoelbak, fruit, groenten, blender en kookboeken." [ref=e99] [cursor=pointer]:
+                - img "Moderne keuken met roestvrijstalen spoelbak, fruit, groenten, blender en kookboeken." [ref=e101]
+              - button "Selecteer productfoto 7 van 11, Moderne keuken met licht houten EKBACKEN werkblad, roestvrijstalen spoelbak, potplant en zwarte bank." [ref=e102] [cursor=pointer]:
+                - img "Moderne keuken met licht houten EKBACKEN werkblad, roestvrijstalen spoelbak, potplant en zwarte bank." [ref=e104]
+              - button "Selecteer productfoto 8 van 11, Moderne minimalistische keuken met witte kasten, licht houten aanrechtblad, ingebouwde gootsteen, open planken en twee stoelen." [ref=e105] [cursor=pointer]:
+                - img "Moderne minimalistische keuken met witte kasten, licht houten aanrechtblad, ingebouwde gootsteen, open planken en twee stoelen." [ref=e107]
+              - button "Selecteer productfoto 9 van 11, EKBACKEN Werkblad, essenpatroon/laminaat, 246x2.8 cm" [ref=e108] [cursor=pointer]:
+                - img "EKBACKEN Werkblad, essenpatroon/laminaat, 246x2.8 cm" [ref=e110]
+              - button "Selecteer productfoto 10 van 11, EKBACKEN Werkblad, essenpatroon/laminaat, 246x2.8 cm" [ref=e111] [cursor=pointer]:
+                - img "EKBACKEN Werkblad, essenpatroon/laminaat, 246x2.8 cm" [ref=e113]
+              - 'button "Selecteer productfoto 11 van 11, Illustratie met afmetingen voor het product: EKBACKEN." [ref=e114] [cursor=pointer]':
+                - 'img "Illustratie met afmetingen voor het product: EKBACKEN." [ref=e116]'
+            - button "Toon volgende afbeelding" [ref=e118] [cursor=pointer]:
+              - generic:
+                - img
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - img "Een EKBACKEN laminaat werkblad in beige. Het is rechthoekig, met rechte randen, en heeft een moderne uitstraling. De bovenkant is glad en klaar om op maat te worden gesneden." [ref=e124]
+                - button "Zoom in image" [ref=e125]:
+                  - status [ref=e126]: Image zoomed out, normal view
+              - generic [ref=e127]: Laatste kans
+            - button "Toon volgende afbeelding" [ref=e128] [cursor=pointer]:
+              - generic:
+                - img
+            - generic [ref=e129]:
+              - button "Alle media weergeven, open modal." [ref=e130] [cursor=pointer]:
+                - generic:
+                  - img
+                  - generic: Alle media
+              - button "Toon 3D-model" [ref=e656] [cursor=pointer]:
+                - generic:
+                  - img
+                  - generic: Bekijk in 3D
+        - generic [ref=e132]:
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - heading "EKBACKEN Werkblad, essenpatroon/laminaat, 246x2.8 cm. Toon specificaties afmetingen" [level=1] [ref=e137]:
+                  - text: EKBACKEN
+                  - generic [ref=e139]:
+                    - text: Werkblad, essenpatroon/laminaat,
+                    - button "246x2.8 cm. Toon specificaties afmetingen" [ref=e140] [cursor=pointer]: 246x2.8 cm
+                - generic [ref=e144]:
+                  - generic [ref=e145]:
+                    - generic [ref=e146]: €79
+                    - generic [ref=e147]: .-
+                    - generic [ref=e148]: /2.46 m
+                  - generic [ref=e149]: Prijs € 79.-/2.46 m
+                - generic [ref=e150]:
+                  - img [ref=e151]
+                  - generic [ref=e153]: Laatste kans
+              - button "Bewaar op boodschappenlijstje" [ref=e154] [cursor=pointer]:
+                - generic:
+                  - img
+            - 'button "Review: 4.2 van 5 sterren. Totaal beoordelingen: 29 (29)" [ref=e156] [cursor=pointer]':
+              - generic [ref=e157]: "Review: 4.2 van 5 sterren. Totaal beoordelingen: 29"
+              - generic [ref=e158]: (29)
+          - generic [ref=e162]:
+            - list [ref=e163]:
+              - listitem [ref=e164]:
+                - 'button "Kies kleur: Essenpatroon/laminaat" [ref=e165] [cursor=pointer]':
+                  - generic [ref=e167]:
+                    - heading "Kies kleur" [level=2] [ref=e169]
+                    - generic [ref=e170]: Essenpatroon/laminaat
+                  - img [ref=e172]
+            - list "Kies kleur" [ref=e174]:
+              - listitem [ref=e175]:
+                - link "Bruin walnootpatroon/laminaat" [ref=e176] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-bruin-walnootpatroon-laminaat-10442984/#content
+                  - img "Deze afbeelding toont een werkblad van EKBACKEN laminaat. Het is rechthoekig en donkerbruin van kleur, ontworpen voor eenvoudig onderhoud en duurzaamheid." [ref=e179]
+              - listitem [ref=e180]:
+                - generic "Essenpatroon/laminaat" [ref=e181]:
+                  - img "Een EKBACKEN laminaat werkblad in beige. Het is rechthoekig, met rechte randen, en heeft een moderne uitstraling. De bovenkant is glad en klaar om op maat te worden gesneden." [ref=e183]
+              - listitem [ref=e184]:
+                - link "Grijs terrazzo patroon/laminaat" [ref=e185] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-grijs-terrazzo-patroon-laminaat-80609013/#content
+                  - img "Een rechthoekig EKBACKEN aanrechtblad in grijze kleur, gemaakt van laminaat en spaanplaat, met een gespikkelde textuur en rechte randen." [ref=e188]
+              - listitem [ref=e189]:
+                - link "Grijsbeige steenpatroon/laminaat" [ref=e190] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-grijsbeige-steenpatroon-laminaat-20604320/#content
+                  - img "Een ikea EKBACKEN beige laminaat aanrechtblad. Het is rechthoekig, plat en ontworpen voor gebruik in de keuken." [ref=e193]
+              - listitem [ref=e194]:
+                - link "Lichtgrijs betonpatroon/laminaat" [ref=e195] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-lichtgrijs-betonpatroon-laminaat-40616275/#content
+                  - img "EKBACKEN Werkblad, lichtgrijs betonpatroon/laminaat, 246x2.8 cm" [ref=e198]
+              - listitem [ref=e199]:
+                - link "Terracotta-effect/laminaat" [ref=e200] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-terracotta-effect-laminaat-10609064/#content
+                  - img "EKBACKEN rood rechthoekig laminaat aanrechtblad met afgeschuinde randen." [ref=e203]
+              - listitem [ref=e204]:
+                - link "Triplexeffect/laminaat" [ref=e205] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-triplexeffect-laminaat-80609046/#content
+                  - img "Een ikea EKBACKEN rechthoekig lichtgeel werkblad. Het is een plat, dun tafelblad met een glad oppervlak, gemaakt van laminaat en spaanplaat." [ref=e208]
+              - listitem [ref=e209]:
+                - link "Wit levendig marmer/lam/laminaat" [ref=e210] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-wit-levendig-marmer-lam-laminaat-70570351/#content
+                  - img "Wit marmeren stijl ikea EKBACKEN werkblad. Rechthoekig, strak, laminaat met grijze adering." [ref=e213]
+              - listitem [ref=e214]:
+                - link "Wit marmerpatroon/laminaat" [ref=e215] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-wit-marmerpatroon-laminaat-60609033/#content
+                  - img "EKBACKEN wit rechthoekig aanrechtblad in marmerlook met naadloze, strakke randen." [ref=e218]
+              - listitem [ref=e219]:
+                - link "Zwart/laminaat" [ref=e220] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-zwart-laminaat-20589678/#content
+                  - img "EKBACKEN zwart rechthoekig werkblad, gladde afwerking, vlak oppervlak." [ref=e223]
+          - generic [ref=e226]:
+            - heading "Kies afmeting" [level=2] [ref=e227]
+            - list "Kies afmeting" [ref=e228]:
+              - listitem [ref=e229]:
+                - link "186x2.8 cm" [ref=e230] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/p/ekbacken-werkblad-essenpatroon-laminaat-50337617/#content
+                  - generic [ref=e231]:
+                    - generic [ref=e232]: 186x2.8 cm
+                    - generic [ref=e233]:
+                      - text: −
+                      - generic [ref=e234]:
+                        - generic [ref=e235]:
+                          - generic [ref=e236]: €10
+                          - generic [ref=e237]: .-
+                        - generic [ref=e238]: € 10.-
+              - listitem [ref=e239]:
+                - generic "246x2.8 cm" [ref=e240]:
+                  - generic [ref=e241]: 246x2.8 cm
+          - link "Ontwerp jouw keuken, Ontwerp jouw keuken met onze planner," [ref=e246] [cursor=pointer]:
+            - /url: https://kitchen.planner.ikea.com/nl/nl/
+            - generic [ref=e247]:
+              - heading "Ontwerp jouw keuken" [level=2] [ref=e248]
+              - paragraph [ref=e249]: Ontwerp jouw keuken met onze planner
+            - img [ref=e251]
+          - generic [ref=e253]:
+            - generic [ref=e254]:
+              - heading "Hoe kom je eraan?" [level=2] [ref=e255]
+              - button "Verander van winkel" [ref=e933] [cursor=pointer]
+            - generic [ref=e256]:
+              - button "Bezorging Bekijk beschikbaarheid" [ref=e657] [cursor=pointer]:
+                - generic [ref=e258]:
+                  - img [ref=e259]
+                  - generic [ref=e261]:
+                    - strong [ref=e262]: Bezorging
+                    - text: Bekijk beschikbaarheid
+                - img [ref=e264]
+              - button "IKEA Amsterdam Bestellen & Ophalen - Niet te koop Winkel - Bestel voor bezorging Deze of vergelijkbare producten zijn te bekijken in de winkel" [ref=e934] [cursor=pointer]:
+                - generic [ref=e267]:
+                  - img [ref=e268]
+                  - generic [ref=e270]:
+                    - strong [ref=e271]:
+                      - generic [ref=e935]: IKEA Amsterdam
+                    - generic [ref=e938]: Bestellen & Ophalen - Niet te koop
+                    - generic [ref=e942]: Winkel - Bestel voor bezorging
+                    - generic [ref=e944]: Deze of vergelijkbare producten zijn te bekijken in de winkel
+                - img [ref=e273]
+          - generic [ref=e661]:
+            - generic [ref=e663]:
+              - textbox "Ingevoerde hoeveelheid waarde" [ref=e664]: "1"
+              - generic [ref=e665]: Typ een getal in of gebruik pijl omhoog of pijl omlaag om de hoeveelheid te wijzigen. De minimale hoeveelheid is 1.
+              - button "Hoeveelheid verhogen" [ref=e666] [cursor=pointer]:
+                - generic:
+                  - img
+              - button "Hoeveelheid verlagen" [disabled] [ref=e667]:
+                - generic:
+                  - img
+            - button "Voeg toe aan winkelwagen" [ref=e669] [cursor=pointer]:
+              - generic:
+                - generic: Voeg toe aan winkelwagen
+          - generic [ref=e278]:
+            - img [ref=e280]
+            - generic [ref=e283]:
+              - heading "Verzamel 15 punten met IKEA Family" [level=2] [ref=e284]:
+                - text: Verzamel 15 punten met
+                - generic [ref=e285]: IKEA Family
+              - generic [ref=e286]:
+                - link "Meld je gratis aan of log in" [ref=e287] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/profile/login/?from=https%3A%2F%2Fwww.ikea.com%2Fnl%2Fnl%2Fp%2Fekbacken-werkblad-essenpatroon-laminaat-90337620%2F
+                - text: "|"
+                - button "Bekijk alle beloningen" [ref=e288] [cursor=pointer]
+        - generic [ref=e289]:
+          - generic [ref=e290]:
+            - generic [ref=e291]: Producteigenschappen
+            - list [ref=e292]:
+              - listitem [ref=e293]:
+                - paragraph [ref=e294]:
+                  - generic [ref=e297]: "25"
+                  - text: 25 jaar garantie
+          - generic [ref=e298]:
+            - paragraph [ref=e300]: Laminaatwerkbladen zijn slijtvast en betaalbaar. Ze zijn makkelijk schoon te maken en het werkblad blijft lang mooi. EKBACKEN is beschikbaar in veel kleuren en looks, met een dikte van 2,8 cm.
+            - generic [ref=e302]:
+              - generic [ref=e303]: Artikelnummer
+              - generic [ref=e304]: 903.376.20
+          - list [ref=e306]:
+            - listitem [ref=e307]:
+              - button "Productinformatie" [ref=e308] [cursor=pointer]:
+                - heading "Productinformatie" [level=2] [ref=e312]
+                - img [ref=e314]
+            - listitem [ref=e316]:
+              - button "Afmetingen" [ref=e317] [cursor=pointer]:
+                - heading "Afmetingen" [level=2] [ref=e321]
+                - img [ref=e323]
+          - generic [ref=e326]:
+            - generic [ref=e327]:
+              - heading "Reviews van klanten" [level=2] [ref=e329]
+              - generic [ref=e330]:
+                - link "Klantbeoordelingen overslaan" [ref=e331] [cursor=pointer]:
+                  - /url: "#pipf--carousel__highlight-reviews-carousel-skip-btn"
+                - list [ref=e333]:
+                  - listitem [ref=e334]:
+                    - generic [ref=e335]:
+                      - generic [ref=e336]: Precies wat ik nodig had
+                      - generic [ref=e337]:
+                        - generic [ref=e338]: "Review: 5 van 5 sterren."
+                        - generic [ref=e339]: "5"
+                      - blockquote [ref=e340]: Prachtig stevig blad met strips om zaagkant af te werken, erg mooi
+                      - generic [ref=e341]: M, Nederland
+                  - listitem [ref=e342]:
+                    - generic [ref=e343]:
+                      - generic [ref=e344]: Mooi werkblad
+                      - generic [ref=e345]:
+                        - generic [ref=e346]: "Review: 5 van 5 sterren."
+                        - generic [ref=e347]: "5"
+                      - blockquote [ref=e348]: Goed op maat te zagen en je krijgt er nog een plakstrip bij zodat je niet ziet dat je het hebt ingekort
+                      - generic [ref=e349]: Jennifer, Nederland
+                  - listitem [ref=e350]:
+                    - generic [ref=e351]:
+                      - generic [ref=e352]: Prachtig werkblad
+                      - generic [ref=e353]:
+                        - generic [ref=e354]: "Review: 5 van 5 sterren."
+                        - generic [ref=e355]: "5"
+                      - blockquote [ref=e356]: Tot nu toe zeer tevreden over de kwaliteit en uitstraling van het werkblad.
+                      - generic [ref=e357]: Hélène, Nederland
+            - generic [ref=e363]:
+              - generic [ref=e364]:
+                - generic [ref=e365]:
+                  - generic [ref=e366]: "4.2"
+                  - generic [ref=e368]: "Review: 4.2 van 5 sterren. Totaal beoordelingen: 29"
+                  - generic [ref=e369]: Gemiddelde beoordeling
+                - generic [ref=e370]:
+                  - generic [ref=e371]: "29"
+                  - generic [ref=e372]: Reviews
+              - button "Toon alle reviews" [ref=e373] [cursor=pointer]:
+                - generic:
+                  - generic: Toon alle reviews
+      - heading "Soortgelijke producten" [level=2] [ref=e376]
+      - generic [ref=e380]:
+        - heading "Ontdek meer opties" [level=2] [ref=e381]
+        - generic [ref=e382]:
+          - link "Kant-en-klare laminaat aanrechtbladen, 39 producten" [ref=e383] [cursor=pointer]:
+            - /url: https://www.ikea.com/nl/nl/cat/kunststof-aanrechtbladen-33546/
+            - img "Kant-en-klare laminaat aanrechtbladen" [ref=e386]
+            - generic [ref=e387]:
+              - text: Kant-en-klare laminaat aanrechtbladen
+              - superscript [ref=e388]: "39"
+          - link "Kant-en-klare houtfineer aanrechtbladen, 20 producten" [ref=e389] [cursor=pointer]:
+            - /url: https://www.ikea.com/nl/nl/cat/houten-keukenbladen-46457/
+            - img "Kant-en-klare houtfineer aanrechtbladen" [ref=e392]
+            - generic [ref=e393]:
+              - text: Kant-en-klare houtfineer aanrechtbladen
+              - superscript [ref=e394]: "20"
+          - link "Alle Standaard aanrechtbladen" [ref=e395] [cursor=pointer]:
+            - /url: https://www.ikea.com/nl/nl/cat/standaard-werkbladen-700419/
+      - heading "Aanbevolen voor jou" [level=2] [ref=e397]
+      - generic [ref=e406]:
+        - generic [ref=e407]:
+          - generic [ref=e408]: Planner
+          - link "Ontwerp jouw IKEA-keuken" [ref=e409] [cursor=pointer]:
+            - /url: https://kitchen.planner.ikea.com/nl/nl/
+            - heading "Ontwerp jouw IKEA-keuken" [level=2] [ref=e410]
+          - paragraph [ref=e411]: Wil je een keukenontwerp maken dat past bij jouw ruimte, behoeften en stijl?
+        - generic [ref=e412]:
+          - button:
+            - generic:
+              - generic: Pas het aan
+      - generic [ref=e416]:
+        - heading "Kwaliteit" [level=2] [ref=e417]
+        - heading "Gebouwd en getest om lang mee te gaan" [level=3] [ref=e419]
+        - paragraph [ref=e422]: "Wij vinden dat onze keukenwerkbladen moeten voldoen aan de hoogste eisen wat betreft vormgeving en kwaliteit - zonder compromissen. Daarom testen we de werkbladen en stellen ze bloot aan alle dagelijkse uitdagingen die ze in je keuken zullen tegenkomen: vloeistoffen, olie, eten, stoom, warmte, stoten en krassen. Wanneer ze onze tests hebben doorstaan, weten we dat ze lang meegaan - en daar geven wij 25 jaar garantie op."
+      - generic [ref=e426]:
+        - generic [ref=e427]:
+          - heading "Shop de look" [level=2] [ref=e428]
+          - paragraph [ref=e429]: Ideeën op basis van je recent bekeken producten
+        - generic [ref=e430]:
+          - link "Skip listing" [ref=e431] [cursor=pointer]:
+            - /url: "#crec--carousel__carousel-imc-P0-0-skip-btn"
+          - list [ref=e433]:
+            - listitem [ref=e434]
+            - listitem [ref=e436]
+            - listitem [ref=e438]
+            - listitem [ref=e440]
+            - listitem [ref=e442]
+            - listitem [ref=e444]
+            - listitem [ref=e446]
+            - listitem [ref=e448]
+            - listitem [ref=e450]
+            - listitem [ref=e452]
+            - listitem [ref=e454]
+            - listitem [ref=e456]
+      - heading "Meer uit de" [level=2] [ref=e461]
+      - heading "Accessoires voor EKBACKEN" [level=2] [ref=e466]
+      - dialog "IKEA Amsterdam" [ref=e945]:
+        - generic [ref=e673]:
+          - button "Modaal sluiten" [ref=e674] [cursor=pointer]:
+            - generic:
+              - img
+          - button "Terug naar vorig scherm" [ref=e946] [cursor=pointer]:
+            - generic:
+              - img
+        - generic [ref=e947]:
+          - generic [ref=e948]:
+            - heading "IKEA Amsterdam" [level=2] [ref=e950]:
+              - generic [ref=e951]: IKEA Amsterdam
+            - generic [ref=e952]:
+              - text: Open tot 20:00 –
+              - link "Winkel details" [ref=e953] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/stores/amsterdam/
+          - generic [ref=e954]:
+            - generic [ref=e955]:
+              - generic [ref=e960]: Bestellen & Ophalen — Niet te koop
+              - generic [ref=e962]:
+                - generic [ref=e966]: Winkel — Bestel voor bezorging
+                - paragraph [ref=e969]: Kom naar de winkel en probeer dit product of een vergelijkbare optie.
+            - paragraph [ref=e970]: "Laatst gecontroleerd: 13-mei-2026 op 15:41"
+            - button "Bekijk de voorraad in een andere IKEA winkel" [ref=e972] [cursor=pointer]:
+              - generic:
+                - generic: Bekijk de voorraad in een andere IKEA winkel
+          - generic [ref=e973]:
+            - heading "Alles over je pakket" [level=2] [ref=e975]
+            - generic [ref=e976]:
+              - generic [ref=e978]:
+                - img "Een EKBACKEN laminaat werkblad in beige. Het is rechthoekig, met rechte randen, en heeft een moderne uitstraling. De bovenkant is glad en klaar om op maat te worden gesneden." [ref=e981]
+                - generic [ref=e982]:
+                  - generic [ref=e983]: EKBACKEN
+                  - generic [ref=e984]: Werkblad, essenpatroon/laminaat, 246x2.8 cm
+                  - 'generic "Artikelnummer: 903.376.20" [ref=e985]':
+                    - generic [ref=e986]: 903.376.20
+              - generic [ref=e987]:
+                - generic [ref=e988]:
+                  - img [ref=e990]
+                  - generic [ref=e993]: Je moet 1 pakket verzamelen.
+                - generic [ref=e994]:
+                  - img [ref=e996]
+                  - generic [ref=e999]: Het pakketgewicht is 30.56 kg
+                - generic [ref=e1000]:
+                  - img [ref=e1002]
+                  - generic [ref=e1005]: De langste zijde is 255 cm, en de breedste is 65 cm.
+          - text: Prijzen en producten in de winkels kunnen op IKEA.nl afwijken.
+  - contentinfo [ref=e471]:
+    - generic [ref=e472]:
+      - heading "Voettekst" [level=2] [ref=e473]
+      - generic [ref=e474]:
+        - generic [ref=e475]:
+          - generic [ref=e476]:
+            - heading "Word IKEA Family lid" [level=3] [ref=e477]
+            - paragraph [ref=e479]: Als IKEA Family lid profiteer je van heel veel voordelen, zoals kortingen op veel producten en gratis toegang tot workshops en evenementen.
+            - paragraph [ref=e480]:
+              - link "Lees meer >>" [ref=e481] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/ikea-family/
+            - link "Word lid of log in" [ref=e482] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/profile/login
+              - generic:
+                - generic: Word lid of log in
+          - generic [ref=e483]:
+            - heading "Word IKEA for Business Netwerk lid" [level=3] [ref=e484]
+            - paragraph [ref=e486]: Profiteer van een aantal unieke voordelen en services die je ondersteunen als zakelijke klant.
+            - paragraph [ref=e487]:
+              - link "Lees meer >>" [ref=e488] [cursor=pointer]:
+                - /url: https://www.ikea.com/nl/nl/ikea-business/network/
+            - link "Word lid of log in" [ref=e489] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/business-profile/register-network/
+              - generic:
+                - generic: Word lid of log in
+        - list [ref=e491]:
+          - listitem [ref=e492]:
+            - heading "Klantenservice" [level=3] [ref=e493]:
+              - generic: Klantenservice
+            - list "Klantenservice Klantenservice Mijn bestellingen Ruilen en retourneren Transport en bezorging Voorraadinformatie Services Garantie Probleem melden productveiligheid Product- en veiligheidswaarschuwingen Montageservice Onderhoud & reparatie" [ref=e494]:
+              - listitem [ref=e495]:
+                - link "Klantenservice" [ref=e496] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/
+              - listitem [ref=e497]:
+                - link "Mijn bestellingen" [ref=e498] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/purchases/lookup/
+              - listitem [ref=e499]:
+                - link "Ruilen en retourneren" [ref=e500] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/returns-claims/
+              - listitem [ref=e501]:
+                - link "Transport en bezorging" [ref=e502] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/delivery/
+              - listitem [ref=e503]:
+                - link "Voorraadinformatie" [ref=e504] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/stock-availability/
+              - listitem [ref=e505]:
+                - link "Services" [ref=e506] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/
+              - listitem [ref=e507]:
+                - link "Garantie" [ref=e508] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/returns-claims/guarantee/
+              - listitem [ref=e509]:
+                - link "Probleem melden productveiligheid" [ref=e510] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/support/a/2RO01uvzZHA4KG2xONqX8V/
+              - listitem [ref=e511]:
+                - link "Product- en veiligheidswaarschuwingen" [ref=e512] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/product-support/recalls/
+              - listitem [ref=e513]:
+                - link "Montageservice" [ref=e514] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/services/assembly/
+              - listitem [ref=e515]:
+                - link "Onderhoud & reparatie" [ref=e516] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/circular/repair/
+          - listitem [ref=e517]:
+            - heading "Over IKEA" [level=3] [ref=e518]:
+              - generic: Over IKEA
+            - list "Over IKEA Dit is IKEA Het IKEA concept Duurzaamheid Wooninspiratie IKEA Nieuws IKEA Series Catalogus & brochures Campagnes Werken bij IKEA Pers" [ref=e519]:
+              - listitem [ref=e520]:
+                - link "Dit is IKEA" [ref=e521] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/
+              - listitem [ref=e522]:
+                - link "Het IKEA concept" [ref=e523] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/about-us/visie-and-bedrijfsconcept-pub9cd02291/
+              - listitem [ref=e524]:
+                - link "Duurzaamheid" [ref=e525] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/sustainable-everyday/
+              - listitem [ref=e526]:
+                - link "Wooninspiratie" [ref=e527] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ideas/
+              - listitem [ref=e528]:
+                - link "IKEA Nieuws" [ref=e529] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/new/
+              - listitem [ref=e530]:
+                - link "IKEA Series" [ref=e531] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/series-series/
+              - listitem [ref=e532]:
+                - link "Catalogus & brochures" [ref=e533] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/new/ikea-catalogus-pub4c91e7d0/
+              - listitem [ref=e534]:
+                - link "Campagnes" [ref=e535] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/campaigns/
+              - listitem [ref=e536]:
+                - link "Werken bij IKEA" [ref=e537] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/this-is-ikea/work-with-us/
+              - listitem [ref=e538]:
+                - link "Pers" [ref=e539] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/newsroom/
+          - listitem [ref=e540]:
+            - heading "Winkelen bij IKEA" [level=3] [ref=e541]:
+              - generic: Winkelen bij IKEA
+            - list "Winkelen bij IKEA Openingstijden Alle vestigingen Alle producten Aanbiedingen Zweeds restaurant Zweedse delicatessen IKEA App Cadeaukaart Planners" [ref=e542]:
+              - listitem [ref=e543]:
+                - link "Openingstijden" [ref=e544] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/
+              - listitem [ref=e545]:
+                - link "Alle vestigingen" [ref=e546] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/
+              - listitem [ref=e547]:
+                - link "Alle producten" [ref=e548] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/producten-products/
+              - listitem [ref=e549]:
+                - link "Aanbiedingen" [ref=e550] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/offers/
+              - listitem [ref=e551]:
+                - link "Zweeds restaurant" [ref=e552] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/food/
+              - listitem [ref=e553]:
+                - link "Zweedse delicatessen" [ref=e554] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/cat/zweedse-delicatessen-fb001/
+              - listitem [ref=e555]:
+                - link "IKEA App" [ref=e556] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/mobile-apps/
+              - listitem [ref=e557]:
+                - link "Cadeaukaart" [ref=e558] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/gift-cards/
+              - listitem [ref=e559]:
+                - link "Planners" [ref=e560] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/planners/
+          - listitem [ref=e561]:
+            - heading "IKEA Family & Business" [level=3] [ref=e562]:
+              - generic: IKEA Family & Business
+            - list "IKEA Family & Business Log in Meld je aan Over IKEA Family Voordelen Activiteiten & evenementen IKEA for Business Interieuradvies voor bedrijven" [ref=e563]:
+              - listitem [ref=e564]:
+                - link "Log in" [ref=e565] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/profile/login
+              - listitem [ref=e566]:
+                - link "Meld je aan" [ref=e567] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/profile/signup/family/
+              - listitem [ref=e568]:
+                - link "Over IKEA Family" [ref=e569] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-family/
+              - listitem [ref=e570]:
+                - link "Voordelen" [ref=e571] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-family/benefits/
+              - listitem [ref=e572]:
+                - link "Activiteiten & evenementen" [ref=e573] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/stores/events/
+              - listitem [ref=e574]:
+                - link "IKEA for Business" [ref=e575] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-business/
+              - listitem [ref=e576]:
+                - link "Interieuradvies voor bedrijven" [ref=e577] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/ikea-business/interieur-design-service-voor-je-bedrijf-pub64008730/
+        - generic [ref=e578]:
+          - generic [ref=e579]:
+            - list [ref=e581]:
+              - listitem [ref=e582]:
+                - link "Volg IKEA op Volg IKEA op Facebook" [ref=e583] [cursor=pointer]:
+                  - /url: https://www.facebook.com/IKEANederland/
+                  - img [ref=e584]
+              - listitem [ref=e586]:
+                - link "Volg IKEA op Volg IKEA op Instagram" [ref=e587] [cursor=pointer]:
+                  - /url: https://www.instagram.com/ikeanederland/
+                  - img [ref=e588]
+              - listitem [ref=e590]:
+                - link "Volg IKEA op Volg IKEA op Pinterest" [ref=e591] [cursor=pointer]:
+                  - /url: https://www.pinterest.com/ikeanederland/
+                  - img [ref=e592]
+              - listitem [ref=e594]:
+                - link "Volg IKEA op Volg IKEA op Youtube" [ref=e595] [cursor=pointer]:
+                  - /url: https://www.youtube.com/user/IKEAnederland
+                  - img [ref=e596]
+            - list [ref=e599]:
+              - listitem [ref=e600]:
+                - link "iDeal" [ref=e601] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "iDeal" [ref=e602]
+              - listitem [ref=e603]:
+                - link "Mastercard" [ref=e604] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Mastercard" [ref=e605]
+              - listitem [ref=e606]:
+                - link "Visa" [ref=e607] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Visa" [ref=e608]
+              - listitem [ref=e609]:
+                - link "Klarna" [ref=e610] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Klarna" [ref=e611]
+              - listitem [ref=e612]:
+                - link "IKEA cadeaukaart" [ref=e613] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "IKEA cadeaukaart" [ref=e614]
+              - listitem [ref=e615]:
+                - link "Amercian Express" [ref=e616] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Amercian Express" [ref=e617]
+              - listitem [ref=e618]:
+                - link "Paypal" [ref=e619] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Paypal" [ref=e620]
+              - listitem [ref=e621]:
+                - link "Apple Pay" [ref=e622] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Apple Pay" [ref=e623]
+              - listitem [ref=e624]:
+                - link "Google Pay" [ref=e625] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Google Pay" [ref=e626]
+              - listitem [ref=e627]:
+                - link "Betaal in 3 keer met Oney" [ref=e628] [cursor=pointer]:
+                  - /url: https://www.ikea.com/nl/nl/customer-service/payment-options/
+                  - img "Betaal in 3 keer met Oney" [ref=e629]
+          - button "Wijzig taal of land/regio, huidige taal is Nederlands" [ref=e632] [cursor=pointer]:
+            - generic:
+              - img
+              - generic:
+                - generic:
+                  - generic: NLNederlands
+      - generic [ref=e633]:
+        - paragraph [ref=e635]: © Inter IKEA Systems B.V 1999-2026
+        - list [ref=e637]:
+          - listitem [ref=e638]:
+            - link "Privacybeleid" [ref=e639] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/privacy-policy/
+          - listitem [ref=e640]:
+            - link "Cookies" [ref=e641] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/cookie-policy/
+          - listitem [ref=e642]:
+            - link "Cookie-instellingen" [ref=e643] [cursor=pointer]:
+              - /url: "javascript: { if(window.ikea.cookieConsent) { ikea.cookieConsent.togglePreferenceCenter() } }"
+          - listitem [ref=e644]:
+            - link "Algemene voorwaarden" [ref=e645] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/terms-conditions/algemene-verkoopvoorwaarden-pub7d95221d/
+          - listitem [ref=e646]:
+            - link "Gebruikersvoorwaarden" [ref=e647] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/terms-conditions/gebruikersvoorwaarden-pub92fe171d/
+          - listitem [ref=e648]:
+            - link "Responsible Disclosure Program" [ref=e649] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/responsible-disclosure/
+          - listitem [ref=e650]:
+            - link "Verklaring digitale toegankelijkheid" [ref=e651] [cursor=pointer]:
+              - /url: https://www.ikea.com/nl/nl/customer-service/accessibility/

@@ -1,0 +1,64 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "changewatch" [level=1] [ref=e3]
+    - link "Activity" [ref=e4] [cursor=pointer]:
+      - /url: /activity
+  - table [ref=e6]:
+    - rowgroup [ref=e7]:
+      - row "Monitor Status Last value Last run" [ref=e8]:
+        - columnheader "Monitor" [ref=e9]
+        - columnheader "Status" [ref=e10]
+        - columnheader "Last value" [ref=e11]
+        - columnheader "Last run" [ref=e12]
+        - columnheader [ref=e13]
+    - rowgroup [ref=e14]:
+      - row "daily_weather_amsterdam ok 18°C partly cloudy 2026-05-15 19:23:26 Run now" [ref=e15]:
+        - cell "daily_weather_amsterdam" [ref=e16]:
+          - link "daily_weather_amsterdam" [ref=e17] [cursor=pointer]:
+            - /url: /monitors/daily_weather_amsterdam
+        - cell "ok" [ref=e18]:
+          - generic [ref=e19]: ok
+        - cell "18°C partly cloudy" [ref=e20]
+        - cell "2026-05-15 19:23:26" [ref=e21]
+        - cell "Run now" [ref=e22]:
+          - button "Run now" [ref=e23] [cursor=pointer]
+      - row "ikea_ekbacken_stock error — 2026-05-15 19:23:26 Run now" [ref=e24]:
+        - cell "ikea_ekbacken_stock" [ref=e25]:
+          - link "ikea_ekbacken_stock" [ref=e26] [cursor=pointer]:
+            - /url: /monitors/ikea_ekbacken_stock
+        - cell "error" [ref=e27]:
+          - generic [ref=e28]: error
+        - cell "—" [ref=e29]
+        - cell "2026-05-15 19:23:26" [ref=e30]
+        - cell "Run now" [ref=e31]:
+          - button "Run now" [ref=e32] [cursor=pointer]
+      - row "daily_weather_amsterdam ok 16°C overcast 2026-05-15 19:23:26 Run now" [ref=e33]:
+        - cell "daily_weather_amsterdam" [ref=e34]:
+          - link "daily_weather_amsterdam" [ref=e35] [cursor=pointer]:
+            - /url: /monitors/daily_weather_amsterdam
+        - cell "ok" [ref=e36]:
+          - generic [ref=e37]: ok
+        - cell "16°C overcast" [ref=e38]
+        - cell "2026-05-15 19:23:26" [ref=e39]
+        - cell "Run now" [ref=e40]:
+          - button "Run now" [ref=e41] [cursor=pointer]
+      - row "ikea_ekbacken_stock ok In stock 2026-05-15 19:23:26 Run now" [ref=e42]:
+        - cell "ikea_ekbacken_stock" [ref=e43]:
+          - link "ikea_ekbacken_stock" [ref=e44] [cursor=pointer]:
+            - /url: /monitors/ikea_ekbacken_stock
+        - cell "ok" [ref=e45]:
+          - generic [ref=e46]: ok
+        - cell "In stock" [ref=e47]
+        - cell "2026-05-15 19:23:26" [ref=e48]
+        - cell "Run now" [ref=e49]:
+          - button "Run now" [ref=e50] [cursor=pointer]
+      - row "example_price pending — never Run now" [ref=e51]:
+        - cell "example_price" [ref=e52]:
+          - link "example_price" [ref=e53] [cursor=pointer]:
+            - /url: /monitors/example_price
+        - cell "pending" [ref=e54]:
+          - generic [ref=e55]: pending
+        - cell "—" [ref=e56]
+        - cell "never" [ref=e57]
+        - cell "Run now" [ref=e58]:
+          - button "Run now" [ref=e59] [cursor=pointer]

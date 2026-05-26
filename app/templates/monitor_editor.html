@@ -210,12 +210,13 @@
         </div>
       </div>
 
-      {% if notify_channels %}
+      {% if available_channels %}
       <div class="form-section">
         <div class="eyebrow" style="margin-bottom:14px">2 · Notify on change</div>
-        {% for ch in notify_channels %}
+        {% for ch in available_channels %}
         <label class="channel-row">
-          <input type="checkbox" class="channel-checkbox" value="{{ ch }}" style="display:none">
+          <input type="checkbox" class="channel-checkbox" value="{{ ch }}"
+                 {% if ch in selected_channels %}checked{% endif %} style="display:none">
           <span class="channel-check">
             <svg width="10" height="8" viewBox="0 0 10 8" fill="none" class="t-acc" style="display:none">
               <path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -228,7 +229,7 @@
       {% endif %}
 
       <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">{% if notify_channels %}3{% else %}2{% endif %} · Advanced</div>
+        <div class="eyebrow" style="margin-bottom:14px">{% if available_channels %}3{% else %}2{% endif %} · Advanced</div>
         <div class="toggle-row">
           <div>
             <div class="toggle-label">Record to InfluxDB</div>

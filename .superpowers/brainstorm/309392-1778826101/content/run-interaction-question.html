@@ -1,0 +1,19 @@
+<h2>What happens when you trigger a run?</h2>
+<p class="subtitle">The run already executes async in the background — question is what you see while it's happening</p>
+
+<div class="options">
+  <div class="option" data-choice="stream" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Live streaming output</h3>
+      <p>Log lines appear in real-time as the monitor runs (Server-Sent Events). You watch it like a terminal. Page auto-refreshes the run history when done.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="poll" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Trigger and poll</h3>
+      <p>Click "Run now", page polls every second until the run appears in the DB, then shows the result. Simpler, no streaming infrastructure needed.</p>
+    </div>
+  </div>
+</div>

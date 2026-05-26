@@ -1,0 +1,17 @@
+{"type":"server-started","port":53790,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:53790","screen_dir":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content","state_dir":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/state"}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/waiting.html"}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/scope-question.html"}
+{"source":"user-event","type":"click","text":"C\n    \n      Both\n      Dashboard links to per-monitor detail pages, plus a separate global feed/log view","choice":"both","id":null,"timestamp":1778826502432}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/log-depth-question.html"}
+{"source":"user-event","type":"click","text":"B\n    \n      Capture Python log output too\n      Store ctx.logger output (INFO, WARNING, etc.) per run in the DB so you can see what the monitor actually printed during a run.","choice":"capture-logs","id":null,"timestamp":1778826535025}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/run-interaction-question.html"}
+{"source":"user-event","type":"click","text":"B\n    \n      Trigger and poll\n      Click \"Run now\", page polls every second until the run appears in the DB, then shows the result. Simpler, no streaming infrastructure needed.","choice":"poll","id":null,"timestamp":1778826580459}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/approaches.html"}
+{"source":"user-event","type":"click","text":"B\n    \n      Separate run_logs table\n      New table: run_logs(id, run_id, level, message, logged_at). Each log line is a row, linked to the run by run_id. More structured but requires a join on every detail page load.\n      \n        ProsPer-line timestampsFilterable by level\n        ConsExtra table + joinMore schema complexityOverkill for this use case","choice":"table","id":null,"timestamp":1778826642513}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/detail-page-mockup.html"}
+{"source":"user-event","type":"click","text":"✓\n    Looks goodMove on to the global feed layout","choice":"good","id":null,"timestamp":1778826719261}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/activity-feed-mockup.html"}
+{"source":"user-event","type":"click","text":"✓\n    Looks goodReady to see the full design summary","choice":"good","id":null,"timestamp":1778826789876}
+{"type":"screen-added","file":"/home/stevendejong/workspace/personal/changewatch/.superpowers/brainstorm/309392-1778826101/content/design-summary.html"}
+{"source":"user-event","type":"click","text":"✓\n    Approved — write the specSave design doc and move to implementation plan","choice":"approve","id":null,"timestamp":1778827406343}
+{"type":"server-stopped","reason":"idle timeout"}

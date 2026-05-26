@@ -1,0 +1,27 @@
+<h2>Two approaches to the debug page</h2>
+<p class="subtitle">Both give you per-monitor detail + global feed + log capture. The difference is where logs live in the DB.</p>
+
+<div class="options">
+  <div class="option" data-choice="blob" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Log blob on the runs row <span style="font-size:0.75rem;color:#86efac;font-weight:400">— Recommended</span></h3>
+      <p>Add a <code>log TEXT</code> column to the existing <code>runs</code> table. Runner captures ctx.logger output into a string buffer and writes it alongside the run result. Simple schema change, no joins needed.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>One table, one query</li><li>Trivial to add</li><li>Fits current design</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>No per-line timestamps</li><li>Harder to filter by log level</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="table" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Separate run_logs table</h3>
+      <p>New table: <code>run_logs(id, run_id, level, message, logged_at)</code>. Each log line is a row, linked to the run by <code>run_id</code>. More structured but requires a join on every detail page load.</p>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Per-line timestamps</li><li>Filterable by level</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Extra table + join</li><li>More schema complexity</li><li>Overkill for this use case</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

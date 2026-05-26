@@ -420,7 +420,8 @@ function init(): void {
 
   // Initial state
   if (customFile) {
-    // Custom file: start in raw mode
+    // Custom file: raw mode only — hide Form tab to prevent accidental template overwrite
+    tabForm.style.display = "none";
     panelForm.style.display = "none";
     panelRaw.style.display = "";
     tabRaw.classList.add("active");
