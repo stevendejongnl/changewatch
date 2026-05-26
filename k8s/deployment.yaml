@@ -6,7 +6,7 @@ metadata:
   labels:
     app: changewatch
   annotations:
-    keel.sh/policy: force
+    keel.sh/policy: minor
     keel.sh/trigger: poll
     keel.sh/pollSchedule: "@every 5m"
 spec:
@@ -27,7 +27,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: changewatch
-          image: ghcr.io/stevendejongnl/changewatch:latest
+          image: ghcr.io/stevendejongnl/changewatch:v1.13.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
