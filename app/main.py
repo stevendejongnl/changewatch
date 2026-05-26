@@ -47,7 +47,7 @@ _git_editor: GitEditor | None = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync
+    global _db, _scheduler, _browser, _git_sync, _git_editor
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -56,6 +56,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     if MONITORS_REPO_URL:
         _git_sync = GitSync(repo_url=MONITORS_REPO_URL, clone_path=MONITORS_DIR, token=MONITORS_REPO_TOKEN)
         await _git_sync.sync()
+        _git_editor = GitEditor(monitors_dir=MONITORS_DIR)
 
     _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=AppriseClient(), timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
