@@ -315,3 +315,74 @@ async def test_runner_skips_publish_when_no_bus(db, browser):
 
     runs = await db.get_recent_runs("no_bus_mon")
     assert runs[0]["status"] == "ok"
+
+
+async def test_runner_sse_event_has_event_field_on_success(db, browser):
+    from unittest.mock import AsyncMock
+    from app.events import EventBus
+
+    bus = EventBus()
+    bus.publish = AsyncMock()
+    m = Monitor(name="evfield_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        pass
+
+    runner = Runner(db=db, browser=browser, event_bus=bus)
+    await runner.run(m)
+
+    payload = bus.publish.call_args[0][0]
+    assert payload["event"] == "run"
+
+
+async def test_runner_sse_event_has_event_field_on_error(db, browser):
+    from unittest.mock import AsyncMock
+    from app.events import EventBus
+
+    bus = EventBus()
+    bus.publish = AsyncMock()
+    m = Monitor(name="everr_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("oops")
+
+    runner = Runner(db=db, browser=browser, event_bus=bus)
+    await runner.run(m)
+
+    payload = bus.publish.call_args[0][0]
+    assert payload["event"] == "run"
+    assert payload["status"] == "error"
+
+
+async def test_runner_calls_set_changed_at_when_value_changes(db, browser):
+    await db.set_value("chg_mon", "old_value")
+    m = Monitor(name="chg_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        from app.helpers import set_value
+        await set_value(ctx.db, "chg_mon", "new_value")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    config = await db.get_config("chg_mon")
+    assert config["changed_at"] is not None
+
+
+async def test_runner_does_not_set_changed_at_when_value_unchanged(db, browser):
+    await db.set_value("stable_mon", "same_value")
+    m = Monitor(name="stable_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        from app.helpers import set_value
+        await set_value(ctx.db, "stable_mon", "same_value")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    config = await db.get_config("stable_mon")
+    assert config["changed_at"] is None

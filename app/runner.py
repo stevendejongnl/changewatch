@@ -73,6 +73,8 @@ class Runner:
             duration_ms = int((time.monotonic() - start) * 1000)
             last_value = await self._db.get_last_value(monitor.name)
             status = "changed" if prev_value is not None and last_value != prev_value else "ok"
+            if status == "changed":
+                await self._db.set_changed_at(monitor.name)
             run_id = await self._db.record_run(
                 monitor_name=monitor.name,
                 status=status,
@@ -83,6 +85,7 @@ class Runner:
             await self._db.write_run_logs(run_id, log_buffer.lines)
             if self._event_bus is not None:
                 await self._event_bus.publish({
+                    "event": "run",
                     "monitor_name": monitor.name,
                     "status": status,
                     "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
@@ -102,6 +105,7 @@ class Runner:
             await self._db.write_run_logs(run_id, log_buffer.lines)
             if self._event_bus is not None:
                 await self._event_bus.publish({
+                    "event": "run",
                     "monitor_name": monitor.name,
                     "status": "error",
                     "ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
