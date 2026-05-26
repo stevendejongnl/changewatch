@@ -9,7 +9,7 @@
   /* ── Metric strip ────────────────────────────────────────── */
   .metric-strip {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
     margin-bottom: 22px;
   }
@@ -114,7 +114,7 @@
 
   /* ── Responsive ─────────────────────────────────────────── */
   @media (max-width: 900px) {
-    .metric-strip { grid-template-columns: repeat(2, 1fr); }
+    .metric-strip { grid-template-columns: repeat(3, 1fr); }
     .run-row-main {
       grid-template-columns: 20px 90px 60px 1fr 20px;
       gap: 10px;
@@ -145,14 +145,21 @@
     <div class="led lg {{ current_status }}" style="transform:translateY(-2px);flex-shrink:0"></div>
     <span class="mono" style="font-family:var(--mono);font-weight:500;font-size:22px">{{ monitor_name }}</span>
   </h1>
-  <div class="topbar-sub">{{ schedule }}</div>
+  <div class="topbar-sub">{{ schedule }} · {{ schedule | humanize_cron }}</div>
 </div>
 <div class="topbar-right">
-  <button class="btn" id="pause-btn" style="opacity:.5;cursor:default" disabled>
+  <button class="btn" id="pause-btn" onclick="togglePause()">
+    {% if paused %}
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
+      <path d="M7 5l11 7-11 7V5z"/>
+    </svg>
+    <span id="pause-label">Resume</span>
+    {% else %}
     <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
       <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
     </svg>
-    Pause
+    <span id="pause-label">Pause</span>
+    {% endif %}
   </button>
   <button class="btn primary" id="run-btn" onclick="runNow()">
     <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
@@ -180,6 +187,9 @@
       <div class="led lg {{ current_status }}"></div>
       <span class="{% if current_status == 'ok' %}t-ok{% elif current_status == 'error' %}t-err{% elif current_status == 'changed' %}t-chg{% else %}t-pen{% endif %}">{{ current_status }}</span>
     </div>
+    {% if changed_at %}
+    <div class="metric-sub">changed: {{ changed_at | localtime }}</div>
+    {% endif %}
   </div>
   <div class="neu-raised-sm metric-card">
     <div class="eyebrow">success rate</div>
@@ -197,6 +207,16 @@
   <div class="neu-raised-sm metric-card">
     <div class="eyebrow">total runs</div>
     <div class="metric-value num">{{ total_runs }}</div>
+  </div>
+  <div class="neu-raised-sm metric-card">
+    <div class="eyebrow">avg duration</div>
+    <div class="metric-value num">
+      {% if avg_duration is not none %}
+        {{ avg_duration }}<span class="metric-unit">ms</span>
+      {% else %}
+        <span class="t-4">—</span>
+      {% endif %}
+    </div>
   </div>
 </div>
 
@@ -271,6 +291,12 @@
   <div style="font:11px var(--mono);margin-top:8px">Hit "Run now" to trigger a manual run</div>
 </div>
 {% endif %}
+
+<div id="load-more-wrap" style="text-align:center;margin-top:16px">
+  {% if runs | length == 50 %}
+  <button class="btn" id="load-more-btn" onclick="loadMoreRuns()">Load more</button>
+  {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -312,6 +338,86 @@
     } catch (_) {
       label.textContent = 'Error';
       btn.disabled = false;
+    }
+  }
+
+  let _paused = {{ 'true' if paused else 'false' }};
+
+  async function togglePause() {
+    const btn = document.getElementById('pause-btn');
+    const label = document.getElementById('pause-label');
+    btn.disabled = true;
+    const action = _paused ? 'resume' : 'pause';
+    try {
+      const res = await fetch('/monitors/{{ monitor_name }}/' + action, { method: 'POST' });
+      if (res.ok) {
+        _paused = !_paused;
+        label.textContent = _paused ? 'Resume' : 'Pause';
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  let _runsOffset = {{ runs | length }};
+
+  async function loadMoreRuns() {
+    const btn = document.getElementById('load-more-btn');
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch('/api/monitors/{{ monitor_name }}/runs?limit=50&offset=' + _runsOffset);
+      if (!res.ok) return;
+      const runs = await res.json();
+      const list = document.getElementById('runs-list');
+      runs.forEach(run => {
+        const row = document.createElement('div');
+        row.className = 'neu-raised-sm run-row';
+        row.dataset.status = run.status;
+        row.id = 'run-' + run.id;
+
+        const main = document.createElement('div');
+        main.className = 'run-row-main';
+        main.onclick = () => toggleRun(String(run.id), !!(run.logs && run.logs.length));
+
+        const led = document.createElement('div');
+        led.className = 'led ' + run.status;
+
+        const time = document.createElement('span');
+        time.className = 'run-time mono num';
+        time.textContent = run.ran_at || '—';
+
+        const chip = document.createElement('span');
+        chip.className = 'chip ' + run.status;
+        chip.style.cssText = 'padding:3px 8px;font-size:9px;letter-spacing:0.1em';
+        chip.textContent = run.status;
+
+        const dur = document.createElement('span');
+        dur.className = 'run-dur mono num';
+        dur.textContent = run.duration_ms + 'ms';
+
+        const val = document.createElement('span');
+        const rawVal = run.last_value || (run.error ? run.error.split('\n')[0] : '—');
+        val.className = 'run-value ' + (run.status === 'error' ? 't-err mono' : run.status === 'changed' ? 't-chg mono' : 't-2');
+        val.textContent = rawVal;
+
+        const chev = document.createElement('span');
+        chev.className = 'run-chevron';
+        chev.style.transform = 'rotate(-90deg)';
+        chev.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+        main.append(led, time, chip, dur, val, chev);
+        row.appendChild(main);
+        if (list) list.appendChild(row);
+      });
+      _runsOffset += runs.length;
+      if (runs.length < 50) {
+        const wrap = document.getElementById('load-more-wrap');
+        if (wrap) wrap.remove();
+      } else if (btn) {
+        btn.disabled = false;
+      }
+    } catch (_) {
+      if (btn) btn.disabled = false;
     }
   }
 </script>
