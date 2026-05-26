@@ -28,6 +28,36 @@ class GitEditor:
         stdout, stderr = await proc.communicate()
         return proc.returncode, stdout.decode(), stderr.decode()
 
+    async def delete(self, name: str) -> SaveResult:
+        path = self._dir / f"{name}.py"
+        if path.exists():
+            path.unlink()
+
+        if not self._is_git_repo():
+            return SaveResult(status="ok")
+
+        await self._run("git", "add", str(path))
+        rc_commit, _, _ = await self._run("git", "commit", "-m", f"monitor: delete {name}")
+        if rc_commit != 0:
+            return SaveResult(status="ok")
+
+        rc, _, _ = await self._run("git", "push")
+        if rc == 0:
+            return SaveResult(status="ok")
+
+        await self._run("git", "fetch", "origin")
+        _, branch_out, _ = await self._run("git", "branch", "--show-current")
+        branch = branch_out.strip() or "main"
+        rc2, _, _ = await self._run("git", "rebase", f"origin/{branch}")
+        if rc2 == 0:
+            rc3, _, _ = await self._run("git", "push")
+            if rc3 == 0:
+                return SaveResult(status="ok")
+
+        _, diff_out, _ = await self._run("git", "diff", "HEAD")
+        await self._run("git", "rebase", "--abort")
+        return SaveResult(status="conflict", diff=diff_out)
+
     async def save(self, name: str, source: str) -> SaveResult:
         path = self._dir / f"{name}.py"
         path.write_text(source)

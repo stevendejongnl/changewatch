@@ -133,11 +133,94 @@ async def test_save_returns_conflict_on_merge_conflict(git_repo, tmp_path):
 
 async def test_save_returns_ok_when_commit_has_nothing_to_commit(git_repo):
     editor = GitEditor(git_repo)
-    
+
     # First save: creates a new file and commits
     result1 = await editor.save("no_change_mon", "# original")
     assert result1.status == "ok"
-    
+
     # Second save with same content: file unchanged, commit should fail with rc != 0
     result2 = await editor.save("no_change_mon", "# original")
     assert result2.status == "ok"
+
+
+async def test_delete_removes_file_and_commits(git_repo):
+    editor = GitEditor(git_repo)
+    await editor.save("del_mon", "# to delete")
+    assert (git_repo / "del_mon.py").exists()
+
+    result = await editor.delete("del_mon")
+    assert result.status == "ok"
+    assert not (git_repo / "del_mon.py").exists()
+
+
+async def test_delete_nonexistent_file_returns_ok(git_repo):
+    editor = GitEditor(git_repo)
+    result = await editor.delete("no_such_monitor")
+    assert result.status == "ok"
+
+
+async def test_delete_without_git_repo_returns_ok(tmp_path):
+    (tmp_path / "mon.py").write_text("# x")
+    editor = GitEditor(tmp_path)
+    result = await editor.delete("mon")
+    assert result.status == "ok"
+    assert not (tmp_path / "mon.py").exists()
+
+
+async def test_delete_rebases_on_rejected_push(git_repo, tmp_path):
+    bare = tmp_path / "bare.git"
+
+    # Save a file first so there's something to delete
+    editor = GitEditor(git_repo)
+    await editor.save("del_rebase_mon", "# original")
+
+    # Clone2 pushes a competing commit so our push will be rejected
+    clone2 = tmp_path / "clone2"
+    proc = await asyncio.create_subprocess_exec(
+        "git", "clone", str(bare), str(clone2),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await proc.communicate()
+    await run_git(clone2, "git", "config", "user.email", "c2@test.com")
+    await run_git(clone2, "git", "config", "user.name", "Clone2")
+    (clone2 / "other2.py").write_text("other")
+    await run_git(clone2, "git", "add", "other2.py")
+    await run_git(clone2, "git", "commit", "-m", "competing commit")
+    await run_git(clone2, "git", "push")
+
+    # delete should rebase and succeed
+    result = await editor.delete("del_rebase_mon")
+    assert result.status == "ok"
+
+
+async def test_delete_returns_conflict_on_merge_conflict(git_repo, tmp_path):
+    bare = tmp_path / "bare.git"
+
+    editor = GitEditor(git_repo)
+    await editor.save("conflict_del", "# original")
+
+    # clone2 modifies the same file and pushes
+    clone2 = tmp_path / "clone2"
+    proc = await asyncio.create_subprocess_exec(
+        "git", "clone", str(bare), str(clone2),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await proc.communicate()
+    await run_git(clone2, "git", "config", "user.email", "c2@test.com")
+    await run_git(clone2, "git", "config", "user.name", "Clone2")
+    (clone2 / "conflict_del.py").write_text("# clone2 version")
+    await run_git(clone2, "git", "add", "conflict_del.py")
+    await run_git(clone2, "git", "commit", "-m", "clone2 modifies conflict_del")
+    await run_git(clone2, "git", "push")
+
+    # git_repo also has a local change to the same file (committed but not pushed)
+    (git_repo / "conflict_del.py").write_text("# local edit")
+    await run_git(git_repo, "git", "add", "conflict_del.py")
+    await run_git(git_repo, "git", "commit", "-m", "local edit")
+
+    # delete: stages removal, commits, push rejected, rebase conflicts
+    result = await editor.delete("conflict_del")
+    assert result.status == "conflict"
+    assert result.diff is not None

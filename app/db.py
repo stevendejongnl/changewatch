@@ -141,6 +141,7 @@ class Database:
             await self.conn.execute(f"DELETE FROM run_logs WHERE run_id IN ({placeholders})", run_ids)
         await self.conn.execute("DELETE FROM runs WHERE monitor_name = ?", (monitor_name,))
         await self.conn.execute("DELETE FROM state WHERE monitor_name = ?", (monitor_name,))
+        await self.conn.execute("DELETE FROM monitor_config WHERE monitor_name = ?", (monitor_name,))
         await self.conn.commit()
 
     async def set_paused(self, monitor_name: str, paused: bool) -> None:

@@ -346,6 +346,21 @@ async def api_monitor_discard(name: str, git_editor: GitEditorDep):
     return {"status": "ok", "source": source}
 
 
+@app.delete("/api/monitors/{name}")
+async def api_monitor_delete(name: str, db: DbDep, git_editor: GitEditorDep, scheduler: SchedulerDep):
+    path = MONITORS_DIR / f"{name}.py"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    if git_editor is not None:
+        await git_editor.delete(name)
+    else:
+        path.unlink(missing_ok=True)
+    await db.delete_monitor(name)
+    if scheduler is not None:
+        await scheduler.reload()
+    return {"status": "ok"}
+
+
 @app.post("/api/monitors/{name}/dry-run")
 async def api_monitor_dry_run(name: str, body: _DryRunBody, browser: BrowserDep, db: DbDep):
     if browser is None:

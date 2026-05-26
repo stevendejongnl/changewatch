@@ -620,3 +620,54 @@ async def test_api_monitor_dry_run_syntax_error(client):
         assert resp.status_code == 422
     finally:
         del app.dependency_overrides[get_browser]
+
+
+async def test_api_monitor_delete_not_found(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    app.dependency_overrides[get_git_editor] = lambda: None
+    app.dependency_overrides[get_scheduler] = lambda: None
+    try:
+        resp = await client.delete("/api/monitors/nonexistent")
+        assert resp.status_code == 404
+    finally:
+        del app.dependency_overrides[get_git_editor]
+        del app.dependency_overrides[get_scheduler]
+
+
+async def test_api_monitor_delete_no_git_editor(client, tmp_path, monkeypatch, db):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    (tmp_path / "mymon.py").write_text("# monitor")
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_git_editor] = lambda: None
+    app.dependency_overrides[get_scheduler] = lambda: None
+    try:
+        resp = await client.delete("/api/monitors/mymon")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        assert not (tmp_path / "mymon.py").exists()
+    finally:
+        del app.dependency_overrides[get_db]
+        del app.dependency_overrides[get_git_editor]
+        del app.dependency_overrides[get_scheduler]
+
+
+async def test_api_monitor_delete_with_git_editor(client, tmp_path, monkeypatch, db):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    (tmp_path / "mymon.py").write_text("# monitor")
+    mock_editor = MagicMock()
+    mock_editor.delete = AsyncMock(return_value=SaveResult(status="ok"))
+    mock_scheduler = MagicMock()
+    mock_scheduler.reload = AsyncMock()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_git_editor] = lambda: mock_editor
+    app.dependency_overrides[get_scheduler] = lambda: mock_scheduler
+    try:
+        resp = await client.delete("/api/monitors/mymon")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "ok"
+        mock_editor.delete.assert_called_once_with("mymon")
+        mock_scheduler.reload.assert_called_once()
+    finally:
+        del app.dependency_overrides[get_db]
+        del app.dependency_overrides[get_git_editor]
+        del app.dependency_overrides[get_scheduler]

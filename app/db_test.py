@@ -170,6 +170,17 @@ async def test_delete_monitor_noop_when_not_exists(db):
     await db.delete_monitor("never_existed")
 
 
+async def test_delete_monitor_removes_monitor_config(db):
+    await db.set_paused("gone", True)
+    config_before = await db.get_config("gone")
+    assert config_before["paused"] == 1
+
+    await db.delete_monitor("gone")
+
+    config_after = await db.get_config("gone")
+    assert config_after["paused"] == 0  # default when row absent
+
+
 async def test_init_creates_monitor_config_table(db):
     async with db.conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='monitor_config'"
