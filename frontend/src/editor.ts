@@ -252,6 +252,13 @@ function init(): void {
     return generateMonitor(readForm());
   }
 
+  function getEffectiveName(): string {
+    if (monitorName) return monitorName;
+    if (!customFile) return fieldName?.value.trim() ?? "";
+    const config = parseMonitor(getSource());
+    return config?.name ?? "";
+  }
+
   function readForm(): MonitorConfig {
     const channels = [...document.querySelectorAll<HTMLInputElement>(".channel-checkbox:checked")]
       .map(cb => cb.value);
@@ -320,41 +327,53 @@ function init(): void {
 
   // Save button
   btnSave?.addEventListener("click", async () => {
+    const name = getEffectiveName();
+    if (!name) {
+      setGitStatus(gitStatusEl, "error", "Name is required");
+      return;
+    }
     const source = getSource();
+    btnSave.disabled = true;
+    btnSave.textContent = "Saving…";
     setGitStatus(gitStatusEl, "saving");
     try {
-      const resp = await fetch(`/api/monitors/${monitorName}/save`, {
+      const resp = await fetch(`/api/monitors/${name}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source }),
       });
       const data = await resp.json();
       if (data.status === "ok") {
-        setGitStatus(gitStatusEl, "ok");
-        if (conflictPanel) conflictPanel.style.display = "none";
+        window.location.href = `/monitors/${name}`;
       } else if (data.status === "conflict") {
+        btnSave.disabled = false;
+        btnSave.textContent = "Save & deploy";
         setGitStatus(gitStatusEl, "conflict");
         if (conflictPanel) conflictPanel.style.display = "";
         if (conflictDiff) conflictDiff.textContent = data.diff ?? "";
       } else {
+        btnSave.disabled = false;
+        btnSave.textContent = "Save & deploy";
         setGitStatus(gitStatusEl, "error", data.message ?? "Unknown error");
       }
     } catch (e) {
+      btnSave.disabled = false;
+      btnSave.textContent = "Save & deploy";
       setGitStatus(gitStatusEl, "error", String(e));
     }
   });
 
   // Force push button
   btnForce?.addEventListener("click", async () => {
+    const name = getEffectiveName();
     const source = getSource();
     try {
-      await fetch(`/api/monitors/${monitorName}/force-push`, {
+      await fetch(`/api/monitors/${name}/force-push`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source }),
       });
-      setGitStatus(gitStatusEl, "ok");
-      if (conflictPanel) conflictPanel.style.display = "none";
+      window.location.href = `/monitors/${name}`;
     } catch (e) {
       setGitStatus(gitStatusEl, "error", String(e));
     }
@@ -362,8 +381,9 @@ function init(): void {
 
   // Discard button
   btnDiscard?.addEventListener("click", async () => {
+    const name = getEffectiveName();
     try {
-      const resp = await fetch(`/api/monitors/${monitorName}/discard`, { method: "POST" });
+      const resp = await fetch(`/api/monitors/${name}/discard`, { method: "POST" });
       const data = await resp.json();
       const src = data.source ?? "";
       if (customFile && editor) {
@@ -382,12 +402,13 @@ function init(): void {
 
   // Dry-run button
   btnDryRun?.addEventListener("click", async () => {
+    const name = getEffectiveName();
     const source = getSource();
     if (dryRunConsole) {
       dryRunConsole.textContent = "Running…";
     }
     try {
-      const resp = await fetch(`/api/monitors/${monitorName}/dry-run`, {
+      const resp = await fetch(`/api/monitors/${name}/dry-run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source }),
