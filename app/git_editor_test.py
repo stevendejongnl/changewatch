@@ -129,3 +129,15 @@ async def test_save_returns_conflict_on_merge_conflict(git_repo, tmp_path):
 
     assert result.status == "conflict"
     assert result.diff is not None
+
+
+async def test_save_returns_ok_when_commit_has_nothing_to_commit(git_repo):
+    editor = GitEditor(git_repo)
+    
+    # First save: creates a new file and commits
+    result1 = await editor.save("no_change_mon", "# original")
+    assert result1.status == "ok"
+    
+    # Second save with same content: file unchanged, commit should fail with rc != 0
+    result2 = await editor.save("no_change_mon", "# original")
+    assert result2.status == "ok"
