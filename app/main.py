@@ -177,7 +177,10 @@ async def api_monitors(db: DbDep):
 
 @app.get("/api/monitors/{name}/runs")
 async def api_monitor_runs(name: str, db: DbDep, limit: int = 50, offset: int = 0) -> list[dict]:
-    return await db.get_runs_with_logs(name, limit=limit, offset=offset)
+    runs = await db.get_runs_with_logs(name, limit=limit, offset=offset)
+    for run in runs:
+        run["ran_at"] = _to_local(run.get("ran_at"))
+    return runs
 
 
 @app.post("/monitors/{name}/run", status_code=202)
