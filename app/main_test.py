@@ -350,3 +350,40 @@ async def test_dashboard_subtitle_does_not_mention_auto_refresh(client):
 async def test_activity_has_eventsource_script(client):
     response = await client.get("/activity")
     assert "EventSource" in response.text
+
+
+async def test_pause_monitor_sets_paused_flag(client, db):
+    from unittest.mock import patch
+    from app.helpers import Monitor
+    mon = Monitor(name="price", schedule="*/5 * * * *", notify_channels=[])
+    with patch("app.main.discover_monitors", return_value=[mon]):
+        response = await client.post("/monitors/price/pause")
+    assert response.status_code == 204
+    config = await db.get_config("price")
+    assert config["paused"] == 1
+
+
+async def test_pause_monitor_returns_404_for_unknown(client):
+    from unittest.mock import patch
+    with patch("app.main.discover_monitors", return_value=[]):
+        response = await client.post("/monitors/nonexistent/pause")
+    assert response.status_code == 404
+
+
+async def test_resume_monitor_clears_paused_flag(client, db):
+    from unittest.mock import patch
+    from app.helpers import Monitor
+    mon = Monitor(name="price", schedule="*/5 * * * *", notify_channels=[])
+    await db.set_paused("price", True)
+    with patch("app.main.discover_monitors", return_value=[mon]):
+        response = await client.post("/monitors/price/resume")
+    assert response.status_code == 204
+    config = await db.get_config("price")
+    assert config["paused"] == 0
+
+
+async def test_resume_monitor_returns_404_for_unknown(client):
+    from unittest.mock import patch
+    with patch("app.main.discover_monitors", return_value=[]):
+        response = await client.post("/monitors/nonexistent/resume")
+    assert response.status_code == 404

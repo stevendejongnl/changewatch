@@ -175,6 +175,24 @@ async def run_now(name: str, db: DbDep, scheduler: SchedulerDep):
     return {"queued": name}
 
 
+@app.post("/monitors/{name}/pause", status_code=204)
+async def pause_monitor(name: str, db: DbDep, bus: EventBusDep):
+    known = {m.name for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    await db.set_paused(name, True)
+    await bus.publish({"event": "paused", "monitor_name": name, "paused": True})
+
+
+@app.post("/monitors/{name}/resume", status_code=204)
+async def resume_monitor(name: str, db: DbDep, bus: EventBusDep):
+    known = {m.name for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    await db.set_paused(name, False)
+    await bus.publish({"event": "paused", "monitor_name": name, "paused": False})
+
+
 @app.get("/monitors/{name}", response_class=HTMLResponse)
 async def monitor_detail(name: str, request: Request, db: DbDep):
     known = {m.name: m for m in discover_monitors(MONITORS_DIR)}
