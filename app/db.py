@@ -33,6 +33,11 @@ class Database:
                 logged_at TEXT NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_run_logs_run_id ON run_logs(run_id);
+            CREATE TABLE IF NOT EXISTS monitor_config (
+                monitor_name TEXT PRIMARY KEY,
+                paused       INTEGER NOT NULL DEFAULT 0,
+                changed_at   TEXT
+            );
         """)
         await self.conn.commit()
 
@@ -130,14 +135,51 @@ class Database:
         await self.conn.execute("DELETE FROM state WHERE monitor_name = ?", (monitor_name,))
         await self.conn.commit()
 
+    async def set_paused(self, monitor_name: str, paused: bool) -> None:
+        await self.conn.execute(
+            """INSERT INTO monitor_config (monitor_name, paused)
+               VALUES (?, ?)
+               ON CONFLICT(monitor_name) DO UPDATE SET paused=excluded.paused""",
+            (monitor_name, 1 if paused else 0),
+        )
+        await self.conn.commit()
+
+    async def set_changed_at(self, monitor_name: str) -> None:
+        await self.conn.execute(
+            """INSERT INTO monitor_config (monitor_name, changed_at)
+               VALUES (?, datetime('now'))
+               ON CONFLICT(monitor_name) DO UPDATE SET changed_at=datetime('now')""",
+            (monitor_name,),
+        )
+        await self.conn.commit()
+
+    async def get_config(self, monitor_name: str) -> dict:
+        async with self.conn.execute(
+            "SELECT monitor_name, paused, changed_at FROM monitor_config WHERE monitor_name = ?",
+            (monitor_name,),
+        ) as cur:
+            row = await cur.fetchone()
+        if row is None:
+            return {"monitor_name": monitor_name, "paused": 0, "changed_at": None}
+        return dict(row)
+
+    async def get_all_configs(self) -> dict[str, dict]:
+        async with self.conn.execute(
+            "SELECT monitor_name, paused, changed_at FROM monitor_config"
+        ) as cur:
+            rows = await cur.fetchall()
+        return {row["monitor_name"]: dict(row) for row in rows}
+
     async def get_all_monitor_states(self) -> list[dict]:
         async with self.conn.execute(
-            """SELECT r.monitor_name, r.status, r.last_value, r.error, r.duration_ms, r.ran_at
+            """SELECT r.monitor_name, r.status, r.last_value, r.error, r.duration_ms, r.ran_at,
+                      COALESCE(c.paused, 0) AS paused, c.changed_at
                FROM runs r
                INNER JOIN (
                    SELECT monitor_name, MAX(ran_at) AS latest
                    FROM runs GROUP BY monitor_name
-               ) latest ON r.monitor_name = latest.monitor_name AND r.ran_at = latest.latest"""
+               ) latest ON r.monitor_name = latest.monitor_name AND r.ran_at = latest.latest
+               LEFT JOIN monitor_config c ON r.monitor_name = c.monitor_name"""
         ) as cur:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]

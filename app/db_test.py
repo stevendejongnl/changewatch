@@ -168,3 +168,71 @@ async def test_delete_monitor_removes_state_runs_and_logs(db):
 
 async def test_delete_monitor_noop_when_not_exists(db):
     await db.delete_monitor("never_existed")
+
+
+async def test_init_creates_monitor_config_table(db):
+    async with db.conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='monitor_config'"
+    ) as cur:
+        row = await cur.fetchone()
+    assert row is not None
+
+
+async def test_get_config_returns_defaults_when_missing(db):
+    config = await db.get_config("nonexistent")
+    assert config["paused"] == 0
+    assert config["changed_at"] is None
+
+
+async def test_set_paused_creates_row(db):
+    await db.set_paused("mon", True)
+    config = await db.get_config("mon")
+    assert config["paused"] == 1
+
+
+async def test_set_paused_updates_existing_row(db):
+    await db.set_paused("mon", True)
+    await db.set_paused("mon", False)
+    config = await db.get_config("mon")
+    assert config["paused"] == 0
+
+
+async def test_set_changed_at_populates_field(db):
+    await db.set_changed_at("mon")
+    config = await db.get_config("mon")
+    assert config["changed_at"] is not None
+
+
+async def test_set_changed_at_updates_on_repeated_call(db):
+    await db.set_changed_at("mon")
+    first = (await db.get_config("mon"))["changed_at"]
+    await db.set_changed_at("mon")
+    second = (await db.get_config("mon"))["changed_at"]
+    assert second >= first
+
+
+async def test_get_all_configs_returns_keyed_dict(db):
+    await db.set_paused("a", True)
+    await db.set_paused("b", False)
+    configs = await db.get_all_configs()
+    assert "a" in configs
+    assert "b" in configs
+    assert configs["a"]["paused"] == 1
+    assert configs["b"]["paused"] == 0
+
+
+async def test_get_all_monitor_states_includes_paused_and_changed_at(db):
+    await db.record_run("mon", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.set_paused("mon", True)
+    await db.set_changed_at("mon")
+    states = await db.get_all_monitor_states()
+    mon = next(s for s in states if s["monitor_name"] == "mon")
+    assert mon["paused"] == 1
+    assert mon["changed_at"] is not None
+
+
+async def test_get_all_monitor_states_paused_defaults_to_zero(db):
+    await db.record_run("mon", status="ok", last_value="1", error=None, duration_ms=10)
+    states = await db.get_all_monitor_states()
+    mon = next(s for s in states if s["monitor_name"] == "mon")
+    assert mon["paused"] == 0
