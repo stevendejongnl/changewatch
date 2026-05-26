@@ -147,3 +147,24 @@ async def test_get_run_logs_isolated_by_run_id(db):
     logs_b = await db.get_run_logs(run_id_b)
     assert len(logs_a) == 1 and logs_a[0]["message"] == "from a"
     assert len(logs_b) == 1 and logs_b[0]["message"] == "from b"
+
+
+async def test_delete_monitor_removes_state_runs_and_logs(db):
+    await db.set_value("gone", "v")
+    run_id = await db.record_run("gone", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.write_run_logs(run_id, [("INFO", "hello")])
+    # control — should survive
+    await db.set_value("keep", "v")
+    await db.record_run("keep", status="ok", last_value="v", error=None, duration_ms=10)
+
+    await db.delete_monitor("gone")
+
+    assert await db.get_last_value("gone") is None
+    assert await db.get_runs_with_logs("gone") == []
+    async with db.conn.execute("SELECT id FROM run_logs WHERE run_id = ?", (run_id,)) as cur:
+        assert await cur.fetchone() is None
+    assert await db.get_last_value("keep") == "v"
+
+
+async def test_delete_monitor_noop_when_not_exists(db):
+    await db.delete_monitor("never_existed")

@@ -212,6 +212,38 @@ async def test_scheduler_uses_timezone_for_cron_trigger(monitors_dir, tmp_path):
     await db.close()
 
 
+async def test_scheduler_reload_cleans_up_db_for_removed_monitor(monitors_dir, tmp_path):
+    _make_monitor_module(monitors_dir, "keep")
+    path_to_delete = _make_monitor_module(monitors_dir, "delete_me")
+    db = Database(str(tmp_path / "cleanup1.db"))
+    await db.init()
+    await db.record_run("delete_me", status="ok", last_value="v", error=None, duration_ms=10)
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+
+    path_to_delete.unlink()
+    await scheduler.reload()
+
+    await scheduler.stop()
+    states = await db.get_all_monitor_states()
+    assert not any(s["monitor_name"] == "delete_me" for s in states)
+    await db.close()
+
+
+async def test_scheduler_start_cleans_up_stale_db_entries(monitors_dir, tmp_path):
+    _make_monitor_module(monitors_dir, "active")
+    db = Database(str(tmp_path / "cleanup2.db"))
+    await db.init()
+    await db.record_run("stale", status="ok", last_value="v", error=None, duration_ms=10)
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+
+    states = await db.get_all_monitor_states()
+    await scheduler.stop()
+    await db.close()
+    assert not any(s["monitor_name"] == "stale" for s in states)
+
+
 async def test_scheduler_reload_preserves_dunder_jobs(monitors_dir, tmp_path):
     """reload() must not remove internal jobs whose IDs are prefixed with __."""
     from apscheduler.triggers.cron import CronTrigger

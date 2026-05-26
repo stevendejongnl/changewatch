@@ -60,6 +60,10 @@ class Scheduler:
     async def start(self, browser: Any = None) -> None:
         self._browser = browser
         self._monitors = discover_monitors(self._monitors_dir)
+        active_names = {m.name for m in self._monitors}
+        for row in await self._db.get_all_monitor_states():
+            if row["monitor_name"] not in active_names:
+                await self._db.delete_monitor(row["monitor_name"])
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, event_bus=self._event_bus)
         for monitor in self._monitors:
             self._scheduler.add_job(
@@ -87,6 +91,7 @@ class Scheduler:
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, event_bus=self._event_bus)
         for job_id in old_ids - new_ids:
             self._scheduler.remove_job(job_id)
+            await self._db.delete_monitor(job_id)
         for monitor in new_monitors:
             self._scheduler.add_job(
                 runner.run,

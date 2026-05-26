@@ -118,6 +118,18 @@ class Database:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]
 
+    async def delete_monitor(self, monitor_name: str) -> None:
+        async with self.conn.execute(
+            "SELECT id FROM runs WHERE monitor_name = ?", (monitor_name,)
+        ) as cur:
+            run_ids = [row[0] for row in await cur.fetchall()]
+        if run_ids:
+            placeholders = ",".join("?" * len(run_ids))
+            await self.conn.execute(f"DELETE FROM run_logs WHERE run_id IN ({placeholders})", run_ids)
+        await self.conn.execute("DELETE FROM runs WHERE monitor_name = ?", (monitor_name,))
+        await self.conn.execute("DELETE FROM state WHERE monitor_name = ?", (monitor_name,))
+        await self.conn.commit()
+
     async def get_all_monitor_states(self) -> list[dict]:
         async with self.conn.execute(
             """SELECT r.monitor_name, r.status, r.last_value, r.error, r.duration_ms, r.ran_at
