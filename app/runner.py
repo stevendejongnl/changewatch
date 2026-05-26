@@ -64,9 +64,7 @@ class Runner:
         start = time.monotonic()
         page = None
         try:
-            context = await self._browser.new_context(
-                user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-            )
+            context = await self._browser.new_context()
             page = await context.new_page()
             prev_value = await self._db.get_last_value(monitor.name)
             await monitor.fn(page, ctx)
