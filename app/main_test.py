@@ -195,6 +195,18 @@ async def test_api_monitor_runs_empty_returns_empty_list(client):
     assert response.json() == []
 
 
+async def test_api_monitor_runs_supports_offset(client, db):
+    for i in range(5):
+        await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=i * 10)
+    page1 = await client.get("/api/monitors/mon/runs?limit=3&offset=0")
+    page2 = await client.get("/api/monitors/mon/runs?limit=3&offset=3")
+    assert page1.status_code == 200
+    assert page2.status_code == 200
+    ids1 = {r["id"] for r in page1.json()}
+    ids2 = {r["id"] for r in page2.json()}
+    assert ids1.isdisjoint(ids2)
+
+
 async def test_monitor_detail_returns_404_for_unknown_monitor(client):
     response = await client.get("/monitors/does_not_exist_xyz")
     assert response.status_code == 404

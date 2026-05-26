@@ -152,8 +152,16 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
         monitors = [m for m in monitors if m["monitor_name"] != "example_price"]
     seen = {m["monitor_name"] for m in monitors}
     for name in sorted(all_names - seen):
-        monitors.append({"monitor_name": name, "status": "pending", "last_value": None,
-                         "error": None, "duration_ms": 0, "ran_at": None})
+        monitors.append({
+            "monitor_name": name,
+            "status": "pending",
+            "last_value": None,
+            "error": None,
+            "duration_ms": 0,
+            "ran_at": None,
+            "paused": 0,
+            "changed_at": None,
+        })
     return templates.TemplateResponse(
         request, "dashboard.html", {
             "monitors": monitors,
@@ -168,8 +176,8 @@ async def api_monitors(db: DbDep):
 
 
 @app.get("/api/monitors/{name}/runs")
-async def api_monitor_runs(name: str, db: DbDep) -> list[dict]:
-    return await db.get_runs_with_logs(name)
+async def api_monitor_runs(name: str, db: DbDep, limit: int = 50, offset: int = 0) -> list[dict]:
+    return await db.get_runs_with_logs(name, limit=limit, offset=offset)
 
 
 @app.post("/monitors/{name}/run", status_code=202)
@@ -210,12 +218,17 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
     monitor = known[name]
     runs = await db.get_runs_with_logs(name)
     current_status = runs[0]["status"] if runs else "pending"
+    config = await db.get_config(name)
+    avg_duration = await db.get_avg_duration(name)
     return templates.TemplateResponse(
         request, "monitor_detail.html", {
             "monitor_name": name,
             "schedule": monitor.schedule,
             "current_status": current_status,
             "runs": runs,
+            "paused": config["paused"],
+            "changed_at": config["changed_at"],
+            "avg_duration": avg_duration,
         }
     )
 
