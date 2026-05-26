@@ -1,20 +1,332 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == "new" %}New Monitor{% else %}Edit {{ monitor_name }}{% endif %} — changewatch{% endblock %}
+{% block title %}{% if mode == "new" %}New Monitor{% else %}Edit · {{ monitor_name }}{% endif %} — changewatch{% endblock %}
+{% block nav_monitors %}active{% endblock %}
+{% block mob_monitors %}active{% endblock %}
+
 {% block topbar %}
 <div class="topbar-left">
   <div class="topbar-breadcrumb">
-    <a href="/">Monitors</a>
-    <span>/</span>
-    <span>{% if mode == "new" %}New{% else %}{{ monitor_name }}{% endif %}</span>
+    <a href="/">monitors</a>
+    <span style="color:var(--ink-4)">›</span>
+    {% if mode == "edit" %}<a href="/monitors/{{ monitor_name }}">{{ monitor_name }}</a>
+    <span style="color:var(--ink-4)">›</span>{% endif %}
+    <span>{% if mode == "new" %}new{% else %}edit{% endif %}</span>
   </div>
-  <h1>{% if mode == "new" %}New Monitor{% else %}Edit {{ monitor_name }}{% endif %}</h1>
+  <h1>{% if mode == "new" %}New monitor{% else %}Adjust monitor{% endif %}</h1>
+  <div class="topbar-sub">{% if mode == "new" %}Create a new Python monitor{% else %}Adjust the Python monitor file{% endif %}</div>
+</div>
+<div class="topbar-right">
+  <span id="git-status" class="t-3" style="font-size:12px"></span>
+  <a href="{% if mode == 'edit' %}/monitors/{{ monitor_name }}{% else %}/{% endif %}" class="btn">Cancel</a>
+  <button id="btn-save" class="btn primary">Save &amp; deploy</button>
 </div>
 {% endblock %}
+
 {% block content %}
-<div id="editor-root"
-     data-mode="{{ mode }}"
-     data-monitor-name="{{ monitor_name }}"
-     data-custom-file="{{ custom_file | lower }}">
-  <textarea id="source-editor" style="display:none;">{{ source }}</textarea>
+<style>
+  .editor-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .editor-left, .editor-right { padding: 20px; }
+  .form-section { margin-bottom: 24px; }
+  .form-section:last-child { margin-bottom: 0; }
+  .form-row { margin-bottom: 12px; }
+  .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-3);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+  .input.mono-input { font-family: var(--mono); font-size: 12.5px; }
+  .schedule-segs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .schedule-segs button {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font: 500 10.5px var(--mono);
+    color: var(--ink-3);
+    background: var(--bg);
+    border: 0;
+    cursor: pointer;
+    box-shadow: -2px -2px 5px var(--raise), 2px 2px 5px var(--shadow);
+    transition: color .12s;
+  }
+  .schedule-segs button:hover { color: var(--ink-2); }
+  .channel-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .channel-row:last-child { border-bottom: 0; }
+  .channel-check {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    box-shadow: inset 2px 2px 4px var(--shadow), inset -1px -1px 3px var(--raise);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .toggle-row:last-child { border-bottom: 0; }
+  .toggle-label { font-size: 13px; color: var(--ink-2); }
+  .toggle-desc { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  /* Toggle switch */
+  .switch { position: relative; display: inline-block; width: 38px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-track {
+    position: absolute; inset: 0;
+    border-radius: 11px;
+    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 4px var(--raise);
+    background: var(--bg);
+    transition: background .15s;
+  }
+  .switch-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    box-shadow: 1px 1px 3px var(--shadow);
+    transition: transform .15s, background .15s;
+  }
+  .switch input:checked ~ .switch-thumb {
+    transform: translateX(16px);
+    background: var(--accent);
+  }
+  /* Raw editor panel */
+  .raw-wrap {
+    display: flex;
+    height: 400px;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: inset 3px 3px 7px var(--shadow), inset -2px -2px 5px var(--raise);
+    font: 12.5px/1.6 var(--mono);
+    color: var(--ink);
+  }
+  /* Tabs */
+  .editor-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .editor-tab {
+    padding: 7px 16px;
+    border-radius: 10px;
+    font: 500 12px var(--sans);
+    color: var(--ink-3);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    transition: color .12s;
+  }
+  .editor-tab.active {
+    color: var(--ink);
+    background: var(--surface);
+    box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
+  }
+  /* Code preview */
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  /* Conflict panel */
+  .conflict-panel {
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    box-shadow: inset 3px 3px 7px var(--shadow), inset -2px -2px 5px var(--raise);
+  }
+  .conflict-diff {
+    font: 11px/1.6 var(--mono);
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 12px 0;
+    white-space: pre;
+  }
+  @media (max-width: 900px) {
+    .editor-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  document.body.dataset.monitorName = {{ monitor_name | tojson }};
+</script>
+
+<div class="editor-grid">
+  <!-- LEFT PANEL -->
+  <div class="editor-left neu-raised">
+    <div class="editor-tabs">
+      <button class="editor-tab active" id="tab-form">Form</button>
+      <button class="editor-tab" id="tab-raw">Raw</button>
+    </div>
+
+    <!-- FORM PANEL -->
+    <div id="panel-form">
+
+      <div class="form-section">
+        <div class="eyebrow" style="margin-bottom:14px">1 · Basics</div>
+
+        <div class="form-row">
+          <label class="form-label" for="field-name">Name</label>
+          <input id="field-name" class="input mono-input" type="text"
+                 placeholder="my_monitor"
+                 value="{{ '' if mode == 'new' else monitor_name }}">
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="field-url">URL</label>
+          <input id="field-url" class="input mono-input" type="url"
+                 placeholder="https://example.com">
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="field-schedule">Schedule (cron)</label>
+          <input id="field-schedule" class="input mono-input" type="text"
+                 placeholder="*/30 * * * *">
+          <div class="schedule-segs">
+            <button type="button" data-cron="*/5 * * * *">5 min</button>
+            <button type="button" data-cron="*/15 * * * *">15 min</button>
+            <button type="button" data-cron="*/30 * * * *">30 min</button>
+            <button type="button" data-cron="0 * * * *">hourly</button>
+            <button type="button" data-cron="0 0 * * *">daily</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label" for="field-selector">CSS selector</label>
+          <input id="field-selector" class="input mono-input" type="text"
+                 placeholder=".price, #stock-count">
+        </div>
+      </div>
+
+      {% if notify_channels %}
+      <div class="form-section">
+        <div class="eyebrow" style="margin-bottom:14px">2 · Notify on change</div>
+        {% for ch in notify_channels %}
+        <label class="channel-row">
+          <input type="checkbox" class="channel-checkbox" value="{{ ch }}" style="display:none">
+          <span class="channel-check">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" class="t-acc" style="display:none">
+              <path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span style="font-size:13px;color:var(--ink-2)">{{ ch }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-section">
+        <div class="eyebrow" style="margin-bottom:14px">{% if notify_channels %}3{% else %}2{% endif %} · Advanced</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Record to InfluxDB</div>
+            <div class="toggle-desc">Write extracted value as a metric</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="field-influx">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Wait for network idle</div>
+            <div class="toggle-desc">Useful for JS-heavy pages</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="field-networkidle">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+    </div><!-- /panel-form -->
+
+    <!-- RAW PANEL -->
+    <div id="panel-raw" style="display:none">
+      {% if custom_file %}
+      <div class="t-3" style="font-size:11.5px;margin-bottom:12px">Custom file — form view unavailable</div>
+      {% endif %}
+      <div class="raw-wrap"
+           id="raw-editor-container"
+           data-source="{{ source | e }}"
+           data-custom-file="{{ 'true' if custom_file else 'false' }}">
+      </div>
+    </div>
+
+  </div><!-- /editor-left -->
+
+  <!-- RIGHT PANEL -->
+  <div class="editor-right neu-raised">
+
+    <div class="preview-header">
+      <div class="chip">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        monitors/{% if monitor_name %}{{ monitor_name }}.py{% else %}new.py{% endif %}
+      </div>
+    </div>
+
+    <div id="code-preview" class="console" style="min-height:180px;white-space:pre;tab-size:4"></div>
+
+    <!-- CONFLICT PANEL -->
+    <div id="conflict-panel" class="conflict-panel" style="display:none">
+      <div style="font-size:13px;font-weight:600;color:var(--err);margin-bottom:8px">&#9888; Conflict detected</div>
+      <div class="t-3" style="font-size:11.5px;margin-bottom:8px">Someone pushed changes while you were editing. Choose:</div>
+      <pre id="conflict-diff" class="conflict-diff t-3"></pre>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="btn-force" class="btn danger">Force mine</button>
+        <button id="btn-discard" class="btn">Discard mine</button>
+      </div>
+    </div>
+
+    <!-- DRY-RUN -->
+    <div style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:10px">Dry run</div>
+      <div id="dry-run-console" class="console" style="min-height:80px">
+        <span class="t-3">Run the monitor once without saving or sending notifications.</span>
+      </div>
+      <div style="margin-top:12px">
+        <button id="btn-dry-run" class="btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Run dry-run
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /editor-right -->
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* Channel checkbox visual sync */
+document.querySelectorAll('.channel-checkbox').forEach(function(cb) {
+  function sync() {
+    var icon = cb.parentElement.querySelector('svg');
+    if (icon) icon.style.display = cb.checked ? '' : 'none';
+  }
+  cb.addEventListener('change', sync);
+  sync();
+});
+</script>
+<script src="/static/editor.js"></script>
 {% endblock %}
