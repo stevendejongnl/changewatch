@@ -264,9 +264,7 @@
     <div class="monitor-footer">
       <span class="mono">last: {{ m.ran_at | localtime if m.ran_at else 'never' }}</span>
       <span class="chip {{ m.status }}" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">{{ m.status }}</span>
-      {% if m.duration_ms %}
-      <span class="mono">{{ m.duration_ms }}ms</span>
-      {% endif %}
+      <span class="mono">{% if m.duration_ms %}{{ m.duration_ms }}ms{% endif %}</span>
     </div>
   </div>
   {% endfor %}
@@ -390,7 +388,7 @@
 
       const well = card.querySelector('.monitor-value-well');
       if (well) {
-        const valueEl = well.querySelector('.monitor-value');
+        const valueEl = well.querySelector('.monitor-value') || well.querySelector('.t-4');
         if (data.status === 'error') {
           const msg = (data.error || '').slice(0, 60) + ((data.error || '').length > 60 ? '…' : '');
           if (valueEl) {
