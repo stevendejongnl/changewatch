@@ -273,3 +273,42 @@ async def test_scheduler_reload_preserves_dunder_jobs(monitors_dir, tmp_path):
     )
     await scheduler.stop()
     await db.close()
+
+
+@pytest.fixture
+async def db(tmp_path):
+    database = Database(str(tmp_path / "sched_test.db"))
+    await database.init()
+    yield database
+    await database.close()
+
+
+async def test_make_job_fn_skips_run_when_paused(db, monitors_dir):
+    from unittest.mock import AsyncMock
+    _make_monitor_module(monitors_dir, "price")
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+
+    await db.set_paused("price", True)
+    monitor = next(m for m in sched._monitors if m.name == "price")
+    mock_runner = AsyncMock()
+    job_fn = sched._make_job_fn(mock_runner, monitor)
+    await job_fn()
+
+    mock_runner.run.assert_not_called()
+    await sched.stop()
+
+
+async def test_make_job_fn_runs_when_not_paused(db, monitors_dir):
+    from unittest.mock import AsyncMock
+    _make_monitor_module(monitors_dir, "price")
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+
+    monitor = next(m for m in sched._monitors if m.name == "price")
+    mock_runner = AsyncMock()
+    job_fn = sched._make_job_fn(mock_runner, monitor)
+    await job_fn()
+
+    mock_runner.run.assert_called_once_with(monitor)
+    await sched.stop()

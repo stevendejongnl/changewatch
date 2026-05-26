@@ -57,6 +57,14 @@ class Scheduler:
     def running(self) -> bool:
         return self._scheduler.running
 
+    def _make_job_fn(self, runner: Runner, monitor: Monitor):
+        async def _run() -> None:
+            config = await self._db.get_config(monitor.name)
+            if config.get("paused"):
+                return
+            await runner.run(monitor)
+        return _run
+
     async def start(self, browser: Any = None) -> None:
         self._browser = browser
         self._monitors = discover_monitors(self._monitors_dir)
@@ -67,9 +75,8 @@ class Scheduler:
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, event_bus=self._event_bus)
         for monitor in self._monitors:
             self._scheduler.add_job(
-                runner.run,
+                self._make_job_fn(runner, monitor),
                 CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),
-                args=[monitor],
                 id=monitor.name,
                 name=monitor.name,
                 misfire_grace_time=60,
@@ -94,9 +101,8 @@ class Scheduler:
             await self._db.delete_monitor(job_id)
         for monitor in new_monitors:
             self._scheduler.add_job(
-                runner.run,
+                self._make_job_fn(runner, monitor),
                 CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),
-                args=[monitor],
                 id=monitor.name,
                 name=monitor.name,
                 misfire_grace_time=60,
