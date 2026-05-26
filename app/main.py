@@ -85,6 +85,9 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates.env.globals["editor_version"] = int(
+    (Path(__file__).parent / "static" / "editor.js").stat().st_mtime
+)
 
 
 def _to_local(dt_str: Optional[str]) -> str:
