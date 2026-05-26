@@ -278,3 +278,39 @@ async def test_get_runs_with_logs_offset_returns_second_page(db):
     ids_page1 = {r["id"] for r in page1}
     ids_page2 = {r["id"] for r in page2}
     assert ids_page1.isdisjoint(ids_page2)
+
+
+async def test_get_stats_returns_zero_counts_on_empty_db(db):
+    stats = await db.get_stats()
+    assert stats["runs"] == 0
+    assert stats["run_logs"] == 0
+    assert stats["state"] == 0
+    assert stats["monitor_config"] == 0
+    assert stats["oldest_run"] is None
+    assert stats["newest_run"] is None
+    assert isinstance(stats["db_size_bytes"], int)
+
+
+async def test_get_stats_counts_runs_correctly(db):
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.record_run("mon_a", status="ok", last_value="v2", error=None, duration_ms=20)
+    stats = await db.get_stats()
+    assert stats["runs"] == 2
+    assert stats["oldest_run"] is not None
+    assert stats["newest_run"] is not None
+
+
+async def test_get_stats_counts_state_and_config(db):
+    await db.set_value("mon", "42")
+    await db.set_paused("mon", True)
+    stats = await db.get_stats()
+    assert stats["state"] == 1
+    assert stats["monitor_config"] == 1
+
+
+async def test_get_stats_db_size_returns_zero_on_oserror(db, monkeypatch):
+    def _raise(_path):
+        raise OSError("no file")
+    monkeypatch.setattr("app.db.os.path.getsize", _raise)
+    stats = await db.get_stats()
+    assert stats["db_size_bytes"] == 0

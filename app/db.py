@@ -1,3 +1,4 @@
+import os
 import aiosqlite
 from typing import Optional
 
@@ -43,6 +44,22 @@ class Database:
 
     async def close(self) -> None:
         await self.conn.close()
+
+    async def get_stats(self) -> dict:
+        result: dict = {}
+        for table in ("runs", "run_logs", "state", "monitor_config"):
+            async with self.conn.execute(f"SELECT COUNT(*) FROM {table}") as cur:  # noqa: S608
+                row = await cur.fetchone()
+            result[table] = row[0]
+        async with self.conn.execute("SELECT MIN(ran_at), MAX(ran_at) FROM runs") as cur:
+            row = await cur.fetchone()
+        result["oldest_run"] = row[0]
+        result["newest_run"] = row[1]
+        try:
+            result["db_size_bytes"] = os.path.getsize(self._path)
+        except OSError:
+            result["db_size_bytes"] = 0
+        return result
 
     async def get_last_value(self, monitor_name: str) -> Optional[str]:
         async with self.conn.execute(
