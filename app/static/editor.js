@@ -426,7 +426,7 @@
     const initialSource = container.dataset.source ?? "";
     const customFile = container.dataset.customFile === "true";
     const monitorName = document.body.dataset.monitorName ?? "";
-    const editor = buildEditor(container, initialSource);
+    const editor = customFile ? buildEditor(container, initialSource) : null;
     const gitStatusEl = document.getElementById("git-status");
     const codePreview = document.getElementById("code-preview");
     const dryRunConsole = document.getElementById("dry-run-console");
@@ -436,47 +436,58 @@
     const btnDryRun = document.getElementById("btn-dry-run");
     const btnForce = document.getElementById("btn-force");
     const btnDiscard = document.getElementById("btn-discard");
-    const tabForm = document.getElementById("tab-form");
-    const tabRaw = document.getElementById("tab-raw");
-    const panelForm = document.getElementById("panel-form");
-    const panelRaw = document.getElementById("panel-raw");
     const fieldName = document.getElementById("field-name");
     const fieldUrl = document.getElementById("field-url");
     const fieldSchedule = document.getElementById("field-schedule");
     const fieldSelector = document.getElementById("field-selector");
     const fieldInflux = document.getElementById("field-influx");
     const fieldNetworkIdle = document.getElementById("field-networkidle");
+    function getSource() {
+      if (customFile) return editor.getValue();
+      return generateMonitor(readForm());
+    }
     function readForm() {
       const channels = [...document.querySelectorAll(".channel-checkbox:checked")].map((cb) => cb.value);
       return {
-        name: fieldName.value,
-        schedule: fieldSchedule.value,
-        url: fieldUrl.value,
-        selector: fieldSelector.value,
+        name: (fieldName == null ? void 0 : fieldName.value) ?? "",
+        schedule: (fieldSchedule == null ? void 0 : fieldSchedule.value) ?? "",
+        url: (fieldUrl == null ? void 0 : fieldUrl.value) ?? "",
+        selector: (fieldSelector == null ? void 0 : fieldSelector.value) ?? "",
         notifyChannels: channels,
-        recordToInflux: fieldInflux.checked,
-        waitForNetworkIdle: fieldNetworkIdle.checked
+        recordToInflux: (fieldInflux == null ? void 0 : fieldInflux.checked) ?? false,
+        waitForNetworkIdle: (fieldNetworkIdle == null ? void 0 : fieldNetworkIdle.checked) ?? false
       };
     }
     function fillForm(config) {
-      fieldName.value = config.name;
-      fieldUrl.value = config.url;
-      fieldSchedule.value = config.schedule;
-      fieldSelector.value = config.selector;
-      fieldInflux.checked = config.recordToInflux;
-      fieldNetworkIdle.checked = config.waitForNetworkIdle;
+      if (fieldName) fieldName.value = config.name;
+      if (fieldUrl) fieldUrl.value = config.url;
+      if (fieldSchedule) fieldSchedule.value = config.schedule;
+      if (fieldSelector) fieldSelector.value = config.selector;
+      if (fieldInflux) fieldInflux.checked = config.recordToInflux;
+      if (fieldNetworkIdle) fieldNetworkIdle.checked = config.waitForNetworkIdle;
       document.querySelectorAll(".channel-checkbox").forEach((cb) => {
         cb.checked = config.notifyChannels.includes(cb.value);
       });
+      document.querySelectorAll(".channel-checkbox").forEach((cb) => {
+        var _a;
+        const icon = (_a = cb.parentElement) == null ? void 0 : _a.querySelector("svg");
+        if (icon) icon.style.display = cb.checked ? "" : "none";
+      });
     }
     function updatePreview() {
-      const source = generateMonitor(readForm());
-      if (codePreview) codePreview.innerHTML = renderHighlighted(source);
-      editor.setValue(source);
+      if (codePreview) {
+        const source = generateMonitor(readForm());
+        codePreview.innerHTML = renderHighlighted(source);
+      }
+    }
+    if (!customFile) {
+      const config = parseMonitor(initialSource);
+      if (config) fillForm(config);
+      updatePreview();
     }
     document.querySelectorAll("button[data-cron]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        fieldSchedule.value = btn.dataset.cron;
+        if (fieldSchedule) fieldSchedule.value = btn.dataset.cron;
         updatePreview();
       });
     });
@@ -489,29 +500,8 @@
     document.querySelectorAll(".channel-checkbox").forEach((el) => {
       el.addEventListener("change", updatePreview);
     });
-    tabForm == null ? void 0 : tabForm.addEventListener("click", () => {
-      const source = editor.getValue();
-      const config = parseMonitor(source);
-      if (config) {
-        fillForm(config);
-      }
-      panelForm.style.display = "";
-      panelRaw.style.display = "none";
-      tabForm.classList.add("active");
-      tabRaw.classList.remove("active");
-      updatePreview();
-    });
-    tabRaw == null ? void 0 : tabRaw.addEventListener("click", () => {
-      const source = generateMonitor(readForm());
-      editor.setValue(source);
-      if (codePreview) codePreview.innerHTML = renderHighlighted(source);
-      panelForm.style.display = "none";
-      panelRaw.style.display = "";
-      tabRaw.classList.add("active");
-      tabForm.classList.remove("active");
-    });
     btnSave == null ? void 0 : btnSave.addEventListener("click", async () => {
-      const source = panelRaw.style.display === "none" ? generateMonitor(readForm()) : editor.getValue();
+      const source = getSource();
       setGitStatus(gitStatusEl, "saving");
       try {
         const resp = await fetch(`/api/monitors/${monitorName}/save`, {
@@ -535,7 +525,7 @@
       }
     });
     btnForce == null ? void 0 : btnForce.addEventListener("click", async () => {
-      const source = editor.getValue();
+      const source = getSource();
       try {
         await fetch(`/api/monitors/${monitorName}/force-push`, {
           method: "POST",
@@ -552,8 +542,14 @@
       try {
         const resp = await fetch(`/api/monitors/${monitorName}/discard`, { method: "POST" });
         const data = await resp.json();
-        editor.setValue(data.source ?? "");
-        if (codePreview) codePreview.innerHTML = renderHighlighted(data.source ?? "");
+        const src = data.source ?? "";
+        if (customFile && editor) {
+          editor.setValue(src);
+        } else {
+          const config = parseMonitor(src);
+          if (config) fillForm(config);
+          updatePreview();
+        }
         setGitStatus(gitStatusEl, "idle");
         if (conflictPanel) conflictPanel.style.display = "none";
       } catch (e) {
@@ -561,7 +557,7 @@
       }
     });
     btnDryRun == null ? void 0 : btnDryRun.addEventListener("click", async () => {
-      const source = editor.getValue();
+      const source = getSource();
       if (dryRunConsole) {
         dryRunConsole.textContent = "Running…";
       }
@@ -590,21 +586,6 @@
         if (dryRunConsole) dryRunConsole.textContent = `Error: ${e}`;
       }
     });
-    if (customFile) {
-      tabForm.style.display = "none";
-      panelForm.style.display = "none";
-      panelRaw.style.display = "";
-      tabRaw.classList.add("active");
-      tabForm.classList.remove("active");
-      if (codePreview) codePreview.innerHTML = renderHighlighted(initialSource);
-    } else {
-      const config = parseMonitor(initialSource);
-      if (config) fillForm(config);
-      panelForm.style.display = "";
-      panelRaw.style.display = "none";
-      tabForm.classList.add("active");
-      updatePreview();
-    }
   }
   document.addEventListener("DOMContentLoaded", init);
 })();

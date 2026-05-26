@@ -30,6 +30,9 @@
     gap: 20px;
     align-items: start;
   }
+  .editor-grid.custom-file { grid-template-columns: 1fr; }
+  .editor-grid.custom-file .editor-left { display: none; }
+  .custom-file .raw-wrap { height: 560px; }
   .editor-left, .editor-right { padding: 20px; }
   .form-section { margin-bottom: 24px; }
   .form-section:last-child { margin-bottom: 0; }
@@ -115,23 +118,6 @@
     font: 12.5px/1.6 var(--mono);
     color: var(--ink);
   }
-  /* Tabs */
-  .editor-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
-  .editor-tab {
-    padding: 7px 16px;
-    border-radius: 10px;
-    font: 500 12px var(--sans);
-    color: var(--ink-3);
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    transition: color .12s;
-  }
-  .editor-tab.active {
-    color: var(--ink);
-    background: var(--surface);
-    box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
-  }
   /* Code preview */
   .preview-header {
     display: flex;
@@ -163,13 +149,9 @@
   document.body.dataset.monitorName = {{ monitor_name | tojson }};
 </script>
 
-<div class="editor-grid">
-  <!-- LEFT PANEL -->
+<div class="editor-grid{% if custom_file %} custom-file{% endif %}">
+  <!-- LEFT PANEL (form only; hidden for custom files) -->
   <div class="editor-left neu-raised">
-    <div class="editor-tabs">
-      <button class="editor-tab active" id="tab-form">Form</button>
-      <button class="editor-tab" id="tab-raw">Raw</button>
-    </div>
 
     <!-- FORM PANEL -->
     <div id="panel-form">
@@ -256,18 +238,6 @@
 
     </div><!-- /panel-form -->
 
-    <!-- RAW PANEL -->
-    <div id="panel-raw" style="display:none">
-      {% if custom_file %}
-      <div class="t-3" style="font-size:11.5px;margin-bottom:12px">Custom file — form view unavailable</div>
-      {% endif %}
-      <div class="raw-wrap"
-           id="raw-editor-container"
-           data-source="{{ source | e }}"
-           data-custom-file="{{ 'true' if custom_file else 'false' }}">
-      </div>
-    </div>
-
   </div><!-- /editor-left -->
 
   <!-- RIGHT PANEL -->
@@ -283,7 +253,18 @@
       </div>
     </div>
 
+    {% if custom_file %}
+    <!-- Custom file: editable raw editor replaces the read-only preview -->
+    <div class="raw-wrap"
+         id="raw-editor-container"
+         data-source="{{ source | e }}"
+         data-custom-file="true">
+    </div>
+    {% else %}
+    <!-- Standard file: read-only live preview; hidden container carries source for JS -->
+    <div id="raw-editor-container" data-source="{{ source | e }}" data-custom-file="false" style="display:none"></div>
     <div id="code-preview" class="console" style="min-height:180px;white-space:pre;tab-size:4"></div>
+    {% endif %}
 
     <!-- CONFLICT PANEL -->
     <div id="conflict-panel" class="conflict-panel" style="display:none">

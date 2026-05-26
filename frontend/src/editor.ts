@@ -224,11 +224,13 @@ function init(): void {
   const customFile = container.dataset.customFile === "true";
   const monitorName = document.body.dataset.monitorName ?? "";
 
-  const editor = buildEditor(container, initialSource);
+  // Custom files: build textarea overlay in the right panel container
+  // Standard files: container is hidden, only used to carry initialSource
+  const editor: EditorAPI | null = customFile ? buildEditor(container, initialSource) : null;
 
   // DOM refs
   const gitStatusEl = document.getElementById("git-status") as HTMLElement;
-  const codePreview = document.getElementById("code-preview") as HTMLElement;
+  const codePreview = document.getElementById("code-preview") as HTMLElement | null;
   const dryRunConsole = document.getElementById("dry-run-console") as HTMLElement;
   const conflictPanel = document.getElementById("conflict-panel") as HTMLElement;
   const conflictDiff = document.getElementById("conflict-diff") as HTMLElement;
@@ -236,61 +238,76 @@ function init(): void {
   const btnDryRun = document.getElementById("btn-dry-run") as HTMLButtonElement;
   const btnForce = document.getElementById("btn-force") as HTMLButtonElement;
   const btnDiscard = document.getElementById("btn-discard") as HTMLButtonElement;
-  const tabForm = document.getElementById("tab-form") as HTMLButtonElement;
-  const tabRaw = document.getElementById("tab-raw") as HTMLButtonElement;
-  const panelForm = document.getElementById("panel-form") as HTMLElement;
-  const panelRaw = document.getElementById("panel-raw") as HTMLElement;
 
-  // Form field refs
-  const fieldName = document.getElementById("field-name") as HTMLInputElement;
-  const fieldUrl = document.getElementById("field-url") as HTMLInputElement;
-  const fieldSchedule = document.getElementById("field-schedule") as HTMLInputElement;
-  const fieldSelector = document.getElementById("field-selector") as HTMLInputElement;
-  const fieldInflux = document.getElementById("field-influx") as HTMLInputElement;
-  const fieldNetworkIdle = document.getElementById("field-networkidle") as HTMLInputElement;
+  // Form field refs (null-safe for custom mode where form is hidden)
+  const fieldName = document.getElementById("field-name") as HTMLInputElement | null;
+  const fieldUrl = document.getElementById("field-url") as HTMLInputElement | null;
+  const fieldSchedule = document.getElementById("field-schedule") as HTMLInputElement | null;
+  const fieldSelector = document.getElementById("field-selector") as HTMLInputElement | null;
+  const fieldInflux = document.getElementById("field-influx") as HTMLInputElement | null;
+  const fieldNetworkIdle = document.getElementById("field-networkidle") as HTMLInputElement | null;
+
+  function getSource(): string {
+    if (customFile) return editor!.getValue();
+    return generateMonitor(readForm());
+  }
 
   function readForm(): MonitorConfig {
     const channels = [...document.querySelectorAll<HTMLInputElement>(".channel-checkbox:checked")]
       .map(cb => cb.value);
     return {
-      name: fieldName.value,
-      schedule: fieldSchedule.value,
-      url: fieldUrl.value,
-      selector: fieldSelector.value,
+      name: fieldName?.value ?? "",
+      schedule: fieldSchedule?.value ?? "",
+      url: fieldUrl?.value ?? "",
+      selector: fieldSelector?.value ?? "",
       notifyChannels: channels,
-      recordToInflux: fieldInflux.checked,
-      waitForNetworkIdle: fieldNetworkIdle.checked,
+      recordToInflux: fieldInflux?.checked ?? false,
+      waitForNetworkIdle: fieldNetworkIdle?.checked ?? false,
     };
   }
 
   function fillForm(config: MonitorConfig): void {
-    fieldName.value = config.name;
-    fieldUrl.value = config.url;
-    fieldSchedule.value = config.schedule;
-    fieldSelector.value = config.selector;
-    fieldInflux.checked = config.recordToInflux;
-    fieldNetworkIdle.checked = config.waitForNetworkIdle;
+    if (fieldName) fieldName.value = config.name;
+    if (fieldUrl) fieldUrl.value = config.url;
+    if (fieldSchedule) fieldSchedule.value = config.schedule;
+    if (fieldSelector) fieldSelector.value = config.selector;
+    if (fieldInflux) fieldInflux.checked = config.recordToInflux;
+    if (fieldNetworkIdle) fieldNetworkIdle.checked = config.waitForNetworkIdle;
     document.querySelectorAll<HTMLInputElement>(".channel-checkbox").forEach(cb => {
       cb.checked = config.notifyChannels.includes(cb.value);
+    });
+    // Sync checkbox icons after programmatic update
+    document.querySelectorAll<HTMLInputElement>(".channel-checkbox").forEach(cb => {
+      const icon = cb.parentElement?.querySelector("svg") as HTMLElement | null;
+      if (icon) icon.style.display = cb.checked ? "" : "none";
     });
   }
 
   function updatePreview(): void {
-    const source = generateMonitor(readForm());
-    // renderHighlighted escapes all content via escapeHtml — safe to assign as innerHTML
-    if (codePreview) codePreview.innerHTML = renderHighlighted(source);
-    editor.setValue(source);
+    // Only update code-preview (right panel); never touch the raw editor
+    if (codePreview) {
+      const source = generateMonitor(readForm());
+      // renderHighlighted escapes all content via escapeHtml — safe to assign as innerHTML
+      codePreview.innerHTML = renderHighlighted(source);
+    }
+  }
+
+  // Standard file: pre-fill form from parsed source and render initial preview
+  if (!customFile) {
+    const config = parseMonitor(initialSource);
+    if (config) fillForm(config);
+    updatePreview();
   }
 
   // Schedule quick-select buttons
   document.querySelectorAll<HTMLButtonElement>("button[data-cron]").forEach(btn => {
     btn.addEventListener("click", () => {
-      fieldSchedule.value = btn.dataset.cron!;
+      if (fieldSchedule) fieldSchedule.value = btn.dataset.cron!;
       updatePreview();
     });
   });
 
-  // Form field changes → update preview
+  // Form field changes → update preview (standard files only; custom has no form)
   [fieldName, fieldUrl, fieldSchedule, fieldSelector].forEach(el => {
     el?.addEventListener("input", updatePreview);
   });
@@ -301,36 +318,9 @@ function init(): void {
     el.addEventListener("change", updatePreview);
   });
 
-  // Tab switching
-  tabForm?.addEventListener("click", () => {
-    const source = editor.getValue();
-    const config = parseMonitor(source);
-    if (config) {
-      fillForm(config);
-    }
-    panelForm.style.display = "";
-    panelRaw.style.display = "none";
-    tabForm.classList.add("active");
-    tabRaw.classList.remove("active");
-    updatePreview();
-  });
-
-  tabRaw?.addEventListener("click", () => {
-    const source = generateMonitor(readForm());
-    editor.setValue(source);
-    // renderHighlighted escapes all content via escapeHtml — safe to assign as innerHTML
-    if (codePreview) codePreview.innerHTML = renderHighlighted(source);
-    panelForm.style.display = "none";
-    panelRaw.style.display = "";
-    tabRaw.classList.add("active");
-    tabForm.classList.remove("active");
-  });
-
   // Save button
   btnSave?.addEventListener("click", async () => {
-    const source = panelRaw.style.display === "none"
-      ? generateMonitor(readForm())
-      : editor.getValue();
+    const source = getSource();
     setGitStatus(gitStatusEl, "saving");
     try {
       const resp = await fetch(`/api/monitors/${monitorName}/save`, {
@@ -356,7 +346,7 @@ function init(): void {
 
   // Force push button
   btnForce?.addEventListener("click", async () => {
-    const source = editor.getValue();
+    const source = getSource();
     try {
       await fetch(`/api/monitors/${monitorName}/force-push`, {
         method: "POST",
@@ -375,9 +365,14 @@ function init(): void {
     try {
       const resp = await fetch(`/api/monitors/${monitorName}/discard`, { method: "POST" });
       const data = await resp.json();
-      editor.setValue(data.source ?? "");
-      // renderHighlighted escapes all content via escapeHtml — safe to assign as innerHTML
-      if (codePreview) codePreview.innerHTML = renderHighlighted(data.source ?? "");
+      const src = data.source ?? "";
+      if (customFile && editor) {
+        editor.setValue(src);
+      } else {
+        const config = parseMonitor(src);
+        if (config) fillForm(config);
+        updatePreview();
+      }
       setGitStatus(gitStatusEl, "idle");
       if (conflictPanel) conflictPanel.style.display = "none";
     } catch (e) {
@@ -387,7 +382,7 @@ function init(): void {
 
   // Dry-run button
   btnDryRun?.addEventListener("click", async () => {
-    const source = editor.getValue();
+    const source = getSource();
     if (dryRunConsole) {
       dryRunConsole.textContent = "Running…";
     }
@@ -417,26 +412,6 @@ function init(): void {
       if (dryRunConsole) dryRunConsole.textContent = `Error: ${e}`;
     }
   });
-
-  // Initial state
-  if (customFile) {
-    // Custom file: raw mode only — hide Form tab to prevent accidental template overwrite
-    tabForm.style.display = "none";
-    panelForm.style.display = "none";
-    panelRaw.style.display = "";
-    tabRaw.classList.add("active");
-    tabForm.classList.remove("active");
-    // renderHighlighted escapes all content via escapeHtml — safe to assign as innerHTML
-    if (codePreview) codePreview.innerHTML = renderHighlighted(initialSource);
-  } else {
-    // Standard file: start in form mode
-    const config = parseMonitor(initialSource);
-    if (config) fillForm(config);
-    panelForm.style.display = "";
-    panelRaw.style.display = "none";
-    tabForm.classList.add("active");
-    updatePreview();
-  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
