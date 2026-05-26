@@ -184,6 +184,13 @@ async def test_get_config_returns_defaults_when_missing(db):
     assert config["changed_at"] is None
 
 
+async def test_get_config_returns_row_when_exists(db):
+    await db.set_paused("mon", True)
+    config = await db.get_config("mon")
+    assert config["monitor_name"] == "mon"
+    assert config["paused"] == 1
+
+
 async def test_set_paused_creates_row(db):
     await db.set_paused("mon", True)
     config = await db.get_config("mon")
