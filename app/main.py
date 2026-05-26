@@ -23,7 +23,7 @@ from app.events import EventBus, get_event_bus
 from app.git_editor import GitEditor, SaveResult as _SaveResult
 from app.git_sync import GitSync
 from app.helpers import Monitor
-from app.monitor_parser import generate_monitor, parse_monitor
+from app.monitor_parser import generate_monitor, parse_monitor, slugify
 from app.scheduler import Scheduler, discover_monitors
 
 MONITORS_REPO_URL = os.getenv("MONITORS_REPO_URL", "")
@@ -311,12 +311,12 @@ async def api_monitor_source(name: str):
 
 @app.post("/api/monitors/{name}/save")
 async def api_monitor_save(name: str, body: _SaveBody, git_editor: GitEditorDep):
+    slug = slugify(name)
     if git_editor is None:
-        # No git editor — write file directly
-        path = MONITORS_DIR / f"{name}.py"
+        path = MONITORS_DIR / f"{slug}.py"
         path.write_text(body.source)
         return {"status": "ok"}
-    result = await git_editor.save(name, body.source)
+    result = await git_editor.save(slug, body.source)
     return {"status": result.status, "diff": result.diff, "message": result.message}
 
 

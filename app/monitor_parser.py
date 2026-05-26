@@ -82,6 +82,14 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
     )
 
 
+def slugify(name: str) -> str:
+    """Lowercase, URL-safe identifier: spaces → _, strip non-alphanum/-/_, collapse."""
+    slug = name.lower()
+    slug = re.sub(r"[^a-z0-9_-]", "_", slug)
+    slug = re.sub(r"_+", "_", slug)
+    return slug.strip("_-")
+
+
 def generate_monitor(config: MonitorConfig) -> str:
     """Generate a Python monitor source file from a MonitorConfig."""
 

@@ -2,6 +2,14 @@ import { renderHighlighted } from "./tokenizer";
 import { parseMonitor, type MonitorConfig } from "./parser";
 import { generateMonitor } from "./generator";
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "");
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -249,12 +257,14 @@ function init(): void {
 
   function getSource(): string {
     if (customFile) return editor!.getValue();
-    return generateMonitor(readForm());
+    const config = readForm();
+    config.name = slugify(config.name);
+    return generateMonitor(config);
   }
 
   function getEffectiveName(): string {
     if (monitorName) return monitorName;
-    if (!customFile) return fieldName?.value.trim() ?? "";
+    if (!customFile) return slugify(fieldName?.value.trim() ?? "");
     const config = parseMonitor(getSource());
     return config?.name ?? "";
   }

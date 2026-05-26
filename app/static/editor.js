@@ -251,6 +251,9 @@
       checkBody.trimEnd()
     ].join("\n") + "\n";
   }
+  function slugify(name) {
+    return name.toLowerCase().replace(/[^a-z0-9_-]/g, "_").replace(/_+/g, "_").replace(/^[_-]+|[_-]+$/g, "");
+  }
   function buildEditor(container, initialSource) {
     const sharedStyle = [
       "font-family: var(--font-mono, 'JetBrains Mono', monospace)",
@@ -444,11 +447,13 @@
     const fieldNetworkIdle = document.getElementById("field-networkidle");
     function getSource() {
       if (customFile) return editor.getValue();
-      return generateMonitor(readForm());
+      const config = readForm();
+      config.name = slugify(config.name);
+      return generateMonitor(config);
     }
     function getEffectiveName() {
       if (monitorName) return monitorName;
-      if (!customFile) return (fieldName == null ? void 0 : fieldName.value.trim()) ?? "";
+      if (!customFile) return slugify((fieldName == null ? void 0 : fieldName.value.trim()) ?? "");
       const config = parseMonitor(getSource());
       return (config == null ? void 0 : config.name) ?? "";
     }
