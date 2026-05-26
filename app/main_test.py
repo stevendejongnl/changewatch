@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from app.db import Database
 from app.git_editor import GitEditor, SaveResult
-from app.main import app, get_db, get_scheduler, get_git_sync, get_git_editor, get_browser, _to_local, _humanize_cron
+from app.main import app, get_db, get_scheduler, get_git_sync, get_git_editor, get_browser, _to_local, _humanize_cron, _mask_url
 from app.scheduler import Scheduler
 
 
@@ -671,3 +671,64 @@ async def test_api_monitor_delete_with_git_editor(client, tmp_path, monkeypatch,
         del app.dependency_overrides[get_db]
         del app.dependency_overrides[get_git_editor]
         del app.dependency_overrides[get_scheduler]
+
+
+def test_mask_url_empty_string_returns_empty():
+    assert _mask_url("") == ""
+
+
+def test_mask_url_short_url_returns_masked():
+    assert _mask_url("abc") == "****"
+
+
+def test_mask_url_long_url_shows_last_8_chars():
+    result = _mask_url("https://github.com/user/secret-repo")
+    assert result == "****...ret-repo"
+
+
+async def test_api_debug_config_returns_expected_keys(client):
+    response = await client.get("/api/debug/config")
+    assert response.status_code == 200
+    data = response.json()
+    for key in ("display_tz", "monitors_dir", "db_path", "git_repo_url",
+                "git_sync_interval", "git_enabled", "channels"):
+        assert key in data, f"missing key: {key}"
+    assert isinstance(data["channels"], list)
+    assert isinstance(data["git_enabled"], bool)
+
+
+async def test_api_debug_notify_test_returns_404_for_unknown_channel(db):
+    from app.main import get_apprise
+    from unittest.mock import MagicMock
+    from app.apprise_client import AppriseClient
+    mock = MagicMock(spec=AppriseClient)
+    mock.resolved_channels.return_value = {}
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_apprise] = lambda: mock
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/api/debug/notify-test/nonexistent")
+    app.dependency_overrides.pop(get_apprise, None)
+    app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 404
+
+
+async def test_api_debug_notify_test_sends_notification_and_returns_ok(db):
+    from app.main import get_apprise
+    from unittest.mock import MagicMock, AsyncMock
+    from app.apprise_client import AppriseClient
+    mock = MagicMock(spec=AppriseClient)
+    mock.resolved_channels.return_value = {"telegram": "tgram://token/chat"}
+    mock.notify = AsyncMock()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_apprise] = lambda: mock
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/api/debug/notify-test/telegram")
+    app.dependency_overrides.pop(get_apprise, None)
+    app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    mock.notify.assert_called_once_with(
+        title="changewatch test",
+        body="Notification channel is working.",
+        tags=["telegram"],
+    )

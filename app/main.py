@@ -43,11 +43,12 @@ _scheduler: Scheduler | None = None
 _browser = None
 _git_sync: GitSync | None = None
 _git_editor: GitEditor | None = None
+_apprise: AppriseClient | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync, _git_editor
+    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -58,7 +59,8 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         await _git_sync.sync()
         _git_editor = GitEditor(monitors_dir=MONITORS_DIR)
 
-    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=AppriseClient(), timezone=DISPLAY_TZ, event_bus=get_event_bus())
+    _apprise = AppriseClient()
+    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 
     if MONITORS_REPO_URL and _git_sync is not None:
@@ -105,6 +107,14 @@ def _humanize_cron(cron: str) -> str:
         return cron
 
 
+def _mask_url(url: str) -> str:
+    if not url:
+        return ""
+    if len(url) <= 8:
+        return "****"
+    return "****..." + url[-8:]
+
+
 templates.env.filters["localtime"] = _to_local
 templates.env.filters["humanize_cron"] = _humanize_cron
 
@@ -126,6 +136,10 @@ async def get_git_editor() -> GitEditor | None:  # pragma: no cover
     return _git_editor
 
 
+async def get_apprise() -> AppriseClient:  # pragma: no cover
+    return _apprise or AppriseClient()
+
+
 async def get_browser():  # pragma: no cover
     return _browser
 
@@ -134,6 +148,7 @@ DbDep = Annotated[Database, Depends(get_db)]
 SchedulerDep = Annotated[Optional[Scheduler], Depends(get_scheduler)]
 GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
 GitEditorDep = Annotated[GitEditor | None, Depends(get_git_editor)]
+AppraiseDep = Annotated[AppriseClient, Depends(get_apprise)]
 BrowserDep = Annotated[Any, Depends(get_browser)]
 EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
 
@@ -188,6 +203,35 @@ async def events(bus: EventBusDep):
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
+
+
+@app.get("/api/debug/config")
+async def api_debug_config():
+    return {
+        "display_tz": DISPLAY_TZ,
+        "monitors_dir": str(MONITORS_DIR),
+        "db_path": DB_PATH,
+        "git_repo_url": _mask_url(MONITORS_REPO_URL),
+        "git_sync_interval": MONITORS_REPO_SYNC_INTERVAL,
+        "git_enabled": bool(MONITORS_REPO_URL),
+        "channels": _available_channels(),
+    }
+
+
+@app.post("/api/debug/notify-test/{channel}")
+async def api_debug_notify_test(channel: str, apprise: AppraiseDep):
+    channels = apprise.resolved_channels()
+    if channel not in channels:
+        raise HTTPException(status_code=404, detail=f"Channel {channel!r} not configured")
+    try:
+        await apprise.notify(
+            title="changewatch test",
+            body="Notification channel is working.",
+            tags=[channel],
+        )
+        return {"status": "ok"}
+    except Exception as exc:
+        return {"status": "error", "detail": str(exc)}
 
 
 @app.get("/", response_class=HTMLResponse)
