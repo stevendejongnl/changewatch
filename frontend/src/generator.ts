@@ -2,7 +2,7 @@ import type { MonitorConfig } from "./parser";
 
 export function generateMonitor(config: MonitorConfig): string {
   const channels = JSON.stringify(config.notifyChannels);
-  const imports = ["Monitor", "extract_text", "get_last_value", "set_value", "notify"];
+  const imports = ["Monitor", "navigate", "extract_text", "get_last_value", "set_value", "notify"];
   if (config.recordToInflux) imports.push("record_metric");
 
   const importLine = "from app.helpers import " + imports.join(", ");
@@ -35,7 +35,7 @@ export function generateMonitor(config: MonitorConfig): string {
     "",
     "@monitor.check",
     "async def check(page, ctx):",
-    `    await page.goto(${JSON.stringify(config.url)})`,
+    `    await navigate(page, ${JSON.stringify(config.url)})`,
     checkBody.trimEnd(),
   ].join("\n") + "\n";
 }

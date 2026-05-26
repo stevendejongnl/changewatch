@@ -191,6 +191,13 @@ def test_generate_monitor_valid_python():
     ast.parse(generated)  # raises SyntaxError if escaping is broken
 
 
+def test_generate_monitor_uses_navigate_helper():
+    config = MonitorConfig(name="nav_monitor", schedule="0 * * * *", url="https://example.com")
+    output = generate_monitor(config)
+    assert "navigate" in output
+    assert "page.goto" not in output
+
+
 def test_parse_monitor_single_quoted_fields():
     source = """
 monitor = Monitor(

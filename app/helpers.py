@@ -9,6 +9,21 @@ if TYPE_CHECKING:  # pragma: no cover
     from app.apprise_client import AppriseClient
     from app.influx import InfluxClient
 
+_CONSENT_SELECTORS = [
+    "button:has-text('Accept all')",
+    "button:has-text('Accept All')",
+    "button:has-text('Akkoord')",
+    "button:has-text('Accept')",
+    "button:has-text('Agree')",
+    "button:has-text('I agree')",
+    "button:has-text('Tout accepter')",
+    "button:has-text('Alles accepteren')",
+    "#accept-all",
+    "[aria-label='Accept all']",
+]
+_CONSENT_CLICK_TIMEOUT = 2_000
+_CONSENT_URL_TIMEOUT = 5_000
+
 
 @dataclass
 class Monitor:
@@ -35,6 +50,23 @@ async def extract_text(page: Page, selector: str, timeout: int = 10_000) -> str:
     element = await page.wait_for_selector(selector, timeout=timeout)
     text = await element.inner_text()
     return text.strip()
+
+
+async def navigate(page: Page, url: str) -> None:
+    """Navigate to url, auto-accepting inline consent gates when redirected."""
+    await page.goto(url)
+    if page.url == url:
+        return
+    for sel in _CONSENT_SELECTORS:
+        loc = page.locator(sel)
+        if await loc.count() > 0:
+            try:
+                await loc.first.click(timeout=_CONSENT_CLICK_TIMEOUT)
+                await page.wait_for_url(url, timeout=_CONSENT_URL_TIMEOUT)
+                return
+            except Exception:
+                pass
+    await page.goto(url)
 
 
 async def extract_json(page: Page, url: str, timeout: int = 10_000) -> Any:

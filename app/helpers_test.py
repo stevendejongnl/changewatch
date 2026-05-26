@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp import web as aio_web
 from playwright.async_api import async_playwright
 
-from app.helpers import Monitor, get_last_value, set_value, extract_text, extract_json, notify, record_metric
+from app.helpers import Monitor, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric
 from app.db import Database
 from app.apprise_client import AppriseClient
 
@@ -142,6 +142,111 @@ async def test_extract_json_error_includes_status_and_body_snippet(html_server, 
     await page.close()
     assert "status=" in str(exc_info.value)
     assert "body=" in str(exc_info.value)
+
+
+# ── navigate helper ────────────────────────────────────────────────────────
+
+async def test_navigate_goes_to_url_directly(html_server, browser):
+    base_url, pages = html_server
+    pages["product"] = '<html><body>ok</body></html>'
+    page = await browser.new_page()
+    await navigate(page, f"{base_url}/product")
+    assert page.url == f"{base_url}/product"
+    await page.close()
+
+
+async def test_navigate_accepts_consent_and_lands_on_target(browser):
+    from aiohttp import web as aio_web
+
+    async def handler(request):
+        if request.path == "/product":
+            if request.cookies.get("consented") != "1":
+                raise aio_web.HTTPFound("/consent")
+            return aio_web.Response(text='<html><body>product</body></html>', content_type='text/html')
+        if request.path == "/consent":
+            return aio_web.Response(
+                text="<html><body>"
+                     "<button onclick=\"document.cookie='consented=1'; window.location='/product'\">Accept All</button>"
+                     "</body></html>",
+                content_type='text/html',
+            )
+        return aio_web.Response(status=404)  # pragma: no cover
+
+    app = aio_web.Application()
+    app.router.add_get("/{path:.*}", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    base = f"http://127.0.0.1:{port}"
+    try:
+        page = await browser.new_page()
+        await navigate(page, f"{base}/product")
+        assert page.url == f"{base}/product"
+        await page.close()
+    finally:
+        await runner.cleanup()
+
+
+async def test_navigate_falls_back_when_no_consent_button(browser):
+    from aiohttp import web as aio_web
+
+    async def handler(request):
+        if request.path == "/product":
+            raise aio_web.HTTPFound("/gate")
+        if request.path == "/gate":
+            return aio_web.Response(text='<html><body>no buttons here</body></html>', content_type='text/html')
+        return aio_web.Response(status=404)  # pragma: no cover
+
+    app = aio_web.Application()
+    app.router.add_get("/{path:.*}", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    base = f"http://127.0.0.1:{port}"
+    try:
+        page = await browser.new_page()
+        await navigate(page, f"{base}/product")
+        assert page.url == f"{base}/gate"
+        await page.close()
+    finally:
+        await runner.cleanup()
+
+
+async def test_navigate_continues_when_consent_click_does_not_redirect(browser, monkeypatch):
+    import app.helpers as helpers_mod
+    monkeypatch.setattr(helpers_mod, "_CONSENT_URL_TIMEOUT", 200)
+
+    from aiohttp import web as aio_web
+
+    async def handler(request):
+        if request.path == "/product":
+            raise aio_web.HTTPFound("/gate")
+        if request.path == "/gate":
+            return aio_web.Response(
+                text='<html><body><button onclick="void(0)">Accept</button></body></html>',
+                content_type='text/html',
+            )
+        return aio_web.Response(status=404)  # pragma: no cover
+
+    app = aio_web.Application()
+    app.router.add_get("/{path:.*}", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    base = f"http://127.0.0.1:{port}"
+    try:
+        page = await browser.new_page()
+        await navigate(page, f"{base}/product")
+        assert page.url == f"{base}/gate"
+        await page.close()
+    finally:
+        await runner.cleanup()
 
 
 # ── notify helper ─────────────────────────────────────────────────────────

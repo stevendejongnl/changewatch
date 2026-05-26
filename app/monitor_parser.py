@@ -97,9 +97,9 @@ def generate_monitor(config: MonitorConfig) -> str:
 
     # Build imports
     if config.record_to_influx:
-        imports = "from app.helpers import Monitor, extract_text, get_last_value, set_value, notify, record_metric"
+        imports = "from app.helpers import Monitor, navigate, extract_text, get_last_value, set_value, notify, record_metric"
     else:
-        imports = "from app.helpers import Monitor, extract_text, get_last_value, set_value, notify"
+        imports = "from app.helpers import Monitor, navigate, extract_text, get_last_value, set_value, notify"
 
     # Build monitor constructor
     monitor_block = 'monitor = Monitor(\n    name={name},\n    schedule={schedule},\n    url={url},\n    notify_channels={channels_repr},\n)'.format(
@@ -112,7 +112,7 @@ def generate_monitor(config: MonitorConfig) -> str:
     # Build check function body
     body_lines = []
 
-    body_lines.append('    await page.goto({url})'.format(url=json.dumps(config.url)))
+    body_lines.append('    await navigate(page, {url})'.format(url=json.dumps(config.url)))
 
     if config.wait_for_network_idle:
         body_lines.append('    await page.wait_for_load_state("networkidle")')
@@ -132,7 +132,7 @@ def generate_monitor(config: MonitorConfig) -> str:
 
     check_fn = "@monitor.check\nasync def check(page, ctx):\n" + "\n".join(body_lines)
 
-    return "{imports}\n\n{monitor_block}\n\n\n{check_fn}\n".format(
+    return "{imports}\n\n{monitor_block}\n\n{check_fn}\n".format(
         imports=imports,
         monitor_block=monitor_block,
         check_fn=check_fn,
