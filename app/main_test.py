@@ -603,3 +603,13 @@ async def test_api_monitor_dry_run_invalid_source(client):
         assert resp.status_code == 422
     finally:
         del app.dependency_overrides[get_browser]
+
+
+async def test_api_monitor_dry_run_syntax_error(client):
+    mock_browser = MagicMock()
+    app.dependency_overrides[get_browser] = lambda: mock_browser
+    try:
+        resp = await client.post("/api/monitors/dry_test/dry-run", json={"source": "def ("})
+        assert resp.status_code == 422
+    finally:
+        del app.dependency_overrides[get_browser]

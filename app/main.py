@@ -146,10 +146,14 @@ async def _load_monitor_from_source(source: str, name: str) -> Monitor:
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
         f.write(source)
         tmp_path = f.name
-    spec = importlib.util.spec_from_file_location(name, tmp_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    Path(tmp_path).unlink(missing_ok=True)
+    try:
+        spec = importlib.util.spec_from_file_location(name, tmp_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid source: {exc}")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
     monitor = getattr(module, "monitor", None)
     if monitor is None or not isinstance(monitor, Monitor):
         raise HTTPException(status_code=422, detail="No valid monitor instance found in source")
