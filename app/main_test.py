@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 
 from app.db import Database
-from app.main import app, get_db, get_scheduler, get_git_sync, _to_local
+from app.main import app, get_db, get_scheduler, get_git_sync, _to_local, _humanize_cron
 from app.scheduler import Scheduler
 
 
@@ -387,3 +387,13 @@ async def test_resume_monitor_returns_404_for_unknown(client):
     with patch("app.main.discover_monitors", return_value=[]):
         response = await client.post("/monitors/nonexistent/resume")
     assert response.status_code == 404
+
+
+def test_humanize_cron_returns_human_string_for_common_pattern():
+    result = _humanize_cron("*/30 * * * *")
+    assert "30" in result.lower()
+
+
+def test_humanize_cron_returns_input_on_invalid_cron():
+    result = _humanize_cron("not-a-cron")
+    assert result == "not-a-cron"

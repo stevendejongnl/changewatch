@@ -7,6 +7,7 @@ from typing import Annotated, Optional
 from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
+from cron_descriptor import get_description as _cron_get_description
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -86,7 +87,15 @@ def _to_local(dt_str: Optional[str]) -> str:
     return dt.astimezone(ZoneInfo(DISPLAY_TZ)).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def _humanize_cron(cron: str) -> str:
+    try:
+        return _cron_get_description(cron).lower()
+    except Exception:
+        return cron
+
+
 templates.env.filters["localtime"] = _to_local
+templates.env.filters["humanize_cron"] = _humanize_cron
 
 
 async def get_db() -> Database:  # pragma: no cover
