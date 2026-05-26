@@ -47,7 +47,7 @@ class Runner:
         self._influx = influx
         self._event_bus = event_bus
 
-    async def run(self, monitor: Monitor) -> None:
+    async def run(self, monitor: Monitor, dry_run: bool = False) -> list[tuple[str, str]]:
         logger = logging.getLogger(f"changewatch.{monitor.name}.{uuid.uuid4().hex[:8]}")
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
@@ -55,8 +55,8 @@ class Runner:
             monitor_name=monitor.name,
             logger=logger,
             db=self._db,
-            apprise=self._apprise,
-            influx=self._influx,
+            apprise=None if dry_run else self._apprise,
+            influx=None if dry_run else self._influx,
         )
         log_buffer = _RunLogBuffer()
         log_buffer.setLevel(logging.DEBUG)
@@ -70,6 +70,8 @@ class Runner:
             page = await context.new_page()
             prev_value = await self._db.get_last_value(monitor.name)
             await monitor.fn(page, ctx)
+            if dry_run:
+                return list(log_buffer.lines)
             duration_ms = int((time.monotonic() - start) * 1000)
             last_value = await self._db.get_last_value(monitor.name)
             status = "changed" if prev_value is not None and last_value != prev_value else "ok"
@@ -94,6 +96,9 @@ class Runner:
                     "error": None,
                 })
         except Exception as exc:
+            if dry_run:
+                log_buffer.lines.append(("ERROR", str(exc)))
+                return list(log_buffer.lines)
             duration_ms = int((time.monotonic() - start) * 1000)
             run_id = await self._db.record_run(
                 monitor_name=monitor.name,
@@ -129,3 +134,4 @@ class Runner:
             if page is not None:
                 await page.close()
                 await page.context.close()
+        return []

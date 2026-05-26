@@ -386,3 +386,87 @@ async def test_runner_does_not_set_changed_at_when_value_unchanged(db, browser):
 
     config = await db.get_config("stable_mon")
     assert config["changed_at"] is None
+
+
+async def test_runner_dry_run_returns_log_lines(db, browser):
+    m = Monitor(name="dry_log_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        ctx.logger.info("dry run step")
+
+    runner = Runner(db=db, browser=browser)
+    result = await runner.run(m, dry_run=True)
+
+    assert isinstance(result, list)
+    assert len(result) >= 1
+    assert any(msg == "dry run step" for _, msg in result)
+    levels = [level for level, _ in result]
+    assert "INFO" in levels
+
+
+async def test_runner_dry_run_does_not_write_to_db(db, browser):
+    m = Monitor(name="dry_db_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        ctx.logger.info("should not be persisted")
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m, dry_run=True)
+
+    runs = await db.get_runs_with_logs("dry_db_mon")
+    assert runs == []
+
+
+async def test_runner_dry_run_suppresses_apprise(db, browser):
+    class StubApprise:
+        def __init__(self):
+            self.calls: list[dict] = []
+
+        async def notify(self, title, body, tags=None):  # pragma: no cover
+            self.calls.append({"title": title, "body": body, "tags": tags})
+
+    stub = StubApprise()
+    m = Monitor(name="dry_apprise_mon", schedule="0 * * * *", notify_channels=["telegram"])
+
+    received_apprise = {}
+
+    @m.check
+    async def check(page, ctx):
+        received_apprise["value"] = ctx.apprise
+
+    runner = Runner(db=db, browser=browser, apprise=stub)
+    await runner.run(m, dry_run=True)
+
+    assert received_apprise["value"] is None
+    assert stub.calls == []
+
+
+async def test_runner_dry_run_captures_exception_in_log_lines(db, browser):
+    m = Monitor(name="dry_err_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("dry run failure")
+
+    runner = Runner(db=db, browser=browser)
+    result = await runner.run(m, dry_run=True)
+
+    assert isinstance(result, list)
+    assert any(level == "ERROR" and "dry run failure" in msg for level, msg in result)
+    runs = await db.get_runs_with_logs("dry_err_mon")
+    assert runs == []
+
+
+async def test_runner_normal_run_returns_empty_list(db, browser):
+    m = Monitor(name="normal_ret_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        pass
+
+    runner = Runner(db=db, browser=browser)
+    result = await runner.run(m)
+
+    assert result == []
