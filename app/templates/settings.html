@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — changewatch{% endblock %}
+{% block nav_settings %}active{% endblock %}
+{% block mob_settings %}active{% endblock %}
+
+{% block head %}
+<style>
+  .settings-stack { display: flex; flex-direction: column; gap: 20px; }
+  .settings-card { padding: 24px; }
+  .settings-card-title {
+    font: 600 11px var(--sans);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 18px;
+  }
+  .config-table { display: flex; flex-direction: column; gap: 10px; }
+  .config-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 9px 14px;
+    border-radius: 9px;
+    background: var(--surface);
+    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
+  }
+  .config-key {
+    font: 500 10.5px var(--sans);
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    min-width: 130px;
+    flex-shrink: 0;
+  }
+  .config-val {
+    font: 12.5px var(--mono);
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .db-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-mini {
+    padding: 14px 16px;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .stat-mini-val {
+    font: 600 22px/1 var(--sans);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .channel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .channel-row:last-child { border-bottom: 0; }
+  .channel-name {
+    font: 500 12px var(--mono);
+    color: var(--ink-2);
+    min-width: 100px;
+  }
+  .test-result {
+    font: 12px var(--sans);
+    min-width: 80px;
+  }
+  .log-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .log-console-wrap {
+    height: 320px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font: 11.5px/1.65 var(--mono);
+    background: var(--surface);
+    box-shadow: inset 3px 3px 7px var(--shadow), inset -2px -2px 5px var(--raise);
+  }
+  .log-line { white-space: pre-wrap; word-break: break-all; }
+  .log-error  { color: var(--err); }
+  .log-warn   { color: var(--chg); }
+  .log-info   { color: var(--ink-2); }
+  .log-debug  { color: var(--ink-4); }
+  .autoscroll-label {
+    display: flex; align-items: center; gap: 6px;
+    font: 500 11px var(--sans); color: var(--ink-3); cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    .db-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .log-controls { gap: 6px; }
+  }
+</style>
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-left">
+  <h1>Settings</h1>
+  <div class="topbar-sub">Configuration &amp; debug tools</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="settings-stack">
+
+  <div class="neu-raised-sm settings-card">
+    <div class="settings-card-title">Configuration</div>
+    <div class="config-table" id="config-table">
+      <div class="t-3" style="font-size:12px">Loading&#8230;</div>
+    </div>
+  </div>
+
+  <div class="neu-raised-sm settings-card">
+    <div class="settings-card-title">Database</div>
+    <div id="db-stats-content">
+      <div class="t-3" style="font-size:12px">Loading&#8230;</div>
+    </div>
+  </div>
+
+  <div class="neu-raised-sm settings-card">
+    <div class="settings-card-title">Notification channels</div>
+    <div id="channels-list">
+      <div class="t-3" style="font-size:12px">Loading&#8230;</div>
+    </div>
+  </div>
+
+  <div class="neu-raised-sm settings-card">
+    <div class="settings-card-title" style="margin-bottom:12px">App logs</div>
+    <div class="log-controls">
+      <div class="seg" id="log-level-seg">
+        <button class="on" onclick="setLogFilter('all', this)">All</button>
+        <button onclick="setLogFilter('info', this)">Info+</button>
+        <button onclick="setLogFilter('warn', this)">Warn+</button>
+        <button onclick="setLogFilter('error', this)">Error</button>
+      </div>
+      <label class="autoscroll-label">
+        <input type="checkbox" id="autoscroll" checked> Auto-scroll
+      </label>
+      <button class="btn" onclick="clearLogs()">Clear</button>
+    </div>
+    <div class="log-console-wrap" id="log-console"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  fetch('/api/debug/config').then(function(r) { return r.json(); }).then(function(cfg) {
+    var pairs = [
+      ['Timezone',      String(cfg.display_tz)],
+      ['Monitors dir',  String(cfg.monitors_dir)],
+      ['DB path',       String(cfg.db_path)],
+      ['Git repo',      cfg.git_repo_url ? String(cfg.git_repo_url) : '(not set)'],
+      ['Sync interval', String(cfg.git_sync_interval)],
+      ['Git enabled',   cfg.git_enabled ? 'yes' : 'no'],
+    ];
+    var table = document.getElementById('config-table');
+    table.textContent = '';
+    pairs.forEach(function(pair) {
+      var row = document.createElement('div');
+      row.className = 'config-row';
+      var keyEl = document.createElement('span');
+      keyEl.className = 'config-key';
+      keyEl.textContent = pair[0];
+      var valEl = document.createElement('span');
+      valEl.className = 'config-val';
+      valEl.textContent = pair[1];
+      row.appendChild(keyEl);
+      row.appendChild(valEl);
+      table.appendChild(row);
+    });
+
+    var list = document.getElementById('channels-list');
+    list.textContent = '';
+    if (!cfg.channels || !cfg.channels.length) {
+      var msg = document.createElement('div');
+      msg.className = 't-4';
+      msg.style.fontSize = '12px';
+      msg.textContent = 'No APPRISE_URL_* env vars configured.';
+      list.appendChild(msg);
+    } else {
+      cfg.channels.forEach(function(ch) {
+        var row = document.createElement('div');
+        row.className = 'channel-row';
+        row.id = 'ch-' + ch;
+
+        var nameEl = document.createElement('span');
+        nameEl.className = 'channel-name';
+        nameEl.textContent = ch;
+
+        var btn = document.createElement('button');
+        btn.className = 'btn';
+        var label = document.createElement('span');
+        label.className = 'ch-label';
+        label.textContent = 'Test';
+        var spin = document.createElement('span');
+        spin.className = 'ch-spin spinner';
+        spin.style.cssText = 'display:none;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-4);border-top-color:var(--accent);animation:spin .6s linear infinite';
+        btn.appendChild(label);
+        btn.appendChild(spin);
+        (function(channel) {
+          btn.addEventListener('click', function() { testChannel(channel); });
+        }(ch));
+
+        var result = document.createElement('span');
+        result.className = 'test-result';
+        result.id = 'ch-result-' + ch;
+
+        row.appendChild(nameEl);
+        row.appendChild(btn);
+        row.appendChild(result);
+        list.appendChild(row);
+      });
+    }
+  }).catch(function() {
+    var el = document.getElementById('config-table');
+    el.textContent = '';
+    var msg = document.createElement('div');
+    msg.className = 't-err';
+    msg.style.fontSize = '12px';
+    msg.textContent = 'Failed to load config.';
+    el.appendChild(msg);
+  });
+
+  // ── DB Stats ─────────────────────────────────────────────────
+  fetch('/api/debug/db-stats').then(function(r) { return r.json(); }).then(function(s) {
+    function fmt(n) { return n != null ? n.toLocaleString() : '—'; }
+    function fmtBytes(n) {
+      if (!n) return '0 B';
+      var kb = n / 1024;
+      return kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb.toFixed(1) + ' KB';
+    }
+
+    var content = document.getElementById('db-stats-content');
+    content.textContent = '';
+
+    var grid = document.createElement('div');
+    grid.className = 'db-stats-grid';
+
+    [[fmt(s.runs), 'runs'], [fmt(s.run_logs), 'log lines'], [fmt(s.state), 'monitored'], [fmtBytes(s.db_size_bytes), 'db size']].forEach(function(pair) {
+      var tile = document.createElement('div');
+      tile.className = 'neu-raised-xs stat-mini';
+      var valEl = document.createElement('div');
+      valEl.className = 'stat-mini-val num';
+      valEl.textContent = pair[0];
+      var labelEl = document.createElement('div');
+      labelEl.className = 'eyebrow';
+      labelEl.style.marginTop = '6px';
+      labelEl.textContent = pair[1];
+      tile.appendChild(valEl);
+      tile.appendChild(labelEl);
+      grid.appendChild(tile);
+    });
+
+    content.appendChild(grid);
+
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:11px;color:var(--ink-3);margin-top:16px';
+    var oldest = s.oldest_run != null ? String(s.oldest_run) : '—';
+    var newest = s.newest_run != null ? String(s.newest_run) : '—';
+    meta.textContent = 'Oldest: ' + oldest + '  ·  Newest: ' + newest;
+    content.appendChild(meta);
+  }).catch(function() {
+    var el = document.getElementById('db-stats-content');
+    el.textContent = 'Failed to load DB stats.';
+  });
+
+  // ── Notification test ─────────────────────────────────────────
+  function testChannel(ch) {
+    var row = document.getElementById('ch-' + ch);
+    var btn = row.querySelector('button');
+    var label = btn.querySelector('.ch-label');
+    var spin = btn.querySelector('.ch-spin');
+    var result = document.getElementById('ch-result-' + ch);
+    btn.disabled = true;
+    label.style.display = 'none';
+    spin.style.display = '';
+    result.textContent = '';
+    fetch('/api/debug/notify-test/' + encodeURIComponent(ch), { method: 'POST' })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        result.textContent = data.status === 'ok' ? '✓ sent' : '✗ ' + (data.detail || 'error');
+        result.style.color = data.status === 'ok' ? 'var(--ok)' : 'var(--err)';
+      })
+      .catch(function() {
+        result.textContent = '✗ network error';
+        result.style.color = 'var(--err)';
+      })
+      .finally(function() {
+        btn.disabled = false;
+        label.style.display = '';
+        spin.style.display = 'none';
+      });
+  }
+
+  // ── App Logs (SSE) ────────────────────────────────────────────
+  var LEVEL_ORDER = { DEBUG: 0, INFO: 1, WARNING: 2, CRITICAL: 3, ERROR: 3 };
+  var logFilter = 'all';
+
+  function levelClass(lvl) {
+    if (lvl === 'ERROR' || lvl === 'CRITICAL') return 'log-error';
+    if (lvl === 'WARNING') return 'log-warn';
+    if (lvl === 'INFO') return 'log-info';
+    return 'log-debug';
+  }
+
+  function shouldShow(lvl) {
+    if (logFilter === 'all') return true;
+    var min = { info: 1, warn: 2, error: 3 }[logFilter] || 0;
+    return (LEVEL_ORDER[lvl] || 0) >= min;
+  }
+
+  function setLogFilter(f, btn) {
+    document.querySelectorAll('#log-level-seg button').forEach(function(b) { b.classList.remove('on'); });
+    btn.classList.add('on');
+    logFilter = f;
+    document.querySelectorAll('#log-console .log-line').forEach(function(el) {
+      el.style.display = shouldShow(el.dataset.level) ? '' : 'none';
+    });
+  }
+
+  function appendLog(entry) {
+    var wrap = document.getElementById('log-console');
+    var el = document.createElement('div');
+    el.className = 'log-line ' + levelClass(entry.level);
+    el.dataset.level = entry.level;
+    var ts = new Date(entry.ts * 1000).toLocaleTimeString('en-GB', { hour12: false });
+    var pad = String(entry.level || '').padEnd(8);
+    el.textContent = '[' + ts + '] ' + pad + ' ' + entry.logger + ': ' + entry.message;
+    el.style.display = shouldShow(entry.level) ? '' : 'none';
+    wrap.appendChild(el);
+    if (document.getElementById('autoscroll').checked) {
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+  }
+
+  function clearLogs() {
+    document.getElementById('log-console').textContent = '';
+  }
+
+  var sse = new EventSource('/api/debug/log-stream');
+  sse.onmessage = function(e) {
+    try { appendLog(JSON.parse(e.data)); } catch (_) {}
+  };
+  window.addEventListener('beforeunload', function() { sse.close(); });
+</script>
+{% endblock %}

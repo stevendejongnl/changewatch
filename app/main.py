@@ -270,6 +270,11 @@ async def api_debug_log_stream(buf: LogBufDep):
     )
 
 
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    return templates.TemplateResponse(request, "settings.html", {})
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
     monitors = await db.get_all_monitor_states()

@@ -839,3 +839,10 @@ async def test_log_stream_generator_yields_history_then_streams(db):
 
     assert any("gen-test" in c for c in chunks)
     assert any("live-entry" in c for c in chunks)
+
+
+async def test_settings_returns_200(client):
+    response = await client.get("/settings")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Settings" in response.text
