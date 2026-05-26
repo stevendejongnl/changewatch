@@ -1,5 +1,6 @@
 import importlib.util
 import json as _json
+import logging as _logging
 import os
 import tempfile
 from contextlib import asynccontextmanager
@@ -20,6 +21,7 @@ from pydantic import BaseModel
 from app.apprise_client import AppriseClient
 from app.db import Database
 from app.events import EventBus, get_event_bus
+from app.log_stream import AppLogBuffer, get_log_buffer
 from app.git_editor import GitEditor, SaveResult as _SaveResult
 from app.git_sync import GitSync
 from app.helpers import Monitor
@@ -44,11 +46,12 @@ _browser = None
 _git_sync: GitSync | None = None
 _git_editor: GitEditor | None = None
 _apprise: AppriseClient | None = None
+_log_buf: AppLogBuffer | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise
+    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise, _log_buf
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -60,6 +63,9 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         _git_editor = GitEditor(monitors_dir=MONITORS_DIR)
 
     _apprise = AppriseClient()
+    _log_buf = get_log_buffer()
+    _log_buf.setLevel(_logging.INFO)
+    _logging.getLogger().addHandler(_log_buf)
     _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 
@@ -140,6 +146,10 @@ async def get_apprise() -> AppriseClient:  # pragma: no cover
     return _apprise or AppriseClient()
 
 
+def get_log_buf() -> AppLogBuffer:  # pragma: no cover
+    return get_log_buffer()
+
+
 async def get_browser():  # pragma: no cover
     return _browser
 
@@ -149,6 +159,7 @@ SchedulerDep = Annotated[Optional[Scheduler], Depends(get_scheduler)]
 GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
 GitEditorDep = Annotated[GitEditor | None, Depends(get_git_editor)]
 AppraiseDep = Annotated[AppriseClient, Depends(get_apprise)]
+LogBufDep = Annotated[AppLogBuffer, Depends(get_log_buf)]
 BrowserDep = Annotated[Any, Depends(get_browser)]
 EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
 
@@ -232,6 +243,32 @@ async def api_debug_notify_test(channel: str, apprise: AppraiseDep):
         return {"status": "ok"}
     except Exception as exc:
         return {"status": "error", "detail": str(exc)}
+
+
+@app.get("/api/debug/db-stats")
+async def api_debug_db_stats(db: DbDep):
+    return await db.get_stats()
+
+
+async def _log_stream_generator(buf: AppLogBuffer):
+    for entry in buf.get_history():
+        yield f"data: {_json.dumps(entry)}\n\n"
+    q = buf.subscribe()
+    try:
+        while True:
+            entry = await q.get()
+            yield f"data: {_json.dumps(entry)}\n\n"
+    finally:
+        buf.unsubscribe(q)
+
+
+@app.get("/api/debug/log-stream")
+async def api_debug_log_stream(buf: LogBufDep):
+    return StreamingResponse(
+        _log_stream_generator(buf),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

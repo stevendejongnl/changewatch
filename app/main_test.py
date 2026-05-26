@@ -732,3 +732,110 @@ async def test_api_debug_notify_test_sends_notification_and_returns_ok(db):
         body="Notification channel is working.",
         tags=["telegram"],
     )
+
+
+async def test_api_debug_notify_test_returns_error_on_exception(db):
+    from app.main import get_apprise
+    from unittest.mock import MagicMock, AsyncMock
+    from app.apprise_client import AppriseClient
+    mock = MagicMock(spec=AppriseClient)
+    mock.resolved_channels.return_value = {"telegram": "tgram://token/chat"}
+    mock.notify = AsyncMock(side_effect=RuntimeError("send failed"))
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_apprise] = lambda: mock
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.post("/api/debug/notify-test/telegram")
+    app.dependency_overrides.pop(get_apprise, None)
+    app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json() == {"status": "error", "detail": "send failed"}
+
+
+async def test_api_debug_db_stats_returns_expected_keys(client, db):
+    response = await client.get("/api/debug/db-stats")
+    assert response.status_code == 200
+    data = response.json()
+    for key in ("runs", "run_logs", "state", "monitor_config", "db_size_bytes"):
+        assert key in data, f"missing key: {key}"
+
+
+async def test_api_debug_db_stats_counts_reflect_data(client, db):
+    await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=10)
+    response = await client.get("/api/debug/db-stats")
+    assert response.status_code == 200
+    assert response.json()["runs"] == 1
+
+
+async def test_api_debug_log_stream_returns_history_as_sse(db):
+    import json as _json_mod
+    import logging as _stdlib_logging
+    import app.main as main_module
+    from app.log_stream import AppLogBuffer
+    from app.main import get_log_buf, get_db as _get_db
+
+    buf = AppLogBuffer()
+    record = _stdlib_logging.LogRecord(
+        name="t", level=_stdlib_logging.INFO, pathname="", lineno=0,
+        msg="hello-sse", args=(), exc_info=None,
+    )
+    buf.emit(record)
+    history = buf.get_history()
+
+    async def _finite(b):
+        for entry in history:
+            yield f"data: {_json_mod.dumps(entry)}\n\n"
+
+    original_gen = main_module._log_stream_generator
+    main_module._log_stream_generator = _finite
+    app.dependency_overrides[_get_db] = lambda: db
+    app.dependency_overrides[get_log_buf] = lambda: buf
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/api/debug/log-stream")
+    app.dependency_overrides.pop(get_log_buf, None)
+    app.dependency_overrides.pop(_get_db, None)
+    main_module._log_stream_generator = original_gen
+
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers["content-type"]
+    assert "hello-sse" in response.text
+
+
+async def test_log_stream_generator_yields_history_then_streams(db):
+    import asyncio
+    import logging as _stdlib_logging
+    from app.log_stream import AppLogBuffer
+    from app.main import _log_stream_generator
+
+    buf = AppLogBuffer()
+    record = _stdlib_logging.LogRecord(
+        name="t", level=_stdlib_logging.INFO, pathname="", lineno=0,
+        msg="gen-test", args=(), exc_info=None,
+    )
+    buf.emit(record)
+
+    chunks = []
+    gen = _log_stream_generator(buf)
+    # get history chunk (exhausts the for-loop)
+    chunk = await gen.__anext__()
+    chunks.append(chunk)
+
+    # The generator is now past the history loop. Emit a live entry so the
+    # while-loop body (subscribe + q.get + yield + finally unsubscribe) runs.
+    async def _emit_after_delay():
+        await asyncio.sleep(0.01)
+        live_record = _stdlib_logging.LogRecord(
+            name="t", level=_stdlib_logging.INFO, pathname="", lineno=0,
+            msg="live-entry", args=(), exc_info=None,
+        )
+        buf.emit(live_record)
+
+    task = asyncio.create_task(_emit_after_delay())
+    # advance into the while loop: subscribe() runs, q.get() returns the live entry
+    live_chunk = await gen.__anext__()
+    chunks.append(live_chunk)
+    await task
+    # close generator (exercises finally: buf.unsubscribe)
+    await gen.aclose()
+
+    assert any("gen-test" in c for c in chunks)
+    assert any("live-entry" in c for c in chunks)
