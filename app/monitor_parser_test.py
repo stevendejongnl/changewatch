@@ -1,3 +1,5 @@
+import ast
+
 from app.monitor_parser import MonitorConfig, parse_monitor, generate_monitor
 
 STANDARD_SOURCE = '''
@@ -155,3 +157,49 @@ def test_generate_monitor_influx_flag():
     )
     output = generate_monitor(config)
     assert "record_metric" in output
+
+
+def test_parse_monitor_ignores_base_url():
+    source = '''
+monitor = Monitor(
+    name="my_monitor",
+    schedule="*/5 * * * *",
+    base_url="https://wrong.com",
+    notify_channels=[],
+)
+
+@monitor.check
+async def check(page, ctx):
+    pass
+'''
+    config = parse_monitor(source)
+    assert config is not None
+    assert config.url == ""
+
+
+def test_generate_monitor_valid_python():
+    config = MonitorConfig(
+        name="price_monitor",
+        schedule="*/30 * * * *",
+        url="https://example.com/product",
+        selector='.price[data-id="1"]',
+        notify_channels=["telegram"],
+        record_to_influx=False,
+        wait_for_network_idle=False,
+    )
+    generated = generate_monitor(config)
+    ast.parse(generated)  # raises SyntaxError if escaping is broken
+
+
+def test_parse_monitor_single_quoted_fields():
+    source = """
+monitor = Monitor(
+    name='my_mon',
+    schedule='*/5 * * * *',
+    url='https://example.com',
+    notify_channels=[],
+)
+"""
+    config = parse_monitor(source)
+    assert config is not None
+    assert config.name == "my_mon"
