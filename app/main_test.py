@@ -428,6 +428,13 @@ async def test_get_monitors_edit(client, tmp_path, monkeypatch):
     assert resp.status_code == 200
 
 
+async def test_get_monitors_edit_custom_file(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("app.main.MONITORS_DIR", tmp_path)
+    (tmp_path / "custom.py").write_text("# custom file with no Monitor constructor\n")
+    resp = await client.get("/monitors/custom/edit")
+    assert resp.status_code == 200
+
+
 async def test_get_monitors_edit_not_found(client):
     resp = await client.get("/monitors/nonexistent_xyz/edit")
     assert resp.status_code == 404
