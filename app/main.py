@@ -349,6 +349,32 @@ async def monitor_metrics(name: str, influx: InfluxDep, hours: int = 48):
     return await influx.query(monitor.metric, hours=hours)
 
 
+@app.post("/api/monitors/{name}/backfill")
+async def monitor_backfill(name: str, db: DbDep, influx: InfluxDep):
+    known = {m.name: m for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    monitor = known[name]
+    if influx is None:
+        raise HTTPException(status_code=503, detail="InfluxDB not configured")
+    if not monitor.metric:
+        raise HTTPException(status_code=400, detail=f"Monitor {name!r} has no metric field")
+    from datetime import datetime, timezone
+    runs = await db.get_all_runs_for_monitor(name)
+    written = 0
+    skipped = 0
+    for run in runs:
+        try:
+            v = float(run["last_value"].replace("€", "").replace("$", "").strip())
+            ts = int(datetime.strptime(run["ran_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
+        except (ValueError, AttributeError):
+            skipped += 1
+            continue
+        await influx.write(monitor.metric, v, timestamp=ts, monitor=name, source="backfill")
+        written += 1
+    return {"written": written, "skipped": skipped}
+
+
 @app.post("/monitors/{name}/run", status_code=202)
 async def run_now(name: str, db: DbDep, scheduler: SchedulerDep):
     known = {m.name for m in discover_monitors(MONITORS_DIR)}

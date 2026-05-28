@@ -233,6 +233,81 @@ async def test_metrics_endpoint_with_influx(db, tmp_path, monkeypatch):
     fake_influx.query.assert_called_once_with("met_mon_price", hours=48)
 
 
+async def test_backfill_unknown_monitor(client):
+    resp = await client.post("/api/monitors/nonexistent/backfill")
+    assert resp.status_code == 404
+
+
+async def test_backfill_no_influx(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    from app.main import get_influx
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "bf_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="bf_mon", schedule="0 8 * * *", metric="bf_price", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    app.dependency_overrides[get_influx] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.post("/api/monitors/bf_mon/backfill")
+    app.dependency_overrides.clear()
+    assert resp.status_code == 503
+
+
+async def test_backfill_no_metric(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    from app.main import get_influx
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "nm_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="nm_mon", schedule="0 8 * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    fake_influx = MagicMock()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    app.dependency_overrides[get_influx] = lambda: fake_influx
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.post("/api/monitors/nm_mon/backfill")
+    app.dependency_overrides.clear()
+    assert resp.status_code == 400
+
+
+async def test_backfill_writes_and_skips(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    from app.main import get_influx
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "bf2_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="bf2_mon", schedule="0 8 * * *", metric="bf2_price", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("bf2_mon", status="ok", last_value="12.50", error=None, duration_ms=100)
+    await db.record_run("bf2_mon", status="ok", last_value="not-a-number", error=None, duration_ms=100)
+    await db.record_run("bf2_mon", status="ok", last_value="13.00", error=None, duration_ms=100)
+    fake_influx = MagicMock()
+    fake_influx.write = AsyncMock()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    app.dependency_overrides[get_influx] = lambda: fake_influx
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.post("/api/monitors/bf2_mon/backfill")
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["written"] == 2
+    assert data["skipped"] == 1
+    assert fake_influx.write.call_count == 2
+
+
 async def test_api_monitor_runs_supports_offset(client, db):
     for i in range(5):
         await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=i * 10)

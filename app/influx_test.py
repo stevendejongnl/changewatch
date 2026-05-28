@@ -42,6 +42,18 @@ async def test_write_single_tag_sends_line_protocol():
     assert any("price" in line and "value=42.5" in line for line in _FakeInfluxHandler.received)
 
 
+async def test_write_with_timestamp_includes_epoch():
+    server, port = _start_fake_influx()
+    _FakeInfluxHandler.received = []
+
+    client = InfluxClient(url=f"http://127.0.0.1:{port}", token="t", org="o", bucket="b")
+    await client.write("price", 10.0, timestamp=1748000000)
+    client.close()
+    server.shutdown()
+
+    assert any("price" in line and "1748000000" in line for line in _FakeInfluxHandler.received)
+
+
 async def test_write_no_tags_sends_bare_measurement():
     server, port = _start_fake_influx()
     _FakeInfluxHandler.received = []

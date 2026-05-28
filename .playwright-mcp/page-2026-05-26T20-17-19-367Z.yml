@@ -1,0 +1,85 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - link "Monitors" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e8]
+    - link "Activity" [ref=e11] [cursor=pointer]:
+      - /url: /activity
+      - img [ref=e12]
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - img [ref=e19]
+          - link "monitors" [ref=e21] [cursor=pointer]:
+            - /url: /
+          - img [ref=e22]
+          - generic [ref=e24]: tp-link_deco_x50
+        - heading "tp-link_deco_x50" [level=1] [ref=e25]:
+          - generic [ref=e27]: tp-link_deco_x50
+        - generic [ref=e28]: 0 */2 * * * · every 2 hours
+      - generic [ref=e29]:
+        - link "Edit" [ref=e30] [cursor=pointer]:
+          - /url: /monitors/tp-link_deco_x50/edit
+        - button "Pause" [ref=e31] [cursor=pointer]:
+          - img [ref=e32]
+          - generic [ref=e35]: Pause
+        - button "Run now" [ref=e36] [cursor=pointer]:
+          - img [ref=e37]
+          - generic [ref=e39]: Run now
+        - button "Delete" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+          - text: Delete
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]: schedule
+          - generic [ref=e49]: 0 */2 * * *
+        - generic [ref=e50]:
+          - generic [ref=e51]: status
+          - generic [ref=e54]: ok
+        - generic [ref=e55]:
+          - generic [ref=e56]: success rate
+          - generic [ref=e57]:
+            - text: "25.0"
+            - generic [ref=e58]: "%"
+          - generic [ref=e59]: 3 errors
+        - generic [ref=e60]:
+          - generic [ref=e61]: total runs
+          - generic [ref=e62]: "4"
+        - generic [ref=e63]:
+          - generic [ref=e64]: avg duration
+          - generic [ref=e65]:
+            - text: "11390"
+            - generic [ref=e66]: ms
+      - generic [ref=e67]:
+        - heading "Recent runs" [level=2] [ref=e68]
+        - generic [ref=e69]:
+          - button "All" [ref=e70] [cursor=pointer]
+          - button "Errors" [ref=e71] [cursor=pointer]
+          - button "Changes" [ref=e72] [cursor=pointer]
+      - generic [ref=e73]:
+        - generic [ref=e75] [cursor=pointer]:
+          - generic [ref=e77]: 2026-05-26 22:17:17
+          - generic [ref=e78]: ok
+          - generic [ref=e79]: 4445ms
+          - generic [ref=e80]: —
+          - img [ref=e82]
+        - generic [ref=e85] [cursor=pointer]:
+          - generic [ref=e87]: 2026-05-26 22:00:12
+          - generic [ref=e88]: error
+          - generic [ref=e89]: 12919ms
+          - generic [ref=e90]: "Page.wait_for_selector: Timeout 10000ms exceeded."
+          - img [ref=e92]
+        - generic [ref=e95] [cursor=pointer]:
+          - generic [ref=e97]: 2026-05-26 21:13:17
+          - generic [ref=e98]: error
+          - generic [ref=e99]: 12200ms
+          - generic [ref=e100]: "Page.wait_for_selector: Timeout 10000ms exceeded."
+          - img [ref=e102]
+        - generic [ref=e105] [cursor=pointer]:
+          - generic [ref=e107]: 2026-05-26 20:00:16
+          - generic [ref=e108]: error
+          - generic [ref=e109]: 15995ms
+          - generic [ref=e110]: "Page.wait_for_selector: Timeout 10000ms exceeded."
+          - img [ref=e112]

@@ -1,0 +1,40 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - link "Monitors" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e8]
+    - link "Activity" [ref=e11] [cursor=pointer]:
+      - /url: /activity
+      - img [ref=e12]
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - link "monitors" [ref=e19] [cursor=pointer]:
+            - /url: /
+          - generic [ref=e20]: ›
+          - link "tp-link_deco_x50" [ref=e21] [cursor=pointer]:
+            - /url: /monitors/tp-link_deco_x50
+          - generic [ref=e22]: ›
+          - generic [ref=e23]: edit
+        - heading "Adjust monitor" [level=1] [ref=e24]
+        - generic [ref=e25]: Adjust the Python monitor file
+      - generic [ref=e26]:
+        - link "Cancel" [ref=e27] [cursor=pointer]:
+          - /url: /monitors/tp-link_deco_x50
+        - button "Save & deploy" [ref=e28] [cursor=pointer]
+    - generic [ref=e31]:
+      - generic [ref=e33]:
+        - img [ref=e34]
+        - text: monitors/tp-link_deco_x50.py
+      - generic [ref=e38]:
+        - generic [ref=e39]: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21
+        - generic [ref=e40]:
+          - generic: "from app.helpers import Monitor, extract_text, get_last_value, set_value, notify, record_metric monitor = Monitor( name=\"tp-link_deco_x50\", schedule=\"0 */2 * * *\", url=\"https://tweakers.net/pricewatch/1786790/tp-link-deco-x50-1-pack.html\", notify_channels=[\"telegram\"], ) @monitor.check async def check(page, ctx): await page.goto(\"https://tweakers.net/pricewatch/1786790/tp-link-deco-x50-1-pack.html\") await page.wait_for_load_state(\"networkidle\") value = await extract_text(page, \"#new-entity span.lowest-price\") prev = await get_last_value(ctx.db, \"tp-link_deco_x50\") await set_value(ctx.db, \"tp-link_deco_x50\", value) if prev is not None and value != prev and ctx.apprise: await notify(ctx.apprise, title=\"tp-link_deco_x50 changed\", body=value, tags=[\"telegram\"]) if ctx.influx: await record_metric(ctx.influx, \"tp-link_deco_x50\", value)"
+          - textbox [ref=e41]: "from app.helpers import Monitor, extract_text, get_last_value, set_value, notify, record_metric monitor = Monitor( name=\"tp-link_deco_x50\", schedule=\"0 */2 * * *\", url=\"https://tweakers.net/pricewatch/1786790/tp-link-deco-x50-1-pack.html\", notify_channels=[\"telegram\"], ) @monitor.check async def check(page, ctx): await page.goto(\"https://tweakers.net/pricewatch/1786790/tp-link-deco-x50-1-pack.html\") await page.wait_for_load_state(\"networkidle\") value = await extract_text(page, \"#new-entity span.lowest-price\") prev = await get_last_value(ctx.db, \"tp-link_deco_x50\") await set_value(ctx.db, \"tp-link_deco_x50\", value) if prev is not None and value != prev and ctx.apprise: await notify(ctx.apprise, title=\"tp-link_deco_x50 changed\", body=value, tags=[\"telegram\"]) if ctx.influx: await record_metric(ctx.influx, \"tp-link_deco_x50\", value)"
+      - generic [ref=e42]:
+        - generic [ref=e43]: Dry run
+        - generic [ref=e44]: Run the monitor once without saving or sending notifications.
+        - button "Run dry-run" [ref=e46] [cursor=pointer]:
+          - img [ref=e47]
+          - text: Run dry-run
