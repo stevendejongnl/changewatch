@@ -1,0 +1,3 @@
+DOMAIN = "changewatch"
+CONF_URL = "url"
+SCAN_INTERVAL_SECONDS = 30

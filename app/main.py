@@ -330,6 +330,30 @@ async def api_monitors(db: DbDep):
     return await db.get_all_monitor_states()
 
 
+@app.get("/ha/sensors")
+async def ha_sensors(db: DbDep):
+    states = await db.get_all_monitor_states()
+    monitors = [
+        {
+            "name": m["monitor_name"],
+            "status": m["status"],
+            "last_value": m["last_value"],
+            "ran_at": m["ran_at"],
+            "paused": bool(m["paused"]),
+            "duration_ms": m["duration_ms"],
+        }
+        for m in states
+    ]
+    return {
+        "monitors_total": len(monitors),
+        "monitors_ok": sum(1 for m in monitors if m["status"] == "ok"),
+        "monitors_changed": sum(1 for m in monitors if m["status"] == "changed"),
+        "monitors_error": sum(1 for m in monitors if m["status"] == "error"),
+        "monitors_paused": sum(1 for m in monitors if m["paused"]),
+        "monitors": monitors,
+    }
+
+
 @app.get("/api/monitors/{name}/runs")
 async def api_monitor_runs(name: str, db: DbDep, limit: int = 50, offset: int = 0) -> list[dict]:
     runs = await db.get_runs_with_logs(name, limit=limit, offset=offset)

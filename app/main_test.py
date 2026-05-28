@@ -957,3 +957,44 @@ async def test_settings_returns_200(client):
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "Settings" in response.text
+
+
+# ── HA sensors endpoint ──────────────────────────────────────────────────────
+
+async def test_ha_sensors_empty_returns_zeros(client):
+    response = await client.get("/ha/sensors")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["monitors_total"] == 0
+    assert data["monitors_ok"] == 0
+    assert data["monitors_changed"] == 0
+    assert data["monitors_error"] == 0
+    assert data["monitors_paused"] == 0
+    assert data["monitors"] == []
+
+
+async def test_ha_sensors_returns_aggregates(client, db):
+    await db.record_run("mon_a", status="ok", last_value="100", error=None, duration_ms=500)
+    await db.record_run("mon_b", status="changed", last_value="200", error=None, duration_ms=600)
+    await db.record_run("mon_c", status="error", last_value=None, error="boom", duration_ms=100)
+    response = await client.get("/ha/sensors")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["monitors_total"] == 3
+    assert data["monitors_ok"] == 1
+    assert data["monitors_changed"] == 1
+    assert data["monitors_error"] == 1
+    assert data["monitors_paused"] == 0
+    names = {m["name"] for m in data["monitors"]}
+    assert names == {"mon_a", "mon_b", "mon_c"}
+
+
+async def test_ha_sensors_counts_paused_monitors(client, db):
+    await db.record_run("paused_mon", status="ok", last_value="42", error=None, duration_ms=200)
+    await db.set_paused("paused_mon", True)
+    response = await client.get("/ha/sensors")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["monitors_paused"] == 1
+    monitor = next(m for m in data["monitors"] if m["name"] == "paused_mon")
+    assert monitor["paused"] is True

@@ -117,7 +117,7 @@ class Runner:
                     "error": str(exc),
                 })
             if self._apprise is not None and monitor.notify_channels:
-                # TODO(user): customize title/body — terse vs rich, every-failure vs transition-only
+                # TODO(user): customise title/body — terse vs rich, every-failure vs transition-only
                 try:
                     await notify(
                         self._apprise,

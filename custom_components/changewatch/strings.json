@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Changewatch",
+        "description": "Enter the URL of your Changewatch installation.",
+        "data": {
+          "url": "Changewatch URL"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to Changewatch. Check the URL.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "Changewatch is already configured."
+    }
+  }
+}
