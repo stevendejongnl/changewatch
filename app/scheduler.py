@@ -111,7 +111,8 @@ class Scheduler:
         self._monitors = new_monitors
 
     async def trigger(self, monitor_name: str, browser: Any) -> None:
-        monitor = next((m for m in self._monitors if m.name == monitor_name), None)
+        all_monitors = discover_monitors(self._monitors_dir)
+        monitor = next((m for m in all_monitors if m.name == monitor_name), None)
         if monitor is None:
             raise KeyError(f"No monitor named {monitor_name!r}")
         runner = Runner(db=self._db, browser=browser, apprise=self._apprise, event_bus=self._event_bus)
