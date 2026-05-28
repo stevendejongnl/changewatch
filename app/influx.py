@@ -14,5 +14,27 @@ class InfluxClient:
         line = f"{measurement},{tag_str} value={value}" if tag_str else f"{measurement} value={value}"
         self._write_api.write(bucket=self._bucket, org=self._org, record=line)
 
+    async def query(self, measurement: str, hours: int = 48) -> list[dict]:
+        query_api = self._client.query_api()
+        flux = (
+            f'from(bucket: "{self._bucket}")'
+            f' |> range(start: -{hours}h)'
+            f' |> filter(fn: (r) => r._measurement == "{measurement}")'
+            f' |> filter(fn: (r) => r._field == "value")'
+            f' |> keep(columns: ["_time", "_value"])'
+        )
+        try:
+            tables = query_api.query(flux, org=self._org)
+        except Exception:
+            return []
+        result = []
+        for table in tables:
+            for record in table.records:
+                t = record.get_time()
+                v = record.get_value()
+                if t is not None and v is not None:
+                    result.append({"t": t.isoformat().replace("+00:00", "Z"), "v": float(v)})
+        return result
+
     def close(self) -> None:
         self._client.close()

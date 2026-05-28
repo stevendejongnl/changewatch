@@ -71,3 +71,70 @@ async def test_close_does_not_raise():
     client = InfluxClient(url=f"http://127.0.0.1:{port}", token="t", org="o", bucket="b")
     client.close()
     server.shutdown()
+
+
+class _FakeInfluxQueryHandler(BaseHTTPRequestHandler):
+    """Fake InfluxDB server that returns a Flux CSV response for query requests."""
+    csv_response: str = (
+        "#datatype,string,long,dateTime:RFC3339,double\n"
+        "#group,false,false,false,false\n"
+        "#default,_result,,,\n"
+        ",result,table,_time,_value\n"
+        ",,0,2026-05-28T10:00:00Z,22.5\n"
+        ",,0,2026-05-28T11:00:00Z,23.1\n"
+    )
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/csv")
+        body = self.csv_response.encode()
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+def _start_fake_influx_query() -> tuple[HTTPServer, int]:
+    server = HTTPServer(("127.0.0.1", 0), _FakeInfluxQueryHandler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, port
+
+
+async def test_query_returns_time_value_pairs():
+    server, port = _start_fake_influx_query()
+    client = InfluxClient(url=f"http://127.0.0.1:{port}", token="t", org="o", bucket="b")
+    result = await client.query("temperature", hours=48)
+    client.close()
+    server.shutdown()
+
+    assert len(result) == 2
+    assert result[0]["t"] == "2026-05-28T10:00:00Z"
+    assert result[0]["v"] == 22.5
+    assert result[1]["t"] == "2026-05-28T11:00:00Z"
+    assert result[1]["v"] == 23.1
+
+
+async def test_query_empty_response():
+    class _EmptyHandler(_FakeInfluxQueryHandler):
+        csv_response = (
+            "#datatype,string,long,dateTime:RFC3339,double\n"
+            "#group,false,false,false,false\n"
+            "#default,_result,,,\n"
+            ",result,table,_time,_value\n"
+        )
+    server = HTTPServer(("127.0.0.1", 0), _EmptyHandler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
+    client = InfluxClient(url=f"http://127.0.0.1:{port}", token="t", org="o", bucket="b")
+    result = await client.query("temperature", hours=48)
+    client.close()
+    server.shutdown()
+
+    assert result == []
