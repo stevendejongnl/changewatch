@@ -31,6 +31,7 @@ class Monitor:
     schedule: str
     notify_channels: list[str]
     url: Optional[str] = None
+    metric: Optional[str] = None
     fn: Optional[Callable] = field(default=None, repr=False)
 
     def check(self, func: Callable) -> Callable:
