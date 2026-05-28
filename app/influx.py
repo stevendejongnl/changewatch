@@ -15,7 +15,7 @@ class InfluxClient:
         if timestamp is not None:
             line += f" {timestamp}"
             self._write_api.write(bucket=self._bucket, org=self._org, record=line,
-                                  precision=WritePrecision.S)
+                                  write_precision=WritePrecision.S)
         else:
             self._write_api.write(bucket=self._bucket, org=self._org, record=line)
 
