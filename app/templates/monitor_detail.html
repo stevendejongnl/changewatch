@@ -112,7 +112,34 @@
   }
   .source-header h2 { font: 600 14px var(--sans); }
 
+  /* ── Two-column layout (runs + chart) ───────────────────── */
+  .detail-body {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 18px;
+    align-items: start;
+  }
+  .detail-body.no-chart {
+    grid-template-columns: 1fr;
+  }
+  .chart-col {
+    position: sticky;
+    top: 18px;
+  }
+  .chart-col .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .chart-col h2 { font: 600 14px var(--sans); margin: 0; }
+
   /* ── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .detail-body { grid-template-columns: 1fr; }
+    .detail-body.no-chart { grid-template-columns: 1fr; }
+    .chart-col { position: static; }
+  }
   @media (max-width: 900px) {
     .metric-strip { grid-template-columns: repeat(3, 1fr); }
     .run-row-main {
@@ -227,25 +254,9 @@
   </div>
 </div>
 
-{% if metric %}
-<!-- Value over time chart -->
-<div class="neu-raised-sm" style="padding:18px;margin-bottom:18px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <h2 style="font:600 14px var(--sans);margin:0">Value over time</h2>
-    <span class="mono t-3" style="font-size:10.5px">{{ metric }} · 48h</span>
-  </div>
-  <div class="neu-inset" style="padding:10px 12px;min-height:60px;position:relative">
-    <div id="cw-chart-loading" class="t-3 mono" style="font-size:11px;text-align:center;padding:20px 0">loading…</div>
-    <div id="cw-chart-empty" class="t-4 mono" style="font-size:11px;text-align:center;padding:20px 0;display:none">no data</div>
-    <div id="cw-chart-container"></div>
-  </div>
-</div>
-
-<script src="/static/chart.js?v={{ chart_version }}"></script>
-<script>
-  CWChart.initChart({{ monitor_name | tojson }}, "", 48);
-</script>
-{% endif %}
+<div class="detail-body {% if not metric %}no-chart{% endif %}">
+<!-- Left col: error banner + runs -->
+<div class="runs-col">
 
 {% if current_status == 'error' and runs %}
 <!-- Error banner -->
@@ -324,9 +335,34 @@
   <button class="btn" id="load-more-btn" onclick="loadMoreRuns()">Load more</button>
   {% endif %}
 </div>
+
+</div><!-- end .runs-col -->
+
+{% if metric %}
+<!-- Right col: chart -->
+<div class="chart-col">
+  <div class="neu-raised-sm" style="padding:18px">
+    <div class="chart-header">
+      <h2>Value over time</h2>
+      <span class="mono t-3" style="font-size:10.5px">48h</span>
+    </div>
+    <div class="neu-inset" style="padding:10px 12px;min-height:80px;position:relative">
+      <div id="cw-chart-loading" class="t-3 mono" style="font-size:11px;text-align:center;padding:20px 0">loading…</div>
+      <div id="cw-chart-empty" class="t-4 mono" style="font-size:11px;text-align:center;padding:20px 0;display:none">no data</div>
+      <div id="cw-chart-container"></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div><!-- end .detail-body -->
 {% endblock %}
 
 {% block scripts %}
+{% if metric %}
+<script src="/static/chart.js?v={{ chart_version }}"></script>
+<script>CWChart.initChart({{ monitor_name | tojson }}, "", 48);</script>
+{% endif %}
 <script>
   function toggleRun(id, hasLogs) {
     if (!hasLogs) return;

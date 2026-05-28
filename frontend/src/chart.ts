@@ -168,4 +168,84 @@ async function initChart(
   }
 }
 
-(window as any).CWChart = { initChart };
+function renderSparkline(container: HTMLElement, data: DataPoint[]): void {
+  container.innerHTML = "";
+  const totalW = container.clientWidth || 200;
+  const totalH = 48;
+
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", "100%")
+    .attr("height", totalH)
+    .attr("viewBox", `0 0 ${totalW} ${totalH}`)
+    .attr("preserveAspectRatio", "none")
+    .style("display", "block");
+
+  const xScale = d3
+    .scaleTime()
+    .domain(d3.extent(data, (d) => d.t) as [Date, Date])
+    .range([0, totalW]);
+
+  const [minV, maxV] = d3.extent(data, (d) => d.v) as [number, number];
+  const pad = (maxV - minV) * 0.1 || 1;
+  const yScale = d3
+    .scaleLinear()
+    .domain([minV - pad, maxV + pad])
+    .range([totalH, 0]);
+
+  const gradId = "cw-spark-grad-" + Math.random().toString(36).slice(2);
+  const defs = svg.append("defs");
+  const grad = defs
+    .append("linearGradient")
+    .attr("id", gradId)
+    .attr("x1", "0").attr("y1", "0").attr("x2", "0").attr("y2", "1");
+  grad.append("stop").attr("offset", "0%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0.3);
+  grad.append("stop").attr("offset", "100%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0);
+
+  const area = d3.area<DataPoint>()
+    .x((d) => xScale(d.t))
+    .y0(totalH)
+    .y1((d) => yScale(d.v))
+    .curve(d3.curveMonotoneX);
+
+  svg.append("path").datum(data).attr("fill", `url(#${gradId})`).attr("d", area);
+
+  const line = d3.line<DataPoint>()
+    .x((d) => xScale(d.t))
+    .y((d) => yScale(d.v))
+    .curve(d3.curveMonotoneX);
+
+  svg.append("path")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "var(--accent)")
+    .attr("stroke-width", 1.5)
+    .attr("filter", "drop-shadow(0 0 2px var(--accent-glow))")
+    .attr("d", line);
+
+  const last = data[data.length - 1];
+  svg.append("circle")
+    .attr("cx", xScale(last.t))
+    .attr("cy", yScale(last.v))
+    .attr("r", 3)
+    .attr("fill", "var(--accent)")
+    .attr("filter", "drop-shadow(0 0 3px var(--accent-glow))");
+}
+
+async function initSparkline(monitorName: string, containerId: string): Promise<void> {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  try {
+    const resp = await fetch(`/api/monitors/${encodeURIComponent(monitorName)}/metrics?hours=48`);
+    if (!resp.ok) return;
+    const raw: Array<{ t: string; v: number }> = await resp.json();
+    if (raw.length < 2) return;
+    const data: DataPoint[] = raw.map((d) => ({ t: new Date(d.t), v: d.v }));
+    renderSparkline(container, data);
+  } catch {
+    // silently skip — sparkline is optional decoration
+  }
+}
+
+(window as any).CWChart = { initChart, initSparkline };

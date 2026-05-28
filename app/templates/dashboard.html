@@ -261,6 +261,10 @@
       {% endif %}
     </div>
 
+    {% if m.metric %}
+    <div id="spark-{{ m.monitor_name }}" style="margin-top:8px;height:48px"></div>
+    {% endif %}
+
     <!-- Footer -->
     <div class="monitor-footer">
       <span class="mono">last: {{ m.ran_at | localtime if m.ran_at else 'never' }}</span>
@@ -455,4 +459,16 @@
     window.addEventListener('beforeunload', () => src.close());
   })();
 </script>
+{% set ns = namespace(has_sparkline=false) %}
+{% for m in monitors %}{% if m.metric %}{% set ns.has_sparkline = true %}{% endif %}{% endfor %}
+{% if ns.has_sparkline %}
+<script src="/static/chart.js?v={{ chart_version }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    {% for m in monitors %}{% if m.metric %}
+    CWChart.initSparkline({{ m.monitor_name | tojson }}, {{ ('spark-' ~ m.monitor_name) | tojson }});
+    {% endif %}{% endfor %}
+  });
+</script>
+{% endif %}
 {% endblock %}
