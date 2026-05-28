@@ -37,6 +37,8 @@ spec:
               value: /data/state.db
             - name: MONITORS_DIR
               value: /app/monitors
+            - name: FTP_INTERNAL_URL
+              value: "http://findthatproduct.findthatproduct.svc.cluster.local"
           envFrom:
             - secretRef:
                 name: changewatch-secrets
