@@ -490,14 +490,18 @@ async def api_monitor_source(name: str):
 
 
 @app.post("/api/monitors/{name}/save")
-async def api_monitor_save(name: str, body: _SaveBody, git_editor: GitEditorDep):
+async def api_monitor_save(name: str, body: _SaveBody, git_editor: GitEditorDep, scheduler: SchedulerDep):
     slug = slugify(name)
     if git_editor is None:
         path = MONITORS_DIR / f"{slug}.py"
         path.write_text(body.source)
-        return {"status": "ok"}
-    result = await git_editor.save(slug, body.source)
-    return {"status": result.status, "diff": result.diff, "message": result.message}
+        result_data = {"status": "ok"}
+    else:
+        result = await git_editor.save(slug, body.source)
+        result_data = {"status": result.status, "diff": result.diff, "message": result.message}
+    if scheduler is not None:
+        await scheduler.reload()
+    return result_data
 
 
 @app.post("/api/monitors/{name}/force-push")
