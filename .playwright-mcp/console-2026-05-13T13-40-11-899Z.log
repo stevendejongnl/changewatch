@@ -1,4 +1,0 @@
-[    8617ms] [ERROR] Access to fetch at 'https://api.ingka.ikea.com/meta/nl/stores' from origin 'null' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ about:blank:0
-[    8618ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.ingka.ikea.com/meta/nl/stores:0
-[   43467ms] [ERROR] Access to fetch at 'https://www.ikea.com/nl/nl/meta/storelocator/' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ about:blank:0
-[   43467ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://www.ikea.com/nl/nl/meta/storelocator/:0

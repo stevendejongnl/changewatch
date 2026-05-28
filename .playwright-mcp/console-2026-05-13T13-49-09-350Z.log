@@ -1,5 +1,0 @@
-[     275ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://cdn.cookielaw.org/scripttemplates/otSDKStub.js:0
-[     375ms] false
-[     636ms] [ERROR] TypeError: Cannot read properties of undefined (reading 'prototype')
-    at n (https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:1:190)
-    at https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:1:45409 @ https://www.ikea.com/nl/nl/javascripts/main.e961d2a2ed47d4fdcbf5.js:0

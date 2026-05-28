@@ -1,4 +1,0 @@
-[     510ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://cdn.cookielaw.org/scripttemplates/otSDKStub.js:0
-[     581ms] false
-[   40294ms] [ERROR] Access to fetch at 'https://api.salesitem.ingka.com/stores/ru/nl' from origin 'https://www.ikea.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://www.ikea.com/nl/nl/p/ekbacken-werkblad-essenpatroon-laminaat-90337620/:0
-[   40294ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.salesitem.ingka.com/stores/ru/nl:0

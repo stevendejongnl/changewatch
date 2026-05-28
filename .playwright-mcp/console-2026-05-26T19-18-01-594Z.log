@@ -1,6 +1,0 @@
-[   14817ms] [INFO] AST library loaded: 1.10.92 @ https://adsdk.microsoft.com/ast/ast.js:4
-[   14909ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://bcp.crwdcntrl.net/6/map?xcid=18347:0
-[   14911ms] [ERROR] SYNC.JS: Aborting due to error contacting Lotame's servers. Error reason was ''. @ https://tags.crwdcntrl.net/lt/c/18347/sync.min.js:0
-[   15257ms] [LOG] [AdTech default for n1-pricewatchdetail] @ :2
-[   15930ms] [ERROR] Attestation check for Shared Storage on https://www.googleadservices.com failed. @ https://www.googleadservices.com/pagead/managed/js/activeview/current/reach_worklet.html:0
-[   19025ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://tpsc-ew1.doubleverify.com/bsevent.gif?impid=4e89504061d54f2883c79ec4f6b7f128&flavor=1&gdpr=&gdpr_consent=&tgdur=74&vfdur=68&vfsz=544&tuveims=94&tuveems=167&eoid=1&ttfurm=3139:0
