@@ -209,6 +209,30 @@ async def test_metrics_endpoint_unknown_monitor(client):
     assert resp.status_code == 404
 
 
+async def test_metrics_endpoint_with_influx(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    from app.main import get_influx
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "met_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="met_mon", schedule="0 8 * * *", metric="met_mon_price", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    fake_influx = MagicMock()
+    fake_influx.query = AsyncMock(return_value=[{"t": "2026-01-01T00:00:00Z", "v": 1.0}])
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    app.dependency_overrides[get_influx] = lambda: fake_influx
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.get("/api/monitors/met_mon/metrics")
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    assert resp.json() == [{"t": "2026-01-01T00:00:00Z", "v": 1.0}]
+    fake_influx.query.assert_called_once_with("met_mon_price", hours=48)
+
+
 async def test_api_monitor_runs_supports_offset(client, db):
     for i in range(5):
         await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=i * 10)

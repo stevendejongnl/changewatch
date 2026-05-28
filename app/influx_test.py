@@ -120,6 +120,13 @@ async def test_query_returns_time_value_pairs():
     assert result[1]["v"] == 23.1
 
 
+async def test_query_returns_empty_on_exception():
+    client = InfluxClient(url="http://127.0.0.1:1", token="t", org="o", bucket="b")
+    result = await client.query("temperature", hours=48)
+    client.close()
+    assert result == []
+
+
 async def test_query_empty_response():
     class _EmptyHandler(_FakeInfluxQueryHandler):
         csv_response = (
