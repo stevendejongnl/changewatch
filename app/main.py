@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from app.apprise_client import AppriseClient
 from app.db import Database
 from app.events import EventBus, get_event_bus
+from app.influx import InfluxClient
 from app.log_stream import AppLogBuffer, get_log_buffer
 from app.git_editor import GitEditor, SaveResult as _SaveResult
 from app.git_sync import GitSync
@@ -46,11 +47,12 @@ _browser = None
 _git_sync: GitSync | None = None
 _git_editor: GitEditor | None = None
 _apprise: AppriseClient | None = None
+_influx: InfluxClient | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise
+    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise, _influx
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -62,6 +64,12 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         _git_editor = GitEditor(monitors_dir=MONITORS_DIR)
 
     _apprise = AppriseClient()
+    INFLUXDB_URL = os.getenv("INFLUXDB_URL", "")
+    INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "")
+    INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "")
+    INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "")
+    if INFLUXDB_URL and INFLUXDB_TOKEN and INFLUXDB_ORG and INFLUXDB_BUCKET:
+        _influx = InfluxClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG, bucket=INFLUXDB_BUCKET)
     _lb = get_log_buffer()
     _lb.setLevel(_logging.INFO)
     _logging.getLogger().addHandler(_lb)
@@ -87,6 +95,8 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     await _scheduler.stop()
     await _browser.close()
     await _pw.stop()
+    if _influx is not None:
+        _influx.close()
     await _db.close()
 
 
@@ -145,6 +155,10 @@ async def get_apprise() -> AppriseClient:  # pragma: no cover
     return _apprise or AppriseClient()
 
 
+async def get_influx() -> "InfluxClient | None":  # pragma: no cover
+    return _influx
+
+
 def get_log_buf() -> AppLogBuffer:  # pragma: no cover
     return get_log_buffer()
 
@@ -158,6 +172,7 @@ SchedulerDep = Annotated[Optional[Scheduler], Depends(get_scheduler)]
 GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
 GitEditorDep = Annotated[GitEditor | None, Depends(get_git_editor)]
 AppraiseDep = Annotated[AppriseClient, Depends(get_apprise)]
+InfluxDep = Annotated[Optional[Any], Depends(get_influx)]
 LogBufDep = Annotated[AppLogBuffer, Depends(get_log_buf)]
 BrowserDep = Annotated[Any, Depends(get_browser)]
 EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
@@ -313,6 +328,17 @@ async def api_monitor_runs(name: str, db: DbDep, limit: int = 50, offset: int = 
     for run in runs:
         run["ran_at"] = _to_local(run.get("ran_at"))
     return runs
+
+
+@app.get("/api/monitors/{name}/metrics")
+async def monitor_metrics(name: str, influx: InfluxDep, hours: int = 48):
+    known = {m.name: m for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    monitor = known[name]
+    if influx is None or not monitor.metric:
+        return []
+    return await influx.query(monitor.metric, hours=hours)
 
 
 @app.post("/monitors/{name}/run", status_code=202)
@@ -476,6 +502,7 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
             "paused": config["paused"],
             "changed_at": config["changed_at"],
             "avg_duration": avg_duration,
+            "metric": monitor.metric,
         }
     )
 

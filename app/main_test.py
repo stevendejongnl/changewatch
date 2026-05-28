@@ -197,6 +197,18 @@ async def test_api_monitor_runs_empty_returns_empty_list(client):
     assert response.json() == []
 
 
+async def test_metrics_endpoint_no_influx(client):
+    """Returns empty list when influx not configured."""
+    resp = await client.get("/api/monitors/example_price/metrics")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+async def test_metrics_endpoint_unknown_monitor(client):
+    resp = await client.get("/api/monitors/nonexistent_monitor/metrics")
+    assert resp.status_code == 404
+
+
 async def test_api_monitor_runs_supports_offset(client, db):
     for i in range(5):
         await db.record_run("mon", status="ok", last_value=str(i), error=None, duration_ms=i * 10)
