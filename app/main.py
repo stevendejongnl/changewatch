@@ -106,6 +106,11 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["editor_version"] = int(
     (Path(__file__).parent / "static" / "editor.js").stat().st_mtime
 )
+templates.env.globals["chart_version"] = int(
+    (Path(__file__).parent / "static" / "chart.js").stat().st_mtime
+    if (Path(__file__).parent / "static" / "chart.js").exists()
+    else 0
+)
 
 
 def _to_local(dt_str: Optional[str]) -> str:

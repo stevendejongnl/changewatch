@@ -227,6 +227,26 @@
   </div>
 </div>
 
+{% if metric %}
+<!-- Value over time chart -->
+<div class="neu-raised-sm" style="padding:18px;margin-bottom:18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <h2 style="font:600 14px var(--sans);margin:0">Value over time</h2>
+    <span class="mono t-3" style="font-size:10.5px">{{ metric }} · 48h</span>
+  </div>
+  <div class="neu-inset" style="padding:10px 12px;min-height:60px;position:relative">
+    <div id="cw-chart-loading" class="t-3 mono" style="font-size:11px;text-align:center;padding:20px 0">loading…</div>
+    <div id="cw-chart-empty" class="t-4 mono" style="font-size:11px;text-align:center;padding:20px 0;display:none">no data</div>
+    <div id="cw-chart-container"></div>
+  </div>
+</div>
+
+<script src="/static/chart.js?v={{ chart_version }}"></script>
+<script>
+  CWChart.initChart({{ monitor_name | tojson }}, "", 48);
+</script>
+{% endif %}
+
 {% if current_status == 'error' and runs %}
 <!-- Error banner -->
 <div class="neu-raised-sm error-banner" style="margin-bottom:18px">
