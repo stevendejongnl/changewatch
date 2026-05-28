@@ -998,3 +998,107 @@ async def test_ha_sensors_counts_paused_monitors(client, db):
     assert data["monitors_paused"] == 1
     monitor = next(m for m in data["monitors"] if m["name"] == "paused_mon")
     assert monitor["paused"] is True
+
+
+# ── Monitor.tags field ───────────────────────────────────────────────────────
+
+def test_monitor_tags_default_empty():
+    from app.helpers import Monitor
+    m = Monitor(name="test", schedule="* * * * *", notify_channels=[])
+    assert m.tags == []
+
+
+def test_monitor_tags_can_be_set():
+    from app.helpers import Monitor
+    m = Monitor(name="test", schedule="* * * * *", notify_channels=[], tags=["findthatproduct"])
+    assert m.tags == ["findthatproduct"]
+
+
+def test_monitor_tags_multiple_values():
+    from app.helpers import Monitor
+    m = Monitor(name="test", schedule="* * * * *", notify_channels=[], tags=["foo", "bar"])
+    assert m.tags == ["foo", "bar"]
+
+
+# ── GET /api/monitors?tag= filter ───────────────────────────────────────────
+
+async def test_api_monitors_tag_filter_returns_matching(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "tagged_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="tagged_mon", schedule="0 8 * * *", notify_channels=[], tags=["findthatproduct"])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    (monitors_dir / "other_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="other_mon", schedule="0 8 * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("tagged_mon", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.record_run("other_mon", status="ok", last_value="2", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/api/monitors?tag=findthatproduct")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    data = response.json()
+    names = [m["monitor_name"] for m in data]
+    assert "tagged_mon" in names
+    assert "other_mon" not in names
+
+
+async def test_api_monitors_tag_filter_no_match_returns_empty(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    (monitors_dir / "untagged_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="untagged_mon", schedule="0 8 * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("untagged_mon", status="ok", last_value="1", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/api/monitors?tag=nonexistent_tag")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_api_monitors_tag_filter_excludes_monitors_without_file(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    # Record a run for a monitor that has no corresponding .py file
+    await db.record_run("ghost_mon", status="ok", last_value="1", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/api/monitors?tag=anything")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_api_monitors_no_tag_returns_all(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons"
+    monitors_dir.mkdir()
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
+    await db.record_run("mon_a", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="ok", last_value="2", error=None, duration_ms=10)
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_scheduler] = lambda: None
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        response = await c.get("/api/monitors")
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    names = {m["monitor_name"] for m in response.json()}
+    assert names == {"mon_a", "mon_b"}

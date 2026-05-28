@@ -32,6 +32,7 @@ class Monitor:
     notify_channels: list[str]
     url: Optional[str] = None
     metric: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
     fn: Optional[Callable] = field(default=None, repr=False)
 
     def check(self, func: Callable) -> Callable:

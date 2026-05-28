@@ -326,8 +326,18 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
 
 
 @app.get("/api/monitors")
-async def api_monitors(db: DbDep):
-    return await db.get_all_monitor_states()
+async def api_monitors(db: DbDep, tag: str | None = None):
+    monitors = await db.get_all_monitor_states()
+    if tag is None:
+        return monitors
+    filtered = []
+    for m in monitors:
+        path = MONITORS_DIR / f"{m['monitor_name']}.py"
+        if path.exists():
+            source = path.read_text()
+            if tag in source:
+                filtered.append(m)
+    return filtered
 
 
 @app.get("/ha/sensors")
