@@ -210,3 +210,57 @@ monitor = Monitor(
     config = parse_monitor(source)
     assert config is not None
     assert config.name == "my_mon"
+
+
+def test_parse_metric_field():
+    source = """
+monitor = Monitor(
+    name="my_mon",
+    schedule="*/5 * * * *",
+    metric="my_measurement",
+    notify_channels=["telegram"],
+)
+"""
+    config = parse_monitor(source)
+    assert config is not None
+    assert config.metric == "my_measurement"
+
+
+def test_parse_metric_field_absent():
+    source = """
+monitor = Monitor(
+    name="my_mon",
+    schedule="*/5 * * * *",
+    notify_channels=["telegram"],
+)
+"""
+    config = parse_monitor(source)
+    assert config is not None
+    assert config.metric is None
+
+
+def test_generate_with_metric():
+    from app.monitor_parser import generate_monitor, MonitorConfig
+    config = MonitorConfig(
+        name="my_mon",
+        schedule="*/5 * * * *",
+        url="https://example.com",
+        notify_channels=["telegram"],
+        metric="my_measurement",
+        record_to_influx=True,
+    )
+    source = generate_monitor(config)
+    assert 'metric="my_measurement"' in source
+
+
+def test_generate_without_metric():
+    from app.monitor_parser import generate_monitor, MonitorConfig
+    config = MonitorConfig(
+        name="my_mon",
+        schedule="*/5 * * * *",
+        url="https://example.com",
+        notify_channels=["telegram"],
+        metric=None,
+    )
+    source = generate_monitor(config)
+    assert "metric=" not in source

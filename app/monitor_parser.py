@@ -13,6 +13,7 @@ class MonitorConfig:
     notify_channels: list[str] = field(default_factory=list)
     record_to_influx: bool = False
     wait_for_network_idle: bool = False
+    metric: Optional[str] = None
 
 
 def parse_monitor(source: str) -> Optional[MonitorConfig]:
@@ -71,6 +72,14 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
     wait_for_network_idle = 'wait_for_load_state("networkidle")' in source_no_comments or \
                             "wait_for_load_state('networkidle')" in source_no_comments
 
+    # Extract metric
+    metric: Optional[str] = None
+    metric_match = re.search(r'\bmetric\s*=\s*"([^"]+)"', source_no_comments)
+    if not metric_match:
+        metric_match = re.search(r"\bmetric\s*=\s*'([^']+)'", source_no_comments)
+    if metric_match:
+        metric = metric_match.group(1)
+
     return MonitorConfig(
         name=name,
         schedule=schedule,
@@ -79,6 +88,7 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
         notify_channels=notify_channels,
         record_to_influx=record_to_influx,
         wait_for_network_idle=wait_for_network_idle,
+        metric=metric,
     )
 
 
@@ -102,12 +112,15 @@ def generate_monitor(config: MonitorConfig) -> str:
         imports = "from app.helpers import Monitor, navigate, extract_text, get_last_value, set_value, notify"
 
     # Build monitor constructor
-    monitor_block = 'monitor = Monitor(\n    name={name},\n    schedule={schedule},\n    url={url},\n    notify_channels={channels_repr},\n)'.format(
-        name=json.dumps(config.name),
-        schedule=json.dumps(config.schedule),
-        url=json.dumps(config.url),
-        channels_repr=channels_repr,
-    )
+    monitor_fields = [
+        f'    name={json.dumps(config.name)},',
+        f'    schedule={json.dumps(config.schedule)},',
+        f'    url={json.dumps(config.url)},',
+    ]
+    if config.metric:
+        monitor_fields.append(f'    metric={json.dumps(config.metric)},')
+    monitor_fields.append(f'    notify_channels={channels_repr},')
+    monitor_block = 'monitor = Monitor(\n' + '\n'.join(monitor_fields) + '\n)'
 
     # Build check function body
     body_lines = []
