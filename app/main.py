@@ -365,7 +365,7 @@ async def monitor_backfill(name: str, db: DbDep, influx: InfluxDep):
     skipped = 0
     for run in runs:
         try:
-            v = float(run["last_value"].replace("€", "").replace("$", "").strip())
+            v = float(run["last_value"].replace("€", "").replace("$", "").replace(" ", "").replace(",", ".").strip())
             ts = int(datetime.strptime(run["ran_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp())
         except (ValueError, AttributeError):
             skipped += 1
