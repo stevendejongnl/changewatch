@@ -192,6 +192,7 @@
     const scheduleMatch = src.match(/\bschedule\s*=\s*["']([^"']+)["']/);
     if (!nameMatch || !scheduleMatch) return null;
     const urlMatch = src.match(/\burl\s*=\s*["']([^"']+)["']/);
+    const metricMatch = src.match(/\bmetric\s*=\s*["']([^"']+)["']/);
     const selectorMatch = src.match(/extract_text\s*\(\s*page\s*,\s*["']([^"']+)["']/);
     const channelsMatch = src.match(/notify_channels\s*=\s*\[([^\]]*)\]/);
     let notifyChannels = [];
@@ -204,6 +205,7 @@
       url: urlMatch ? urlMatch[1] : "",
       selector: selectorMatch ? selectorMatch[1] : "",
       notifyChannels,
+      metric: metricMatch ? metricMatch[1] : null,
       recordToInflux: src.includes("record_metric("),
       waitForNetworkIdle: src.includes('wait_for_load_state("networkidle")') || src.includes("wait_for_load_state('networkidle')")
     };
@@ -242,6 +244,7 @@
       `    name=${JSON.stringify(config.name)},`,
       `    schedule=${JSON.stringify(config.schedule)},`,
       `    url=${JSON.stringify(config.url)},`,
+      ...config.metric ? [`    metric=${JSON.stringify(config.metric)},`] : [],
       `    notify_channels=${channels},`,
       ")",
       "",
@@ -443,6 +446,7 @@
     const fieldUrl = document.getElementById("field-url");
     const fieldSchedule = document.getElementById("field-schedule");
     const fieldSelector = document.getElementById("field-selector");
+    const fieldMetric = document.getElementById("field-metric");
     const fieldInflux = document.getElementById("field-influx");
     const fieldNetworkIdle = document.getElementById("field-networkidle");
     function getSource() {
@@ -465,6 +469,7 @@
         url: (fieldUrl == null ? void 0 : fieldUrl.value) ?? "",
         selector: (fieldSelector == null ? void 0 : fieldSelector.value) ?? "",
         notifyChannels: channels,
+        metric: (fieldMetric == null ? void 0 : fieldMetric.value.trim()) || null,
         recordToInflux: (fieldInflux == null ? void 0 : fieldInflux.checked) ?? false,
         waitForNetworkIdle: (fieldNetworkIdle == null ? void 0 : fieldNetworkIdle.checked) ?? false
       };
@@ -474,6 +479,7 @@
       if (fieldUrl) fieldUrl.value = config.url;
       if (fieldSchedule) fieldSchedule.value = config.schedule;
       if (fieldSelector) fieldSelector.value = config.selector;
+      if (fieldMetric) fieldMetric.value = config.metric ?? "";
       if (fieldInflux) fieldInflux.checked = config.recordToInflux;
       if (fieldNetworkIdle) fieldNetworkIdle.checked = config.waitForNetworkIdle;
       document.querySelectorAll(".channel-checkbox").forEach((cb) => {
@@ -502,7 +508,7 @@
         updatePreview();
       });
     });
-    [fieldName, fieldUrl, fieldSchedule, fieldSelector].forEach((el) => {
+    [fieldName, fieldUrl, fieldSchedule, fieldSelector, fieldMetric].forEach((el) => {
       el == null ? void 0 : el.addEventListener("input", updatePreview);
     });
     [fieldInflux, fieldNetworkIdle].forEach((el) => {

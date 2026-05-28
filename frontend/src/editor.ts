@@ -252,6 +252,7 @@ function init(): void {
   const fieldUrl = document.getElementById("field-url") as HTMLInputElement | null;
   const fieldSchedule = document.getElementById("field-schedule") as HTMLInputElement | null;
   const fieldSelector = document.getElementById("field-selector") as HTMLInputElement | null;
+  const fieldMetric = document.getElementById("field-metric") as HTMLInputElement | null;
   const fieldInflux = document.getElementById("field-influx") as HTMLInputElement | null;
   const fieldNetworkIdle = document.getElementById("field-networkidle") as HTMLInputElement | null;
 
@@ -278,6 +279,7 @@ function init(): void {
       url: fieldUrl?.value ?? "",
       selector: fieldSelector?.value ?? "",
       notifyChannels: channels,
+      metric: fieldMetric?.value.trim() || null,
       recordToInflux: fieldInflux?.checked ?? false,
       waitForNetworkIdle: fieldNetworkIdle?.checked ?? false,
     };
@@ -288,6 +290,7 @@ function init(): void {
     if (fieldUrl) fieldUrl.value = config.url;
     if (fieldSchedule) fieldSchedule.value = config.schedule;
     if (fieldSelector) fieldSelector.value = config.selector;
+    if (fieldMetric) fieldMetric.value = config.metric ?? "";
     if (fieldInflux) fieldInflux.checked = config.recordToInflux;
     if (fieldNetworkIdle) fieldNetworkIdle.checked = config.waitForNetworkIdle;
     document.querySelectorAll<HTMLInputElement>(".channel-checkbox").forEach(cb => {
@@ -325,7 +328,7 @@ function init(): void {
   });
 
   // Form field changes → update preview (standard files only; custom has no form)
-  [fieldName, fieldUrl, fieldSchedule, fieldSelector].forEach(el => {
+  [fieldName, fieldUrl, fieldSchedule, fieldSelector, fieldMetric].forEach(el => {
     el?.addEventListener("input", updatePreview);
   });
   [fieldInflux, fieldNetworkIdle].forEach(el => {

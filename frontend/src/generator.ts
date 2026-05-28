@@ -30,6 +30,7 @@ export function generateMonitor(config: MonitorConfig): string {
     `    name=${JSON.stringify(config.name)},`,
     `    schedule=${JSON.stringify(config.schedule)},`,
     `    url=${JSON.stringify(config.url)},`,
+    ...(config.metric ? [`    metric=${JSON.stringify(config.metric)},`] : []),
     `    notify_channels=${channels},`,
     ")",
     "",

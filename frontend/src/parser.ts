@@ -4,6 +4,7 @@ export interface MonitorConfig {
   url: string;
   selector: string;
   notifyChannels: string[];
+  metric: string | null;
   recordToInflux: boolean;
   waitForNetworkIdle: boolean;
 }
@@ -19,6 +20,7 @@ export function parseMonitor(source: string): MonitorConfig | null {
   if (!nameMatch || !scheduleMatch) return null;
 
   const urlMatch = src.match(/\burl\s*=\s*["']([^"']+)["']/);
+  const metricMatch = src.match(/\bmetric\s*=\s*["']([^"']+)["']/);
   const selectorMatch = src.match(/extract_text\s*\(\s*page\s*,\s*["']([^"']+)["']/);
 
   // Parse notify_channels list
@@ -34,6 +36,7 @@ export function parseMonitor(source: string): MonitorConfig | null {
     url: urlMatch ? urlMatch[1] : "",
     selector: selectorMatch ? selectorMatch[1] : "",
     notifyChannels,
+    metric: metricMatch ? metricMatch[1] : null,
     recordToInflux: src.includes("record_metric("),
     waitForNetworkIdle: src.includes('wait_for_load_state("networkidle")') ||
                         src.includes("wait_for_load_state('networkidle')"),
