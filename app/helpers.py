@@ -34,6 +34,7 @@ class Monitor:
     metric: Optional[str] = None
     tags: list[str] = field(default_factory=list)
     display_name: str = ""
+    display_url: str = ""
     fn: Optional[Callable] = field(default=None, repr=False)
 
     def check(self, func: Callable) -> Callable:

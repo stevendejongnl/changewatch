@@ -32,6 +32,8 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
             product_name = getattr(module, "_PRODUCT_NAME", None)
             if product_name:
                 monitor.display_name = product_name
+            url_override = getattr(module, "_URL", None)
+            monitor.display_url = url_override if url_override else (monitor.url or "")
             monitors.append(monitor)
     if len(monitors) > 1:
         monitors = [m for m in monitors if m.name != "example_price"]

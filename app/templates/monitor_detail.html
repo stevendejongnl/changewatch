@@ -175,6 +175,12 @@
   <div class="topbar-sub">{{ schedule }} · {{ schedule | humanize_cron }}</div>
 </div>
 <div class="topbar-right">
+  {% if product_url %}
+  <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+    Open
+  </a>
+  {% endif %}
   <a href="/monitors/{{ monitor_name }}/edit" class="btn">Edit</a>
   <button class="btn" id="pause-btn" onclick="togglePause()">
     {% if paused %}

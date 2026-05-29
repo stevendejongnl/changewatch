@@ -56,6 +56,35 @@ def test_discover_monitors_ignores_files_without_monitor_object(monitors_dir):
     assert not any(m.name == "helper_funcs" for m in monitors)
 
 
+def test_discover_monitors_reads_display_url_from_url_override(monitors_dir):
+    monitors_dir.mkdir(exist_ok=True)
+    code = '''
+_URL = "https://www.zitmaxx.nl/kleurstalen-aanvragen"
+from app.helpers import Monitor
+monitor = Monitor(name="zitmaxx", schedule="0 * * * *", notify_channels=[], url="https://api.zitmaxx.nl/data")
+@monitor.check
+async def check(page, ctx): pass
+'''
+    (monitors_dir / "zitmaxx.py").write_text(code)
+    monitors = discover_monitors(monitors_dir)
+    m = next(m for m in monitors if m.name == "zitmaxx")
+    assert m.display_url == "https://www.zitmaxx.nl/kleurstalen-aanvragen"
+
+
+def test_discover_monitors_display_url_falls_back_to_monitor_url(monitors_dir):
+    monitors_dir.mkdir(exist_ok=True)
+    code = '''
+from app.helpers import Monitor
+monitor = Monitor(name="tplink", schedule="0 * * * *", notify_channels=[], url="https://tweakers.net/pricewatch/123")
+@monitor.check
+async def check(page, ctx): pass
+'''
+    (monitors_dir / "tplink.py").write_text(code)
+    monitors = discover_monitors(monitors_dir)
+    m = next(m for m in monitors if m.name == "tplink")
+    assert m.display_url == "https://tweakers.net/pricewatch/123"
+
+
 def test_discover_monitors_reads_product_name(monitors_dir):
     monitors_dir.mkdir(exist_ok=True)
     code = '''

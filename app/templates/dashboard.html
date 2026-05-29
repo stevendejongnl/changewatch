@@ -234,6 +234,14 @@
       {% if m.paused %}
       <span class="paused-chip">paused</span>
       {% endif %}
+      {% if m.product_url %}
+      <a href="{{ m.product_url }}" target="_blank" rel="noopener noreferrer"
+         class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)" title="Open product page">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 17 17 7"/><path d="M8 7h9v9"/>
+        </svg>
+      </a>
+      {% endif %}
       <div class="run-btn" id="run-wrap-{{ m.monitor_name }}">
         <button class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)"
           onclick="runMonitor('{{ m.monitor_name }}')" title="Run now">
