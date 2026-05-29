@@ -301,6 +301,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
     known = discover_monitors(MONITORS_DIR)
     all_names = {m.name for m in known}
     metric_map = {m.name: m.metric for m in known}
+    display_name_map = {m.name: m.display_name or m.name for m in known}
     if "example_price" not in all_names and all_names:
         monitors = [m for m in monitors if m["monitor_name"] != "example_price"]
     seen = {m["monitor_name"] for m in monitors}
@@ -317,6 +318,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
         })
     for m in monitors:
         m["metric"] = metric_map.get(m["monitor_name"])
+        m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])
     return templates.TemplateResponse(
         request, "dashboard.html", {
             "monitors": monitors,
@@ -568,6 +570,7 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
     return templates.TemplateResponse(
         request, "monitor_detail.html", {
             "monitor_name": name,
+            "display_name": monitor.display_name or name,
             "schedule": monitor.schedule,
             "current_status": current_status,
             "runs": runs,

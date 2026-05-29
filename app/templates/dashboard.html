@@ -224,7 +224,7 @@
       <div class="monitor-name-block">
         <div class="led {{ m.status }}"></div>
         <div style="min-width:0">
-          <a href="/monitors/{{ m.monitor_name }}" class="monitor-name">{{ m.monitor_name }}</a>
+          <a href="/monitors/{{ m.monitor_name }}" class="monitor-name">{{ m.display_name }}</a>
           {% if m.get('schedule') %}
           <div class="monitor-schedule">{{ m.schedule }}</div>
           <div class="monitor-schedule" style="color:var(--ink-4)">{{ m.schedule | humanize_cron }}</div>

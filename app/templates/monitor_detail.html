@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ monitor_name }} — changewatch{% endblock %}
+{% block title %}{{ display_name }} — changewatch{% endblock %}
 {% block nav_monitors %}active{% endblock %}
 {% block mob_monitors %}active{% endblock %}
 
@@ -170,7 +170,7 @@
   </div>
   <h1 style="display:flex;align-items:center;gap:12px">
     <div class="led lg {{ current_status }}" style="transform:translateY(-2px);flex-shrink:0"></div>
-    <span class="mono" style="font-family:var(--mono);font-weight:500;font-size:22px">{{ monitor_name }}</span>
+    <span style="font-weight:600;font-size:20px">{{ display_name }}</span>
   </h1>
   <div class="topbar-sub">{{ schedule }} · {{ schedule | humanize_cron }}</div>
 </div>
