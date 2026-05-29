@@ -56,6 +56,28 @@ def test_discover_monitors_ignores_files_without_monitor_object(monitors_dir):
     assert not any(m.name == "helper_funcs" for m in monitors)
 
 
+def test_discover_monitors_reads_product_name(monitors_dir):
+    monitors_dir.mkdir(exist_ok=True)
+    code = '''
+_PRODUCT_NAME = "TP-Link Deco X50"
+from app.helpers import Monitor
+monitor = Monitor(name="tp_link", schedule="0 * * * *", notify_channels=[])
+@monitor.check
+async def check(page, ctx): pass
+'''
+    (monitors_dir / "tp_link.py").write_text(code)
+    monitors = discover_monitors(monitors_dir)
+    m = next(m for m in monitors if m.name == "tp_link")
+    assert m.display_name == "TP-Link Deco X50"
+
+
+def test_discover_monitors_display_name_empty_when_no_product_name(monitors_dir):
+    _make_monitor_module(monitors_dir, "no_name")
+    monitors = discover_monitors(monitors_dir)
+    m = next(m for m in monitors if m.name == "no_name")
+    assert m.display_name == ""
+
+
 def test_discover_monitors_empty_dir_returns_empty_list(monitors_dir):
     monitors_dir.mkdir()
     monitors = discover_monitors(monitors_dir)
