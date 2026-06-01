@@ -29,13 +29,16 @@
     font: 500 10.5px var(--sans);
     letter-spacing: 0.04em;
     color: var(--ink-3);
-    min-width: 130px;
+    width: 100px;
+    min-width: 80px;
     flex-shrink: 0;
   }
   .config-val {
     font: 12.5px var(--mono);
     color: var(--ink);
     word-break: break-all;
+    min-width: 0;
+    overflow-wrap: break-word;
   }
   .db-stats-grid {
     display: grid;

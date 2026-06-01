@@ -57,7 +57,7 @@
 
     /* ── Reset ───────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html, body { height: 100%; overflow-x: hidden; }
     body {
       font-family: var(--sans);
       background: var(--bg);
@@ -342,6 +342,9 @@
     @media (max-width: 700px) {
       .sidebar { display: none; }
       .main { padding: 0; }
+      .topbar { flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+      .topbar-right { flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+      .topbar-right .btn { padding: 8px 10px; font-size: 11.5px; }
       .content-card {
         border-radius: 0;
         box-shadow: none;
