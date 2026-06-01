@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     _lb = get_log_buffer()
     _lb.setLevel(_logging.INFO)
     _logging.getLogger().addHandler(_lb)
-    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, timezone=DISPLAY_TZ, event_bus=get_event_bus())
+    _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, influx=_influx, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 
     if MONITORS_REPO_URL and _git_sync is not None:

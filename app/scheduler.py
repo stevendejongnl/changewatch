@@ -14,6 +14,7 @@ from app.runner import Runner
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.apprise_client import AppriseClient
+    from app.influx import InfluxClient
 
 
 def discover_monitors(monitors_dir: Path) -> list[Monitor]:
@@ -46,12 +47,14 @@ class Scheduler:
         monitors_dir: Path,
         db: Database,
         apprise: Optional["AppriseClient"] = None,
+        influx: Optional["InfluxClient"] = None,
         timezone: str = "UTC",
         event_bus: Optional[EventBus] = None,
     ) -> None:
         self._monitors_dir = monitors_dir
         self._db = db
         self._apprise = apprise
+        self._influx = influx
         self._timezone = timezone
         self._event_bus = event_bus
         self._browser: Any = None
@@ -77,7 +80,7 @@ class Scheduler:
         for row in await self._db.get_all_monitor_states():
             if row["monitor_name"] not in active_names:
                 await self._db.delete_monitor(row["monitor_name"])
-        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, event_bus=self._event_bus)
+        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         for monitor in self._monitors:
             self._scheduler.add_job(
                 self._make_job_fn(runner, monitor),
@@ -100,7 +103,7 @@ class Scheduler:
         new_monitors = discover_monitors(self._monitors_dir)
         new_ids = {m.name for m in new_monitors}
         old_ids = {job.id for job in self._scheduler.get_jobs() if not job.id.startswith("__")}
-        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, event_bus=self._event_bus)
+        runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         for job_id in old_ids - new_ids:
             self._scheduler.remove_job(job_id)
             await self._db.delete_monitor(job_id)
@@ -120,5 +123,5 @@ class Scheduler:
         monitor = next((m for m in all_monitors if m.name == monitor_name), None)
         if monitor is None:
             raise KeyError(f"No monitor named {monitor_name!r}")
-        runner = Runner(db=self._db, browser=browser, apprise=self._apprise, event_bus=self._event_bus)
+        runner = Runner(db=self._db, browser=browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         await runner.run(monitor)
