@@ -37,10 +37,23 @@ class Database:
             CREATE TABLE IF NOT EXISTS monitor_config (
                 monitor_name TEXT PRIMARY KEY,
                 paused       INTEGER NOT NULL DEFAULT 0,
-                changed_at   TEXT
+                changed_at   TEXT,
+                favorite     INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS tags (
+                monitor_name TEXT NOT NULL,
+                tag          TEXT NOT NULL,
+                PRIMARY KEY (monitor_name, tag)
             );
         """)
         await self.conn.commit()
+        try:  # pragma: no cover
+            await self.conn.execute(
+                "ALTER TABLE monitor_config ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0"
+            )
+            await self.conn.commit()
+        except Exception:
+            pass
 
     async def close(self) -> None:
         await self.conn.close()
@@ -179,14 +192,23 @@ class Database:
         )
         await self.conn.commit()
 
+    async def set_favorite(self, monitor_name: str, favorite: bool) -> None:
+        await self.conn.execute(
+            """INSERT INTO monitor_config (monitor_name, favorite)
+               VALUES (?, ?)
+               ON CONFLICT(monitor_name) DO UPDATE SET favorite=excluded.favorite""",
+            (monitor_name, 1 if favorite else 0),
+        )
+        await self.conn.commit()
+
     async def get_config(self, monitor_name: str) -> dict:
         async with self.conn.execute(
-            "SELECT monitor_name, paused, changed_at FROM monitor_config WHERE monitor_name = ?",
+            "SELECT monitor_name, paused, changed_at, favorite FROM monitor_config WHERE monitor_name = ?",
             (monitor_name,),
         ) as cur:
             row = await cur.fetchone()
         if row is None:
-            return {"monitor_name": monitor_name, "paused": 0, "changed_at": None}
+            return {"monitor_name": monitor_name, "paused": 0, "changed_at": None, "favorite": 0}
         return dict(row)
 
     async def get_all_configs(self) -> dict[str, dict]:
@@ -196,10 +218,47 @@ class Database:
             rows = await cur.fetchall()
         return {row["monitor_name"]: dict(row) for row in rows}
 
+    async def set_tags(self, monitor_name: str, tags: list[str]) -> None:
+        await self.conn.execute(
+            "DELETE FROM tags WHERE monitor_name = ?", (monitor_name,)
+        )
+        if tags:
+            await self.conn.executemany(
+                "INSERT INTO tags (monitor_name, tag) VALUES (?, ?)",
+                [(monitor_name, t) for t in tags],
+            )
+        await self.conn.commit()
+
+    async def get_tags(self, monitor_name: str) -> list[str]:
+        async with self.conn.execute(
+            "SELECT tag FROM tags WHERE monitor_name = ? ORDER BY tag",
+            (monitor_name,),
+        ) as cur:
+            rows = await cur.fetchall()
+        return [row["tag"] for row in rows]
+
+    async def get_all_tags(self) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT tag, COUNT(*) AS count FROM tags GROUP BY tag ORDER BY tag"
+        ) as cur:
+            rows = await cur.fetchall()
+        return [{"tag": row["tag"], "count": row["count"]} for row in rows]
+
+    async def rename_tag(self, old_tag: str, new_tag: str) -> None:
+        await self.conn.execute(
+            "UPDATE tags SET tag = ? WHERE tag = ?", (new_tag, old_tag)
+        )
+        await self.conn.commit()
+
+    async def delete_tag(self, tag: str) -> None:
+        await self.conn.execute("DELETE FROM tags WHERE tag = ?", (tag,))
+        await self.conn.commit()
+
     async def get_all_monitor_states(self) -> list[dict]:
         async with self.conn.execute(
             """SELECT r.monitor_name, r.status, r.last_value, r.error, r.duration_ms, r.ran_at,
-                      COALESCE(c.paused, 0) AS paused, c.changed_at
+                      COALESCE(c.paused, 0) AS paused, c.changed_at,
+                      COALESCE(c.favorite, 0) AS favorite
                FROM runs r
                INNER JOIN (
                    SELECT monitor_name, MAX(ran_at) AS latest
