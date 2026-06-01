@@ -1043,6 +1043,12 @@ async def test_post_api_tags_returns_ok(client):
     assert response.json()["tag"] == "electronics"
 
 
+async def test_post_api_tags_persists_to_vocab(client, db):
+    await client.post("/api/tags", json={"tag": "electronics"})
+    tags = await db.get_all_tags()
+    assert any(t["tag"] == "electronics" for t in tags)
+
+
 async def test_post_api_tags_creates_tag(client, db):
     await db.set_tags("mon_a", ["electronics"])
     response = await client.get("/api/tags")

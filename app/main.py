@@ -405,6 +405,7 @@ class _CreateTagBody(BaseModel):
 
 @app.post("/api/tags", status_code=201)
 async def api_create_tag(body: _CreateTagBody, db: DbDep):
+    await db.add_tag_vocab(body.tag)
     return {"status": "ok", "tag": body.tag}
 
 
@@ -659,9 +660,10 @@ async def tag_detail(tag: str, request: Request, db: DbDep, git_sync: GitSyncDep
     metric_map = {m.name: m.metric for m in known}
     display_name_map = {m.name: m.display_name or m.name for m in known}
     display_url_map = {m.name: m.display_url for m in known}
+    all_monitor_tags = await db.get_all_monitor_tags()
     tagged = []
     for m in monitors:
-        tags_for_monitor = await db.get_tags(m["monitor_name"])
+        tags_for_monitor = all_monitor_tags.get(m["monitor_name"], [])
         if tag in tags_for_monitor:
             m["metric"] = metric_map.get(m["monitor_name"])
             m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])

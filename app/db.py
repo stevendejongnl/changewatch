@@ -45,6 +45,9 @@ class Database:
                 tag          TEXT NOT NULL,
                 PRIMARY KEY (monitor_name, tag)
             );
+            CREATE TABLE IF NOT EXISTS tag_vocab (
+                tag TEXT PRIMARY KEY
+            );
         """)
         await self.conn.commit()
         try:  # pragma: no cover
@@ -227,6 +230,10 @@ class Database:
                 "INSERT INTO tags (monitor_name, tag) VALUES (?, ?)",
                 [(monitor_name, t) for t in tags],
             )
+            await self.conn.executemany(
+                "INSERT OR IGNORE INTO tag_vocab (tag) VALUES (?)",
+                [(t,) for t in tags],
+            )
         await self.conn.commit()
 
     async def get_tags(self, monitor_name: str) -> list[str]:
@@ -239,19 +246,43 @@ class Database:
 
     async def get_all_tags(self) -> list[dict]:
         async with self.conn.execute(
-            "SELECT tag, COUNT(*) AS count FROM tags GROUP BY tag ORDER BY tag"
+            """SELECT v.tag, COUNT(t.monitor_name) AS count
+               FROM tag_vocab v
+               LEFT JOIN tags t ON t.tag = v.tag
+               GROUP BY v.tag
+               ORDER BY v.tag"""
         ) as cur:
             rows = await cur.fetchall()
         return [{"tag": row["tag"], "count": row["count"]} for row in rows]
+
+    async def add_tag_vocab(self, tag: str) -> None:
+        await self.conn.execute(
+            "INSERT OR IGNORE INTO tag_vocab (tag) VALUES (?)", (tag,)
+        )
+        await self.conn.commit()
+
+    async def get_all_monitor_tags(self) -> dict[str, list[str]]:
+        async with self.conn.execute(
+            "SELECT monitor_name, tag FROM tags ORDER BY monitor_name, tag"
+        ) as cur:
+            rows = await cur.fetchall()
+        result: dict[str, list[str]] = {}
+        for row in rows:
+            result.setdefault(row["monitor_name"], []).append(row["tag"])
+        return result
 
     async def rename_tag(self, old_tag: str, new_tag: str) -> None:
         await self.conn.execute(
             "UPDATE tags SET tag = ? WHERE tag = ?", (new_tag, old_tag)
         )
+        await self.conn.execute(
+            "UPDATE tag_vocab SET tag = ? WHERE tag = ?", (new_tag, old_tag)
+        )
         await self.conn.commit()
 
     async def delete_tag(self, tag: str) -> None:
         await self.conn.execute("DELETE FROM tags WHERE tag = ?", (tag,))
+        await self.conn.execute("DELETE FROM tag_vocab WHERE tag = ?", (tag,))
         await self.conn.commit()
 
     async def get_all_monitor_states(self) -> list[dict]:

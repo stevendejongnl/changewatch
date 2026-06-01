@@ -315,3 +315,139 @@ async def test_get_stats_db_size_returns_zero_on_oserror(db, monkeypatch):
     monkeypatch.setattr("app.db.os.path.getsize", _raise)
     stats = await db.get_stats()
     assert stats["db_size_bytes"] == 0
+
+
+async def test_init_creates_tags_table(db):
+    async with db.conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='tags'"
+    ) as cur:
+        row = await cur.fetchone()
+    assert row is not None
+
+
+async def test_set_tags_stores_tags(db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    result = await db.get_tags("mon_a")
+    assert sorted(result) == ["electronics", "weekly"]
+
+
+async def test_set_tags_replaces_existing(db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    await db.set_tags("mon_a", ["daily"])
+    result = await db.get_tags("mon_a")
+    assert result == ["daily"]
+
+
+async def test_set_tags_empty_clears_tags(db):
+    await db.set_tags("mon_a", ["electronics"])
+    await db.set_tags("mon_a", [])
+    result = await db.get_tags("mon_a")
+    assert result == []
+
+
+async def test_get_all_tags_returns_counts(db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    await db.set_tags("mon_b", ["electronics"])
+    tags = await db.get_all_tags()
+    tag_map = {t["tag"]: t["count"] for t in tags}
+    assert tag_map["electronics"] == 2
+    assert tag_map["weekly"] == 1
+
+
+async def test_get_all_tags_empty(db):
+    tags = await db.get_all_tags()
+    assert tags == []
+
+
+async def test_rename_tag_updates_all_monitors(db):
+    await db.set_tags("mon_a", ["electronics"])
+    await db.set_tags("mon_b", ["electronics", "weekly"])
+    await db.rename_tag("electronics", "gadgets")
+    assert "gadgets" in await db.get_tags("mon_a")
+    assert "gadgets" in await db.get_tags("mon_b")
+    assert "electronics" not in await db.get_tags("mon_a")
+
+
+async def test_delete_tag_removes_from_all_monitors(db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    await db.set_tags("mon_b", ["electronics"])
+    await db.delete_tag("electronics")
+    assert await db.get_tags("mon_a") == ["weekly"]
+    assert await db.get_tags("mon_b") == []
+
+
+async def test_add_tag_vocab_shows_in_get_all_tags(db):
+    await db.add_tag_vocab("electronics")
+    tags = await db.get_all_tags()
+    assert any(t["tag"] == "electronics" and t["count"] == 0 for t in tags)
+
+
+async def test_add_tag_vocab_count_reflects_assignments(db):
+    await db.add_tag_vocab("electronics")
+    await db.set_tags("mon_a", ["electronics"])
+    tags = await db.get_all_tags()
+    tag_map = {t["tag"]: t["count"] for t in tags}
+    assert tag_map["electronics"] == 1
+
+
+async def test_rename_tag_updates_vocab(db):
+    await db.add_tag_vocab("electronics")
+    await db.rename_tag("electronics", "gadgets")
+    tags = await db.get_all_tags()
+    names = [t["tag"] for t in tags]
+    assert "gadgets" in names
+    assert "electronics" not in names
+
+
+async def test_delete_tag_removes_from_vocab(db):
+    await db.add_tag_vocab("electronics")
+    await db.delete_tag("electronics")
+    tags = await db.get_all_tags()
+    assert not any(t["tag"] == "electronics" for t in tags)
+
+
+async def test_get_all_monitor_tags_returns_mapping(db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    await db.set_tags("mon_b", ["electronics"])
+    result = await db.get_all_monitor_tags()
+    assert sorted(result["mon_a"]) == ["electronics", "weekly"]
+    assert result["mon_b"] == ["electronics"]
+
+
+async def test_get_all_monitor_tags_empty(db):
+    result = await db.get_all_monitor_tags()
+    assert result == {}
+
+
+async def test_init_creates_favorite_column(db):
+    async with db.conn.execute("PRAGMA table_info(monitor_config)") as cur:
+        cols = [row["name"] for row in await cur.fetchall()]
+    assert "favorite" in cols
+
+
+async def test_set_favorite_true(db):
+    await db.set_favorite("mon_a", True)
+    config = await db.get_config("mon_a")
+    assert config["favorite"] == 1
+
+
+async def test_set_favorite_false(db):
+    await db.set_favorite("mon_a", True)
+    await db.set_favorite("mon_a", False)
+    config = await db.get_config("mon_a")
+    assert config["favorite"] == 0
+
+
+async def test_get_all_monitor_states_includes_favorite(db):
+    await db.record_run("mon_a", status="ok", last_value="1", error=None, duration_ms=10)
+    await db.set_favorite("mon_a", True)
+    states = await db.get_all_monitor_states()
+    mon = next(s for s in states if s["monitor_name"] == "mon_a")
+    assert mon["favorite"] == 1
+
+
+async def test_get_all_monitor_states_favorite_defaults_to_zero(db):
+    await db.record_run("mon_a", status="ok", last_value="1", error=None, duration_ms=10)
+    states = await db.get_all_monitor_states()
+    mon = next(s for s in states if s["monitor_name"] == "mon_a")
+    assert mon["favorite"] == 0
