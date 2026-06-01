@@ -399,6 +399,12 @@
           <path d="M3 12h4l2-6 4 12 2-6h6"/>
         </svg>
       </a>
+      <a href="/tags" class="nav-item {% block nav_tags %}{% endblock %}" title="Tags">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+      </a>
       <a href="/settings" class="nav-item {% block nav_settings %}{% endblock %}" title="Settings">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
@@ -437,6 +443,15 @@
           </svg>
         </div>
         Activity
+      </a>
+      <a href="/tags" class="mobile-tab {% block mob_tags %}{% endblock %}">
+        <div class="mobile-tab-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+        </div>
+        Tags
       </a>
       <a href="/settings" class="mobile-tab {% block mob_settings %}{% endblock %}">
         <div class="mobile-tab-icon">
