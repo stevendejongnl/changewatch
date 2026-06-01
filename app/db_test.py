@@ -67,16 +67,6 @@ async def test_get_all_monitor_states_returns_latest_per_monitor(db):
     assert names == {"a", "b"}
 
 
-async def test_get_all_runs_for_monitor_returns_asc_with_values(db):
-    await db.record_run("mon", status="ok", last_value="10.5", error=None, duration_ms=10)
-    await db.record_run("mon", status="ok", last_value=None, error=None, duration_ms=10)
-    await db.record_run("mon", status="ok", last_value="11.0", error=None, duration_ms=10)
-    runs = await db.get_all_runs_for_monitor("mon")
-    assert len(runs) == 2
-    assert all(r["last_value"] is not None for r in runs)
-    assert runs[0]["last_value"] == "10.5"
-    assert runs[1]["last_value"] == "11.0"
-
 
 async def test_record_run_returns_int(db):
     run_id = await db.record_run("mon", status="ok", last_value="v", error=None, duration_ms=100)

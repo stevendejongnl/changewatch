@@ -148,14 +148,6 @@ class Database:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]
 
-    async def get_all_runs_for_monitor(self, monitor_name: str) -> list[dict]:
-        async with self.conn.execute(
-            "SELECT ran_at, last_value FROM runs WHERE monitor_name = ? AND last_value IS NOT NULL ORDER BY id ASC",
-            (monitor_name,),
-        ) as cur:
-            rows = await cur.fetchall()
-        return [dict(r) for r in rows]
-
     async def delete_monitor(self, monitor_name: str) -> None:
         async with self.conn.execute(
             "SELECT id FROM runs WHERE monitor_name = ?", (monitor_name,)
