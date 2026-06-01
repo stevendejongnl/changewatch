@@ -102,6 +102,13 @@
     .db-stats-grid { grid-template-columns: repeat(2, 1fr); }
     .log-controls { gap: 6px; }
   }
+  .tags-list { display:flex; flex-direction:column; gap:8px; }
+  .tag-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:9px; background:var(--surface); box-shadow:inset 2px 2px 5px var(--shadow),inset -2px -2px 5px var(--raise); }
+  .tag-name-edit { background:transparent; border:0; font:500 12px var(--mono); color:var(--ink); outline:none; flex:1; min-width:0; }
+  .tag-name-edit:focus { color:var(--accent); }
+  .tag-count { font:11px var(--mono); color:var(--ink-3); min-width:50px; }
+  .tag-add-row { display:flex; gap:10px; margin-top:12px; }
+  .tag-add-row .input { flex:1; }
 </style>
 {% endblock %}
 
@@ -133,6 +140,17 @@
     <div class="settings-card-title">Notification channels</div>
     <div id="channels-list">
       <div class="t-3" style="font-size:12px">Loading&#8230;</div>
+    </div>
+  </div>
+
+  <div class="neu-raised-sm settings-card">
+    <div class="settings-card-title">Tags</div>
+    <div id="tags-list" class="tags-list">
+      <div class="t-3" style="font-size:12px">Loading…</div>
+    </div>
+    <div class="tag-add-row">
+      <input type="text" class="input" id="new-tag-input" placeholder="New tag name…" style="font-size:12px">
+      <button class="btn" onclick="addTag()">Add</button>
     </div>
   </div>
 
@@ -357,5 +375,78 @@
     try { appendLog(JSON.parse(e.data)); } catch (_) {}
   };
   window.addEventListener('beforeunload', function() { sse.close(); });
+
+  // ── Tags ─────────────────────────────────────────────────────
+  function loadTags() {
+    fetch('/api/tags').then(function(r) { return r.json(); }).then(function(tags) {
+      var list = document.getElementById('tags-list');
+      list.textContent = '';
+      if (!tags.length) {
+        var msg = document.createElement('div');
+        msg.className = 't-4';
+        msg.style.fontSize = '12px';
+        msg.textContent = 'No tags yet. Add one below.';
+        list.appendChild(msg);
+        return;
+      }
+      tags.forEach(function(t) {
+        var row = document.createElement('div');
+        row.className = 'tag-row';
+
+        var nameInput = document.createElement('input');
+        nameInput.className = 'tag-name-edit';
+        nameInput.value = t.tag;
+        nameInput.title = 'Click to rename';
+        nameInput.addEventListener('change', function() {
+          var newName = nameInput.value.trim();
+          if (!newName || newName === t.tag) { nameInput.value = t.tag; return; }
+          fetch('/api/tags/' + encodeURIComponent(t.tag), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_tag: newName }),
+          }).then(function() { loadTags(); });
+        });
+
+        var count = document.createElement('span');
+        count.className = 'tag-count';
+        count.textContent = t.count + ' monitor' + (t.count !== 1 ? 's' : '');
+
+        var delBtn = document.createElement('button');
+        delBtn.className = 'btn danger';
+        delBtn.style.cssText = 'padding:6px 10px;font-size:11px';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', function() {
+          if (!confirm('Remove tag "' + t.tag + '" from ' + t.count + ' monitor' + (t.count !== 1 ? 's' : '') + '?')) return;
+          fetch('/api/tags/' + encodeURIComponent(t.tag), { method: 'DELETE' })
+            .then(function() { loadTags(); });
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(count);
+        row.appendChild(delBtn);
+        list.appendChild(row);
+      });
+    });
+  }
+
+  function addTag() {
+    var input = document.getElementById('new-tag-input');
+    var tag = input.value.trim();
+    if (!tag) return;
+    fetch('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag: tag }),
+    }).then(function() {
+      input.value = '';
+      loadTags();
+    });
+  }
+
+  document.getElementById('new-tag-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addTag();
+  });
+
+  loadTags();
 </script>
 {% endblock %}

@@ -191,6 +191,14 @@ class _DryRunBody(BaseModel):
     source: str
 
 
+class _SetTagsBody(BaseModel):
+    tags: list[str]
+
+
+class _RenameTagBody(BaseModel):
+    new_tag: str
+
+
 async def _load_monitor_from_source(source: str, name: str) -> Monitor:
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
         f.write(source)
@@ -321,9 +329,17 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
         m["metric"] = metric_map.get(m["monitor_name"])
         m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])
         m["product_url"] = display_url_map.get(m["monitor_name"], "")
+        m["tags"] = await db.get_tags(m["monitor_name"])
+
+    favorites = [m for m in monitors if m.get("favorite")]
+    favorites_mode = bool(favorites)
+    display_monitors = favorites if favorites_mode else monitors
+
     return templates.TemplateResponse(
         request, "dashboard.html", {
-            "monitors": monitors,
+            "monitors": display_monitors,
+            "all_monitor_count": len(monitors),
+            "favorites_mode": favorites_mode,
             "git_sync_enabled": git_sync is not None,
         }
     )
@@ -366,6 +382,42 @@ async def ha_sensors(db: DbDep):
         "monitors_paused": sum(1 for m in monitors if m["paused"]),
         "monitors": monitors,
     }
+
+
+@app.get("/api/tags")
+async def api_get_tags(db: DbDep):
+    return await db.get_all_tags()
+
+
+@app.delete("/api/tags/{tag}", status_code=204)
+async def api_delete_tag(tag: str, db: DbDep):
+    await db.delete_tag(tag)
+
+
+@app.put("/api/tags/{tag}")
+async def api_rename_tag(tag: str, body: _RenameTagBody, db: DbDep):
+    await db.rename_tag(tag, body.new_tag)
+    return {"status": "ok"}
+
+
+class _CreateTagBody(BaseModel):
+    tag: str
+
+@app.post("/api/tags", status_code=201)
+async def api_create_tag(body: _CreateTagBody, db: DbDep):
+    return {"status": "ok", "tag": body.tag}
+
+
+@app.get("/api/monitors/{name}/tags")
+async def api_get_monitor_tags(name: str, db: DbDep):
+    tags = await db.get_tags(name)
+    return {"tags": tags}
+
+
+@app.post("/api/monitors/{name}/tags")
+async def api_set_monitor_tags(name: str, body: _SetTagsBody, db: DbDep):
+    await db.set_tags(name, body.tags)
+    return {"status": "ok"}
 
 
 @app.get("/api/monitors/{name}/runs")
@@ -415,6 +467,15 @@ async def resume_monitor(name: str, db: DbDep, bus: EventBusDep):
         raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
     await db.set_paused(name, False)
     await bus.publish({"event": "paused", "monitor_name": name, "paused": False})
+
+
+@app.post("/monitors/{name}/favorite", status_code=204)
+async def toggle_favorite(name: str, db: DbDep):
+    known = {m.name for m in discover_monitors(MONITORS_DIR)}
+    if name not in known:
+        raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
+    config = await db.get_config(name)
+    await db.set_favorite(name, not bool(config["favorite"]))
 
 
 def _available_channels() -> list[str]:
@@ -571,6 +632,40 @@ async def activity_feed(request: Request, db: DbDep, limit: int = 50, offset: in
             "limit": limit,
             "offset": offset,
             "has_more": has_more,
+        }
+    )
+
+
+@app.get("/tags", response_class=HTMLResponse)
+async def tags_overview(request: Request, db: DbDep):
+    tags = await db.get_all_tags()
+    return templates.TemplateResponse(request, "tags.html", {"tags": tags})
+
+
+@app.get("/tags/{tag}", response_class=HTMLResponse)
+async def tag_detail(tag: str, request: Request, db: DbDep, git_sync: GitSyncDep):
+    all_tags = await db.get_all_tags()
+    if not any(t["tag"] == tag for t in all_tags):
+        raise HTTPException(status_code=404, detail=f"Tag {tag!r} not found")
+    monitors = await db.get_all_monitor_states()
+    known = discover_monitors(MONITORS_DIR)
+    metric_map = {m.name: m.metric for m in known}
+    display_name_map = {m.name: m.display_name or m.name for m in known}
+    display_url_map = {m.name: m.display_url for m in known}
+    tagged = []
+    for m in monitors:
+        tags_for_monitor = await db.get_tags(m["monitor_name"])
+        if tag in tags_for_monitor:
+            m["metric"] = metric_map.get(m["monitor_name"])
+            m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])
+            m["product_url"] = display_url_map.get(m["monitor_name"], "")
+            m["tags"] = tags_for_monitor
+            tagged.append(m)
+    return templates.TemplateResponse(
+        request, "tag_detail.html", {
+            "tag": tag,
+            "monitors": tagged,
+            "git_sync_enabled": git_sync is not None,
         }
     )
 
