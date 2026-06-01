@@ -1027,3 +1027,99 @@ async def test_api_monitors_no_tag_returns_all(db, tmp_path, monkeypatch):
     assert response.status_code == 200
     names = {m["monitor_name"] for m in response.json()}
     assert names == {"mon_a", "mon_b"}
+
+
+# ── Tag management API ───────────────────────────────────────────────────────
+
+async def test_get_api_tags_empty(client):
+    response = await client.get("/api/tags")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_post_api_tags_creates_tag(client, db):
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.get("/api/tags")
+    assert response.status_code == 200
+    tags = response.json()
+    assert any(t["tag"] == "electronics" for t in tags)
+
+
+async def test_get_monitor_tags(client, db):
+    await db.set_tags("mon_a", ["electronics", "weekly"])
+    response = await client.get("/api/monitors/mon_a/tags")
+    assert response.status_code == 200
+    assert sorted(response.json()["tags"]) == ["electronics", "weekly"]
+
+
+async def test_post_monitor_tags_sets_tags(client, db):
+    response = await client.post(
+        "/api/monitors/mon_a/tags", json={"tags": ["gadgets", "daily"]}
+    )
+    assert response.status_code == 200
+    result = await db.get_tags("mon_a")
+    assert sorted(result) == ["daily", "gadgets"]
+
+
+async def test_delete_api_tag_removes_it(client, db):
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.delete("/api/tags/electronics")
+    assert response.status_code == 204
+    assert await db.get_tags("mon_a") == []
+
+
+async def test_put_api_tag_renames_it(client, db):
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.put("/api/tags/electronics", json={"new_tag": "gadgets"})
+    assert response.status_code == 200
+    assert "gadgets" in await db.get_tags("mon_a")
+
+
+# ── Favorite toggle endpoint ─────────────────────────────────────────────────
+
+async def test_post_favorite_toggles_on(client, db, tmp_path):
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir(exist_ok=True)
+    (monitors_dir / "mon_a.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="mon_a", schedule="*/30 * * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    import app.main as main_mod
+    orig = main_mod.MONITORS_DIR
+    main_mod.MONITORS_DIR = monitors_dir
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    try:
+        response = await client.post("/monitors/mon_a/favorite")
+        assert response.status_code == 204
+        config = await db.get_config("mon_a")
+        assert config["favorite"] == 1
+    finally:
+        main_mod.MONITORS_DIR = orig
+
+
+async def test_post_favorite_toggles_off(client, db, tmp_path):
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir(exist_ok=True)
+    (monitors_dir / "mon_a.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="mon_a", schedule="*/30 * * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    import app.main as main_mod
+    orig = main_mod.MONITORS_DIR
+    main_mod.MONITORS_DIR = monitors_dir
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.set_favorite("mon_a", True)
+    try:
+        response = await client.post("/monitors/mon_a/favorite")
+        assert response.status_code == 204
+        config = await db.get_config("mon_a")
+        assert config["favorite"] == 0
+    finally:
+        main_mod.MONITORS_DIR = orig
+
+
+async def test_post_favorite_404_unknown(client):
+    response = await client.post("/monitors/nonexistent/favorite")
+    assert response.status_code == 404
