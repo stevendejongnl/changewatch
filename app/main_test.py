@@ -1037,6 +1037,12 @@ async def test_get_api_tags_empty(client):
     assert response.json() == []
 
 
+async def test_post_api_tags_returns_ok(client):
+    response = await client.post("/api/tags", json={"tag": "electronics"})
+    assert response.status_code == 201
+    assert response.json()["tag"] == "electronics"
+
+
 async def test_post_api_tags_creates_tag(client, db):
     await db.set_tags("mon_a", ["electronics"])
     response = await client.get("/api/tags")
