@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag }} — changewatch{% endblock %}
+{% block nav_tags %}active{% endblock %}
+{% block mob_tags %}active{% endblock %}
+
+{% block head %}
+<style>
+  .monitor-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .monitor-card { padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .monitor-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .monitor-name-block { display:flex; align-items:center; gap:10px; min-width:0; }
+  .monitor-name { font:500 13.5px/1.2 var(--mono); color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+  .monitor-schedule { font:11px var(--mono); color:var(--ink-3); margin-top:4px; }
+  .monitor-value-well { padding:14px 16px; min-height:64px; }
+  .monitor-value { font:600 16px/1.2 var(--sans); letter-spacing:-0.01em; }
+  .monitor-footer { display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--ink-3); }
+  .run-btn { position:relative; }
+  .run-btn .spinner { display:none; width:10px; height:10px; border-radius:50%; border:1.5px solid var(--ink-4); border-top-color:var(--accent); animation:spin .6s linear infinite; }
+  .run-btn.loading .btn-icon { display:none; }
+  .run-btn.loading .spinner { display:block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .paused-chip { font:500 9px/1 var(--sans); letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); padding:3px 7px; border-radius:999px; background:var(--surface); box-shadow:inset 1px 1px 3px var(--shadow),inset -1px -1px 3px var(--raise); }
+  @media (max-width:1100px) { .monitor-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:700px) { .monitor-grid { grid-template-columns:1fr; gap:12px; } .monitor-card { padding:14px; } }
+</style>
+{% endblock %}
+
+{% block topbar %}
+<div class="topbar-left">
+  <div class="topbar-breadcrumb">
+    <a href="/tags" style="color:var(--ink-3)">Tags</a>
+    <span>›</span>
+  </div>
+  <h1>{{ tag }}</h1>
+  <div class="topbar-sub">{{ monitors | length }} monitor{% if monitors | length != 1 %}s{% endif %}</div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if monitors %}
+<div class="monitor-grid" id="monitor-grid">
+  {% for m in monitors %}
+  <div class="neu-raised monitor-card" data-status="{{ m.status }}" data-monitor="{{ m.monitor_name }}">
+    <div class="monitor-card-header">
+      <button class="btn icon fav-btn" style="width:32px;height:32px;justify-content:center;color:{% if m.get('favorite') %}var(--chg){% else %}var(--ink-4){% endif %}"
+        onclick="toggleFavorite('{{ m.monitor_name }}', this)" title="{% if m.get('favorite') %}Remove from favorites{% else %}Add to favorites{% endif %}">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="{% if m.get('favorite') %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      <div class="monitor-name-block">
+        <div class="led {{ m.status }}"></div>
+        <div style="min-width:0">
+          <a href="/monitors/{{ m.monitor_name }}" class="monitor-name">{{ m.display_name }}</a>
+          {% if m.get('schedule') %}
+          <div class="monitor-schedule">{{ m.schedule }}</div>
+          <div class="monitor-schedule" style="color:var(--ink-4)">{{ m.schedule | humanize_cron }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% if m.paused %}
+      <span class="paused-chip">paused</span>
+      {% endif %}
+      {% if m.product_url %}
+      <a href="{{ m.product_url }}" target="_blank" rel="noopener noreferrer"
+         class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)" title="Open product page">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 17 17 7"/><path d="M8 7h9v9"/>
+        </svg>
+      </a>
+      {% endif %}
+      <div class="run-btn" id="run-wrap-{{ m.monitor_name }}">
+        <button class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)"
+          onclick="runMonitor('{{ m.monitor_name }}')" title="Run now">
+          <span class="btn-icon">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
+              <path d="M7 5l11 7-11 7V5z"/>
+            </svg>
+          </span>
+          <span class="spinner"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="neu-inset monitor-value-well">
+      <div class="eyebrow" style="margin-bottom:6px">Last value</div>
+      {% if m.status == 'error' %}
+        <div class="mono t-err" style="font-size:12px;line-height:1.4">{{ (m.error or '')[:60] }}{% if (m.error or '') | length > 60 %}…{% endif %}</div>
+      {% elif m.status == 'changed' %}
+        <div class="mono t-chg monitor-value">{{ m.last_value or '—' }}</div>
+      {% elif m.status == 'pending' %}
+        <div class="t-4" style="font-size:14px">waiting for first run</div>
+      {% else %}
+        <div class="monitor-value {% if not m.last_value %}t-4{% endif %}">{{ m.last_value or '—' }}</div>
+      {% endif %}
+    </div>
+
+    <div class="monitor-footer">
+      <span class="mono">last: {{ m.ran_at | localtime if m.ran_at else 'never' }}</span>
+      <span class="chip {{ m.status }}" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">{{ m.status }}</span>
+      <span class="mono">{% if m.duration_ms %}{{ m.duration_ms }}ms{% endif %}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
+  <div style="font:500 14px var(--sans)">No monitors tagged "{{ tag }}"</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function runMonitor(name) {
+    const wrap = document.getElementById('run-wrap-' + name);
+    if (!wrap) return;
+    const btn = wrap.querySelector('button');
+    btn.disabled = true;
+    wrap.classList.add('loading');
+    try {
+      const res = await fetch('/monitors/' + name + '/run', { method: 'POST' });
+      btn.style.color = res.ok ? 'var(--ok)' : 'var(--err)';
+      setTimeout(() => { btn.style.color = ''; btn.disabled = false; wrap.classList.remove('loading'); }, 2000);
+    } catch (_) {
+      btn.style.color = 'var(--err)';
+      btn.disabled = false;
+      wrap.classList.remove('loading');
+    }
+  }
+
+  async function toggleFavorite(name, btn) {
+    btn.disabled = true;
+    try {
+      const res = await fetch('/monitors/' + name + '/favorite', { method: 'POST' });
+      if (res.ok) location.reload();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+{% endblock %}
