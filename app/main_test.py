@@ -1123,3 +1123,78 @@ async def test_post_favorite_toggles_off(client, db, tmp_path):
 async def test_post_favorite_404_unknown(client):
     response = await client.post("/monitors/nonexistent/favorite")
     assert response.status_code == 404
+
+
+async def test_monitor_edit_page_includes_tags_data(client, db, tmp_path):
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir(exist_ok=True)
+    monitor_file = monitors_dir / "price_check.py"
+    monitor_file.write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="price_check", schedule="*/30 * * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    import app.main as main_mod
+    orig = main_mod.MONITORS_DIR
+    main_mod.MONITORS_DIR = monitors_dir
+    await db.set_tags("price_check", ["electronics"])
+    try:
+        response = await client.get("/monitors/price_check/edit")
+        assert response.status_code == 200
+        assert "electronics" in response.text
+    finally:
+        main_mod.MONITORS_DIR = orig
+
+
+async def test_dashboard_favorites_mode_when_favorites_exist(client, db):
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.set_favorite("mon_a", True)
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert "favorites" in response.text.lower()
+
+
+async def test_dashboard_shows_all_when_no_favorites(client, db):
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="ok", last_value="v", error=None, duration_ms=10)
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert "mon_a" in response.text
+    assert "mon_b" in response.text
+
+
+# ── Tag pages ────────────────────────────────────────────────────────────────
+
+async def test_tags_overview_returns_200(client):
+    response = await client.get("/tags")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+async def test_tags_overview_shows_tag_names(client, db):
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.get("/tags")
+    assert "electronics" in response.text
+
+
+async def test_tag_detail_returns_200(client, db):
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.get("/tags/electronics")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+async def test_tag_detail_shows_monitors_with_tag(client, db):
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.record_run("mon_b", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.set_tags("mon_a", ["electronics"])
+    response = await client.get("/tags/electronics")
+    assert "mon_a" in response.text
+    assert "mon_b" not in response.text
+
+
+async def test_tag_detail_404_unknown_tag(client):
+    response = await client.get("/tags/nonexistent")
+    assert response.status_code == 404

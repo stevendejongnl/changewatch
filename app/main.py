@@ -484,7 +484,8 @@ def _available_channels() -> list[str]:
 
 
 @app.get("/monitors/new", response_class=HTMLResponse)
-async def monitor_new(request: Request):
+async def monitor_new(request: Request, db: DbDep):
+    all_tags = await db.get_all_tags()
     return templates.TemplateResponse(
         request, "monitor_editor.html", {
             "mode": "new",
@@ -493,12 +494,14 @@ async def monitor_new(request: Request):
             "available_channels": _available_channels(),
             "selected_channels": [],
             "custom_file": False,
+            "monitor_tags": [],
+            "all_tags": [t["tag"] for t in all_tags],
         }
     )
 
 
 @app.get("/monitors/{name}/edit", response_class=HTMLResponse)
-async def monitor_edit(name: str, request: Request):
+async def monitor_edit(name: str, request: Request, db: DbDep):
     path = MONITORS_DIR / f"{name}.py"
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"Monitor {name!r} not found")
@@ -508,6 +511,8 @@ async def monitor_edit(name: str, request: Request):
         custom_file = True
     else:
         custom_file = source.strip() != generate_monitor(config).strip()
+    monitor_tags = await db.get_tags(name)
+    all_tags = await db.get_all_tags()
     return templates.TemplateResponse(
         request, "monitor_editor.html", {
             "mode": "edit",
@@ -516,6 +521,8 @@ async def monitor_edit(name: str, request: Request):
             "available_channels": _available_channels(),
             "selected_channels": config.notify_channels if config else [],
             "custom_file": custom_file,
+            "monitor_tags": monitor_tags,
+            "all_tags": [t["tag"] for t in all_tags],
         }
     )
 
