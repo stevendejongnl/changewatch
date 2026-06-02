@@ -149,7 +149,7 @@
 {% block topbar %}
 <div class="topbar-left">
   <h1>Monitors</h1>
-  <div class="topbar-sub">{{ monitors | length }} monitors · live</div>
+  <div class="topbar-sub">{% if favorites_mode %}{{ monitors | length }} favorites · live{% else %}{{ monitors | length }} monitors · live{% endif %}</div>
 </div>
 <div class="topbar-right">
   <a href="/monitors/new" class="btn">New monitor</a>
@@ -221,6 +221,12 @@
   {% for m in monitors %}
   <div class="neu-raised monitor-card" data-status="{{ m.status }}" data-monitor="{{ m.monitor_name }}">
     <div class="monitor-card-header">
+      <button class="btn icon fav-btn" style="width:32px;height:32px;justify-content:center;color:{% if m.get('favorite') %}var(--chg){% else %}var(--ink-4){% endif %}"
+        onclick="toggleFavorite('{{ m.monitor_name }}', this)" title="{% if m.get('favorite') %}Remove from favorites{% else %}Add to favorites{% endif %}">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="{% if m.get('favorite') %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
       <div class="monitor-name-block">
         <div class="led {{ m.status }}"></div>
         <div style="min-width:0">
@@ -348,6 +354,18 @@
     }
   }
   {% endif %}
+
+  async function toggleFavorite(name, btn) {
+    btn.disabled = true;
+    try {
+      const res = await fetch('/monitors/' + name + '/favorite', { method: 'POST' });
+      if (res.ok) {
+        location.reload();
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
   (function () {
     const indicator = document.querySelector('.conn-indicator');

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Tags — changewatch{% endblock %}
+{% block nav_tags %}active{% endblock %}
+{% block mob_tags %}active{% endblock %}
+
+{% block topbar %}
+<div class="topbar-left">
+  <h1>Tags</h1>
+  <div class="topbar-sub">{{ tags | length }} tag{% if tags | length != 1 %}s{% endif %}</div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if tags %}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
+  {% for t in tags %}
+  <a href="/tags/{{ t.tag }}" style="text-decoration:none">
+    <div class="neu-raised-sm" style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <span style="font:500 14px var(--sans);color:var(--ink)">{{ t.tag }}</span>
+      <span style="font:12px var(--mono);color:var(--ink-3)">{{ t.count }} monitor{% if t.count != 1 %}s{% endif %}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
+  <div style="font:500 14px var(--sans)">No tags yet</div>
+  <div style="font:11px var(--mono);margin-top:8px">Create tags in Settings or assign them via the monitor editor</div>
+</div>
+{% endif %}
+{% endblock %}
