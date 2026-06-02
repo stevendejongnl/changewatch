@@ -218,13 +218,17 @@ async def _load_monitor_from_source(source: str, name: str) -> Monitor:
 
 
 async def _event_stream(bus: EventBus):
+    import asyncio
     queue = bus.subscribe()
     try:
         while True:
-            event = await queue.get()
-            if "ran_at" in event:
-                event = {**event, "ran_at": _to_local(event["ran_at"])}
-            yield f"data: {_json.dumps(event)}\n\n"
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=30)
+                if "ran_at" in event:
+                    event = {**event, "ran_at": _to_local(event["ran_at"])}
+                yield f"data: {_json.dumps(event)}\n\n"
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
     finally:
         bus.unsubscribe(queue)
 
@@ -278,13 +282,17 @@ async def api_debug_db_stats(db: DbDep):
 
 
 async def _log_stream_generator(buf: AppLogBuffer):
+    import asyncio
     for entry in buf.get_history():
         yield f"data: {_json.dumps(entry)}\n\n"
     q = buf.subscribe()
     try:
         while True:
-            entry = await q.get()
-            yield f"data: {_json.dumps(entry)}\n\n"
+            try:
+                entry = await asyncio.wait_for(q.get(), timeout=30)
+                yield f"data: {_json.dumps(entry)}\n\n"
+            except asyncio.TimeoutError:
+                yield ": keepalive\n\n"
     finally:
         buf.unsubscribe(q)
 
