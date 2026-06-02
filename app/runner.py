@@ -50,7 +50,6 @@ class Runner:
     async def run(self, monitor: Monitor, dry_run: bool = False) -> list[tuple[str, str]]:
         logger = logging.getLogger(f"changewatch.{monitor.name}.{uuid.uuid4().hex[:8]}")
         logger.setLevel(logging.DEBUG)
-        logger.propagate = False
         ctx = RunContext(
             monitor_name=monitor.name,
             logger=logger,
