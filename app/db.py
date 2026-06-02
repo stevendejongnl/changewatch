@@ -57,6 +57,10 @@ class Database:
             await self.conn.commit()
         except Exception:
             pass
+        await self.conn.execute(
+            "INSERT OR IGNORE INTO tag_vocab (tag) SELECT DISTINCT tag FROM tags"
+        )
+        await self.conn.commit()
 
     async def close(self) -> None:
         await self.conn.close()
