@@ -26,6 +26,10 @@ class InfluxClient:
             f' |> range(start: -{hours}h)'
             f' |> filter(fn: (r) => r._measurement == "{measurement}")'
             f' |> filter(fn: (r) => r._field == "value")'
+            f' |> group(columns: ["_time"])'
+            f' |> sum()'
+            f' |> group()'
+            f' |> sort(columns: ["_time"])'
             f' |> keep(columns: ["_time", "_value"])'
         )
         try:
