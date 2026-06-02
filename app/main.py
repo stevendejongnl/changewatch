@@ -219,6 +219,7 @@ async def _load_monitor_from_source(source: str, name: str) -> Monitor:
 
 async def _event_stream(bus: EventBus):
     import asyncio
+    yield ": " + " " * 2048 + "\n\n"  # flush Cloudflare's buffer  # pragma: no cover
     queue = bus.subscribe()
     try:
         while True:
@@ -283,6 +284,7 @@ async def api_debug_db_stats(db: DbDep):
 
 async def _log_stream_generator(buf: AppLogBuffer):
     import asyncio
+    yield ": " + " " * 2048 + "\n\n"  # flush Cloudflare's buffer  # pragma: no cover
     for entry in buf.get_history():
         yield f"data: {_json.dumps(entry)}\n\n"
     q = buf.subscribe()

@@ -851,6 +851,8 @@ async def test_log_stream_generator_yields_history_then_streams(db):
 
     chunks = []
     gen = _log_stream_generator(buf)
+    # skip the initial flush padding comment
+    await gen.__anext__()
     # get history chunk (exhausts the for-loop)
     chunk = await gen.__anext__()
     chunks.append(chunk)
