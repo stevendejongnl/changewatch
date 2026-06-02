@@ -227,7 +227,7 @@ async def _event_stream(bus: EventBus):
                 if "ran_at" in event:
                     event = {**event, "ran_at": _to_local(event["ran_at"])}
                 yield f"data: {_json.dumps(event)}\n\n"
-            except asyncio.TimeoutError:
+            except asyncio.TimeoutError:  # pragma: no cover
                 yield ": keepalive\n\n"
     finally:
         bus.unsubscribe(queue)
@@ -291,7 +291,7 @@ async def _log_stream_generator(buf: AppLogBuffer):
             try:
                 entry = await asyncio.wait_for(q.get(), timeout=30)
                 yield f"data: {_json.dumps(entry)}\n\n"
-            except asyncio.TimeoutError:
+            except asyncio.TimeoutError:  # pragma: no cover
                 yield ": keepalive\n\n"
     finally:
         buf.unsubscribe(q)
