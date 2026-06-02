@@ -272,24 +272,7 @@
       {% endif %}
 
       <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">{% if available_channels %}3{% else %}2{% endif %} · Tags</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px">
-          {% for tag in all_tags %}
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-            <input type="checkbox" class="tag-checkbox" value="{{ tag }}"
-              {% if tag in monitor_tags %}checked{% endif %}
-              onchange="saveTags()">
-            <span style="font:500 12px var(--mono);color:var(--ink-2)">{{ tag }}</span>
-          </label>
-          {% endfor %}
-          {% if not all_tags %}
-          <span style="font:11px var(--mono);color:var(--ink-4)">No tags defined yet — create them in Settings</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">{% if available_channels %}4{% else %}3{% endif %} · Advanced</div>
+        <div class="eyebrow" style="margin-bottom:14px">{% if available_channels %}3{% else %}2{% endif %} · Advanced</div>
         <div class="toggle-row">
           <div>
             <div class="toggle-label">Record to InfluxDB</div>
@@ -373,6 +356,26 @@
 
   </div><!-- /editor-right -->
 </div>
+
+<!-- TAGS (shown for all monitors, including custom files) -->
+{% if monitor_name %}
+<div class="neu-raised" style="margin-top:20px;padding:20px 24px">
+  <div class="eyebrow" style="margin-bottom:14px">Tags</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    {% for tag in all_tags %}
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" class="tag-checkbox" value="{{ tag }}"
+        {% if tag in monitor_tags %}checked{% endif %}
+        onchange="saveTags()">
+      <span style="font:500 12px var(--mono);color:var(--ink-2)">{{ tag }}</span>
+    </label>
+    {% endfor %}
+    {% if not all_tags %}
+    <span style="font:11px var(--mono);color:var(--ink-4)">No tags defined yet — create them in <a href="/settings" style="color:var(--accent)">Settings</a></span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <!-- HELPERS OVERLAY DRAWER -->
 <div class="helpers-backdrop" id="helpers-backdrop"></div>
