@@ -25,4 +25,4 @@ class AppriseClient:
                 continue
             ap = apprise.Apprise()
             ap.add(url)
-            await ap.async_notify(title=title, body=body)
+            await ap.async_notify(title=title, body=body, body_format=apprise.NotifyFormat.TEXT)
