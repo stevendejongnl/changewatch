@@ -338,7 +338,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
     return templates.TemplateResponse(
         request, "dashboard.html", {
             "monitors": display_monitors,
-            "all_monitor_count": len(monitors),
+            "all_monitors": monitors if favorites_mode else [],
             "favorites_mode": favorites_mode,
             "git_sync_enabled": git_sync is not None,
         }

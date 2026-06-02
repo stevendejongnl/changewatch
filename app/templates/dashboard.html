@@ -152,6 +152,9 @@
   <div class="topbar-sub">{% if favorites_mode %}{{ monitors | length }} favorites · live{% else %}{{ monitors | length }} monitors · live{% endif %}</div>
 </div>
 <div class="topbar-right">
+  {% if favorites_mode %}
+  <button class="btn" id="show-all-btn" onclick="toggleShowAll(this)">Show all</button>
+  {% endif %}
   <a href="/monitors/new" class="btn">New monitor</a>
   {% if git_sync_enabled %}
   <button class="btn" id="sync-btn" onclick="syncMonitors()">
@@ -351,6 +354,37 @@
       err.textContent = 'Network error';
       btn.disabled = false;
       label.textContent = 'Sync';
+    }
+  }
+  {% endif %}
+
+  {% if favorites_mode %}
+  var _allMonitors = {{ all_monitors | tojson }};
+  var _showingAll = false;
+
+  function toggleShowAll(btn) {
+    _showingAll = !_showingAll;
+    btn.textContent = _showingAll ? 'Show favorites' : 'Show all';
+    btn.style.color = _showingAll ? 'var(--accent)' : '';
+    var grid = document.getElementById('monitor-grid');
+    if (!grid) return;
+    if (_showingAll) {
+      var existing = new Set(Array.from(grid.querySelectorAll('.monitor-card')).map(function(c) { return c.dataset.monitor; }));
+      _allMonitors.forEach(function(m) {
+        if (!existing.has(m.monitor_name)) {
+          var card = document.createElement('div');
+          card.className = 'neu-raised monitor-card';
+          card.dataset.status = m.status;
+          card.dataset.monitor = m.monitor_name;
+          card.style.opacity = '0.6';
+          card.innerHTML = '<div class="monitor-card-header"><div class="monitor-name-block"><div class="led ' + m.status + '"></div><div style="min-width:0"><a href="/monitors/' + m.monitor_name + '" class="monitor-name">' + (m.display_name || m.monitor_name) + '</a></div></div></div><div class="neu-inset monitor-value-well"><div class="monitor-value ' + (m.last_value ? '' : 't-4') + '">' + (m.last_value || '—') + '</div></div><div class="monitor-footer"><span class="mono">last: ' + (m.ran_at || 'never') + '</span><span class="chip ' + m.status + '" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">' + m.status + '</span></div>';
+          grid.appendChild(card);
+        }
+      });
+    } else {
+      Array.from(grid.querySelectorAll('.monitor-card')).forEach(function(c) {
+        if (c.style.opacity === '0.6') c.remove();
+      });
     }
   }
   {% endif %}
