@@ -78,3 +78,20 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:v${{ needs.release.outputs.version }}
+
+  deploy:
+    name: Deploy to k8s
+    runs-on: [self-hosted, k8s]
+    needs: build
+    steps:
+      - name: Restart deployment
+        run: |
+          RESTART_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          curl -sf -X PATCH \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/strategic-merge-patch+json" \
+            --cacert "$CA" \
+            "https://kubernetes.default.svc/apis/apps/v1/namespaces/changewatch/deployments/changewatch" \
+            -d "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$RESTART_AT\"}}}}}"
