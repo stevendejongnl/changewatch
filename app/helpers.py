@@ -151,7 +151,8 @@ async def imap_fetch_unseen(
     import re as _re
     from email.policy import default as _default_policy
 
-    last_uid_str = await get_last_value(ctx.db, ctx.monitor_name)
+    uid_key = f"{ctx.monitor_name}:_imap_uid"
+    last_uid_str = await get_last_value(ctx.db, uid_key)
 
     if last_uid_str is None:
         # First run: seed by finding max existing UID via SEARCH + FETCH (not UID SEARCH)
@@ -168,7 +169,7 @@ async def imap_fetch_unseen(
                     break
         else:
             max_uid = 0
-        await set_value(ctx.db, ctx.monitor_name, str(max_uid))
+        await set_value(ctx.db, uid_key, str(max_uid))
         return []
 
     last_uid = int(last_uid_str)
@@ -196,5 +197,5 @@ async def imap_fetch_unseen(
                 max_new_uid = max(max_new_uid, uid)
 
     if max_new_uid > last_uid:
-        await set_value(ctx.db, ctx.monitor_name, str(max_new_uid))
+        await set_value(ctx.db, uid_key, str(max_new_uid))
     return messages

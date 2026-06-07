@@ -426,7 +426,7 @@ async def test_imap_fetch_unseen_first_run_stores_max_uid_returns_empty(db, imap
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
     assert result == []
-    assert await get_last_value(db, "test_monitor") == "102"
+    assert await get_last_value(db, "test_monitor:_imap_uid") == "102"
     mock_imap.search.assert_called_once_with("ALL")
 
 
@@ -437,11 +437,11 @@ async def test_imap_fetch_unseen_first_run_empty_inbox(db, imap_ctx):
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
     assert result == []
-    assert await get_last_value(db, "test_monitor") == "0"
+    assert await get_last_value(db, "test_monitor:_imap_uid") == "0"
 
 
 async def test_imap_fetch_unseen_returns_new_messages(db, imap_ctx):
-    await set_value(db, "test_monitor", "102")
+    await set_value(db, "test_monitor:_imap_uid", "102")
 
     raw = b"From: sender@x.nl\r\nSubject: Test\r\n\r\nBody text"
     mock_imap = AsyncMock()
@@ -453,11 +453,11 @@ async def test_imap_fetch_unseen_returns_new_messages(db, imap_ctx):
 
     assert len(result) == 1
     assert result[0]["Subject"] == "Test"
-    assert await get_last_value(db, "test_monitor") == "103"
+    assert await get_last_value(db, "test_monitor:_imap_uid") == "103"
 
 
 async def test_imap_fetch_unseen_updates_max_uid(db, imap_ctx):
-    await set_value(db, "test_monitor", "100")
+    await set_value(db, "test_monitor:_imap_uid", "100")
 
     raw = b"From: a@x.nl\r\nSubject: S\r\n\r\nB"
     mock_imap = AsyncMock()
@@ -471,11 +471,11 @@ async def test_imap_fetch_unseen_updates_max_uid(db, imap_ctx):
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
     assert len(result) == 3
-    assert await get_last_value(db, "test_monitor") == "103"
+    assert await get_last_value(db, "test_monitor:_imap_uid") == "103"
 
 
 async def test_imap_fetch_unseen_no_new_messages(db, imap_ctx):
-    await set_value(db, "test_monitor", "102")
+    await set_value(db, "test_monitor:_imap_uid", "102")
 
     mock_imap = AsyncMock()
     mock_imap.search = AsyncMock(return_value=("OK", [b""]))
@@ -483,11 +483,11 @@ async def test_imap_fetch_unseen_no_new_messages(db, imap_ctx):
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
     assert result == []
-    assert await get_last_value(db, "test_monitor") == "102"
+    assert await get_last_value(db, "test_monitor:_imap_uid") == "102"
 
 
 async def test_imap_fetch_unseen_filters_uids_below_threshold(db, imap_ctx):
-    await set_value(db, "test_monitor", "102")
+    await set_value(db, "test_monitor:_imap_uid", "102")
 
     raw = b"From: a@x.nl\r\n\r\n"
     mock_imap = AsyncMock()
