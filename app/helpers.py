@@ -186,15 +186,14 @@ async def imap_fetch_unseen(
 
     for seqnum in seqnums:
         typ, msg_data = await imap.fetch(seqnum, "(UID RFC822)")
-        for item in msg_data:
-            if isinstance(item, tuple) and len(item) >= 2:
-                uid_match = _re.search(rb"UID (\d+)", item[0])
-                uid = int(uid_match.group(1)) if uid_match else 0
-                if uid >= next_uid:
-                    msg = _email.message_from_bytes(item[1], policy=_default_policy)
-                    messages.append(msg)
-                    max_new_uid = max(max_new_uid, uid)
-                break
+        # aioimaplib returns flat list: [header_bytes, body_bytearray, b')', status_str]
+        if len(msg_data) >= 2 and isinstance(msg_data[0], (bytes, bytearray)):
+            uid_match = _re.search(rb"UID (\d+)", msg_data[0])
+            uid = int(uid_match.group(1)) if uid_match else 0
+            if uid >= next_uid and isinstance(msg_data[1], (bytes, bytearray)):
+                msg = _email.message_from_bytes(bytes(msg_data[1]), policy=_default_policy)
+                messages.append(msg)
+                max_new_uid = max(max_new_uid, uid)
 
     if max_new_uid > last_uid:
         await set_value(ctx.db, ctx.monitor_name, str(max_new_uid))

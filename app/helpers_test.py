@@ -420,7 +420,8 @@ async def imap_ctx(db):
 async def test_imap_fetch_unseen_first_run_stores_max_uid_returns_empty(db, imap_ctx):
     mock_imap = AsyncMock()
     mock_imap.search = AsyncMock(return_value=("OK", [b"1 2 3"]))
-    mock_imap.fetch = AsyncMock(return_value=("OK", [(b"3 (UID 102 FLAGS (\\Seen))", b"")]))
+    # aioimaplib flat list: [header_bytes, b')', status] for (UID)-only fetch
+    mock_imap.fetch = AsyncMock(return_value=("OK", [b"3 FETCH (UID 102 FLAGS (\\Seen))", b")", b"Fetch completed"]))
 
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
@@ -445,7 +446,8 @@ async def test_imap_fetch_unseen_returns_new_messages(db, imap_ctx):
     raw = b"From: sender@x.nl\r\nSubject: Test\r\n\r\nBody text"
     mock_imap = AsyncMock()
     mock_imap.search = AsyncMock(return_value=("OK", [b"1369"]))
-    mock_imap.fetch = AsyncMock(return_value=("OK", [(b"1369 (UID 103 RFC822 {N})", raw), b")"]))
+    # aioimaplib flat list: [header_bytes, body_bytearray, b')', status]
+    mock_imap.fetch = AsyncMock(return_value=("OK", [b"1369 FETCH (UID 103 RFC822 {47})", bytearray(raw), b")", b"Fetch completed"]))
 
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
@@ -461,9 +463,9 @@ async def test_imap_fetch_unseen_updates_max_uid(db, imap_ctx):
     mock_imap = AsyncMock()
     mock_imap.search = AsyncMock(return_value=("OK", [b"10 11 12"]))
     mock_imap.fetch = AsyncMock(side_effect=[
-        ("OK", [(b"10 (UID 101 RFC822 {N})", raw), b")"]),
-        ("OK", [(b"11 (UID 102 RFC822 {N})", raw), b")"]),
-        ("OK", [(b"12 (UID 103 RFC822 {N})", raw), b")"]),
+        ("OK", [b"10 FETCH (UID 101 RFC822 {28})", bytearray(raw), b")", b"Fetch completed"]),
+        ("OK", [b"11 FETCH (UID 102 RFC822 {28})", bytearray(raw), b")", b"Fetch completed"]),
+        ("OK", [b"12 FETCH (UID 103 RFC822 {28})", bytearray(raw), b")", b"Fetch completed"]),
     ])
 
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
@@ -490,7 +492,8 @@ async def test_imap_fetch_unseen_filters_uids_below_threshold(db, imap_ctx):
     raw = b"From: a@x.nl\r\n\r\n"
     mock_imap = AsyncMock()
     mock_imap.search = AsyncMock(return_value=("OK", [b"50"]))
-    mock_imap.fetch = AsyncMock(return_value=("OK", [(b"50 (UID 102 RFC822 {N})", raw), b")"]))
+    # UID 102 == last_uid, so next_uid=103; uid 102 < 103 → filtered
+    mock_imap.fetch = AsyncMock(return_value=("OK", [b"50 FETCH (UID 102 RFC822 {16})", bytearray(raw), b")", b"Fetch completed"]))
 
     result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
 
