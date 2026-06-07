@@ -148,37 +148,54 @@ async def imap_fetch_unseen(
     ctx: "RunContext",
 ) -> list[Any]:
     import email as _email
+    import re as _re
     from email.policy import default as _default_policy
 
     last_uid_str = await get_last_value(ctx.db, ctx.monitor_name)
 
     if last_uid_str is None:
-        typ, data = await imap.uid("search", None, "ALL")
-        uid_strs = data[0].decode().split() if data[0] else []
-        max_uid = max((int(u) for u in uid_strs), default=0)
+        # First run: seed by finding max existing UID via SEARCH + FETCH (not UID SEARCH)
+        typ, data = await imap.search("ALL")
+        seqnums = data[0].decode().split() if data[0] else []
+        if seqnums:
+            typ, fetch_data = await imap.fetch(seqnums[-1], "(UID)")
+            max_uid = 0
+            for item in fetch_data:
+                raw = item[0] if isinstance(item, tuple) else item
+                m = _re.search(rb"UID (\d+)", raw)
+                if m:
+                    max_uid = int(m.group(1))
+                    break
+        else:
+            max_uid = 0
         await set_value(ctx.db, ctx.monitor_name, str(max_uid))
         return []
 
     last_uid = int(last_uid_str)
     next_uid = last_uid + 1
+    # "UID uid-set" is a valid SEARCH criterion (unlike UID SEARCH which some servers reject)
     criteria = list(search) + ["UID", f"{next_uid}:*"]
+    typ, data = await imap.search(*criteria)
+    seqnums = data[0].decode().split() if data[0] else []
 
-    typ, data = await imap.uid("search", None, *criteria)
-    raw_uids = data[0].decode().split() if data[0] else []
-    uid_strs = [u for u in raw_uids if int(u) >= next_uid]
-
-    if not uid_strs:
+    if not seqnums:
         return []
 
     messages = []
-    for uid_str in uid_strs:
-        typ, msg_data = await imap.uid("fetch", uid_str, "(RFC822)")
+    max_new_uid = last_uid
+
+    for seqnum in seqnums:
+        typ, msg_data = await imap.fetch(seqnum, "(UID RFC822)")
         for item in msg_data:
             if isinstance(item, tuple) and len(item) >= 2:
-                msg = _email.message_from_bytes(item[1], policy=_default_policy)
-                messages.append(msg)
+                uid_match = _re.search(rb"UID (\d+)", item[0])
+                uid = int(uid_match.group(1)) if uid_match else 0
+                if uid >= next_uid:
+                    msg = _email.message_from_bytes(item[1], policy=_default_policy)
+                    messages.append(msg)
+                    max_new_uid = max(max_new_uid, uid)
                 break
 
-    max_new_uid = max(int(u) for u in uid_strs)
-    await set_value(ctx.db, ctx.monitor_name, str(max_new_uid))
+    if max_new_uid > last_uid:
+        await set_value(ctx.db, ctx.monitor_name, str(max_new_uid))
     return messages
