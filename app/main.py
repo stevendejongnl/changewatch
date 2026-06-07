@@ -1,3 +1,4 @@
+import asyncio
 import importlib.util
 import json as _json
 import logging as _logging
@@ -48,11 +49,12 @@ _git_sync: GitSync | None = None
 _git_editor: GitEditor | None = None
 _apprise: AppriseClient | None = None
 _influx: InfluxClient | None = None
+_imap_watcher_task: asyncio.Task | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pragma: no cover
-    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise, _influx
+    global _db, _scheduler, _browser, _git_sync, _git_editor, _apprise, _influx, _imap_watcher_task
     _db = Database(DB_PATH)
     await _db.init()
     _pw = await async_playwright().start()
@@ -76,6 +78,17 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, influx=_influx, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 
+    imap_monitors = [m for m in _scheduler._monitors if m.imap_idle]  # pragma: no cover
+    if imap_monitors:  # pragma: no cover
+        from app.imap_watcher import ImapWatcher  # pragma: no cover
+        _imap_watcher_task = asyncio.create_task(  # pragma: no cover
+            ImapWatcher(  # pragma: no cover
+                monitors=imap_monitors,  # pragma: no cover
+                scheduler=_scheduler,  # pragma: no cover
+                browser=_browser,  # pragma: no cover
+            ).run()  # pragma: no cover
+        )  # pragma: no cover
+
     if MONITORS_REPO_URL and _git_sync is not None:
         async def _periodic_sync():  # pragma: no cover
             await _git_sync.sync()
@@ -91,6 +104,13 @@ async def lifespan(app: FastAPI):  # pragma: no cover
         )
 
     yield
+
+    if _imap_watcher_task is not None:  # pragma: no cover
+        _imap_watcher_task.cancel()  # pragma: no cover
+        try:  # pragma: no cover
+            await _imap_watcher_task  # pragma: no cover
+        except asyncio.CancelledError:  # pragma: no cover
+            pass  # pragma: no cover
 
     await _scheduler.stop()
     await _browser.close()
@@ -150,6 +170,10 @@ async def get_scheduler() -> Optional[Scheduler]:  # pragma: no cover
 
 async def get_git_sync() -> Optional[GitSync]:  # pragma: no cover
     return _git_sync
+
+
+async def get_imap_watcher() -> Optional[asyncio.Task]:
+    return _imap_watcher_task
 
 
 async def get_git_editor() -> GitEditor | None:  # pragma: no cover

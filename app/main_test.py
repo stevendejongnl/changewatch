@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from app.db import Database
 from app.git_editor import GitEditor, SaveResult
-from app.main import app, get_db, get_scheduler, get_git_sync, get_git_editor, get_browser, _to_local, _humanize_cron, _mask_url
+from app.main import app, get_db, get_scheduler, get_git_sync, get_git_editor, get_browser, get_imap_watcher, _to_local, _humanize_cron, _mask_url
 from app.scheduler import Scheduler
 
 
@@ -1212,3 +1212,8 @@ async def test_tag_detail_shows_monitors_with_tag(client, db):
 async def test_tag_detail_404_unknown_tag(client):
     response = await client.get("/tags/nonexistent")
     assert response.status_code == 404
+
+
+async def test_get_imap_watcher_returns_none_by_default():
+    result = await get_imap_watcher()
+    assert result is None
