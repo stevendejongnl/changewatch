@@ -26,15 +26,23 @@ _CONSENT_URL_TIMEOUT = 5_000
 
 
 @dataclass
+class ImapIdleConfig:
+    account: str
+    folder: str
+    search: list[str]
+
+
+@dataclass
 class Monitor:
     name: str
-    schedule: str
+    schedule: Optional[str]
     notify_channels: list[str]
     url: Optional[str] = None
     metric: Optional[str] = None
     tags: list[str] = field(default_factory=list)
     display_name: str = ""
     display_url: str = ""
+    imap_idle: Optional["ImapIdleConfig"] = None
     fn: Optional[Callable] = field(default=None, repr=False)
 
     def check(self, func: Callable) -> Callable:

@@ -83,6 +83,8 @@ class Scheduler:
                 await self._db.delete_monitor(row["monitor_name"])
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         for monitor in self._monitors:
+            if monitor.schedule is None:
+                continue
             self._scheduler.add_job(
                 self._make_job_fn(runner, monitor),
                 CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),
@@ -109,6 +111,8 @@ class Scheduler:
             self._scheduler.remove_job(job_id)
             await self._db.delete_monitor(job_id)
         for monitor in new_monitors:
+            if monitor.schedule is None:
+                continue
             self._scheduler.add_job(
                 self._make_job_fn(runner, monitor),
                 CronTrigger.from_crontab(monitor.schedule, timezone=self._timezone),

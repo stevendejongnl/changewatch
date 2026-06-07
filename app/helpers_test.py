@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp import web as aio_web
 from playwright.async_api import async_playwright
 
-from app.helpers import Monitor, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric
+from app.helpers import Monitor, ImapIdleConfig, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric
 from app.db import Database
 from app.apprise_client import AppriseClient
 
@@ -34,6 +34,31 @@ async def test_monitor_check_decorator_stores_function():
 def test_monitor_url_is_optional():
     m = Monitor(name="no_url", schedule="0 * * * *", notify_channels=[])
     assert m.url is None
+
+
+# ── ImapIdleConfig dataclass ───────────────────────────────────────────────
+
+def test_imap_idle_config_stores_fields():
+    cfg = ImapIdleConfig(
+        account="mail@stevenenanja.nl",
+        folder="INBOX",
+        search=["FROM", "@zitmaxx.nl"],
+    )
+    assert cfg.account == "mail@stevenenanja.nl"
+    assert cfg.folder == "INBOX"
+    assert cfg.search == ["FROM", "@zitmaxx.nl"]
+
+
+def test_monitor_imap_idle_defaults_to_none():
+    m = Monitor(name="test", schedule="*/5 * * * *", notify_channels=[])
+    assert m.imap_idle is None
+
+
+def test_monitor_accepts_imap_idle_config():
+    cfg = ImapIdleConfig(account="a@b.nl", folder="INBOX", search=["FROM", "@x.nl"])
+    m = Monitor(name="test", schedule=None, notify_channels=[], imap_idle=cfg)
+    assert m.imap_idle is cfg
+    assert m.schedule is None
 
 
 # ── State helpers (use real in-memory SQLite via fixtures) ─────────────────

@@ -3,7 +3,7 @@ import types
 import pytest
 from pathlib import Path
 
-from app.helpers import Monitor
+from app.helpers import Monitor, ImapIdleConfig
 from app.scheduler import discover_monitors, Scheduler
 from app.db import Database
 
@@ -362,4 +362,59 @@ async def test_make_job_fn_runs_when_not_paused(db, monitors_dir):
     await job_fn()
 
     mock_runner.run.assert_called_once_with(monitor)
+    await sched.stop()
+
+
+# ── IMAP IDLE monitor support ──────────────────────────────────────────────
+
+def _make_imap_monitor_module(monitors_dir: Path, name: str) -> Path:
+    monitors_dir.mkdir(exist_ok=True)
+    code = f"""
+from app.helpers import Monitor, ImapIdleConfig
+
+monitor = Monitor(
+    name="{name}",
+    schedule=None,
+    notify_channels=["telegram"],
+    imap_idle=ImapIdleConfig(account="a@b.nl", folder="INBOX", search=["FROM", "@x.nl"]),
+)
+
+@monitor.check
+async def check(page, ctx):
+    pass
+"""
+    path = monitors_dir / f"{name}.py"
+    path.write_text(code)
+    return path
+
+
+def test_discover_monitors_finds_imap_only_monitor(monitors_dir):
+    _make_imap_monitor_module(monitors_dir, "imap_check")
+    monitors = discover_monitors(monitors_dir)
+    assert any(m.name == "imap_check" for m in monitors)
+
+
+def test_discover_monitors_imap_monitor_has_none_schedule(monitors_dir):
+    _make_imap_monitor_module(monitors_dir, "imap_check")
+    monitors = discover_monitors(monitors_dir)
+    m = next(m for m in monitors if m.name == "imap_check")
+    assert m.schedule is None
+
+
+async def test_scheduler_start_skips_imap_only_monitors(monitors_dir, db):
+    _make_imap_monitor_module(monitors_dir, "imap_check")
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+    jobs = sched.list_jobs()
+    assert not any(j["id"] == "imap_check" for j in jobs)
+    await sched.stop()
+
+
+async def test_scheduler_reload_skips_imap_only_monitors(monitors_dir, db):
+    _make_imap_monitor_module(monitors_dir, "imap_check")
+    sched = Scheduler(monitors_dir=monitors_dir, db=db)
+    await sched.start()
+    await sched.reload()
+    jobs = sched.list_jobs()
+    assert not any(j["id"] == "imap_check" for j in jobs)
     await sched.stop()
