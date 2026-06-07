@@ -70,8 +70,8 @@ class ImapWatcher:
 
         config = ImapIdleConfig(account=account, folder=folder, search=[])
         async with imap_connect(config, IMAP_ENV) as imap:
-            typ, caps_data = await imap.capability()
-            has_idle = b"IDLE" in caps_data[0] if caps_data else False
+            has_idle = imap.has_capability("IDLE")
+            logger.info("IMAP watcher connected to %s/%s (IDLE=%s)", account, folder, has_idle)
 
             if has_idle:
                 await self._idle_wait(imap, monitors)

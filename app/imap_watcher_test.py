@@ -31,7 +31,7 @@ async def test_imap_watcher_triggers_monitor_on_exists(monitors, mock_scheduler)
     mock_imap.login = AsyncMock(return_value=("OK", [b"OK"]))
     mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
     mock_imap.logout = AsyncMock(return_value=("OK", [b"Bye"]))
-    mock_imap.capability = AsyncMock(return_value=("OK", [b"IMAP4rev1 IDLE UIDPLUS"]))
+    mock_imap.has_capability = MagicMock(return_value=True)
     mock_imap.idle_start = AsyncMock()
 
     call_count = 0
@@ -63,7 +63,7 @@ async def test_imap_watcher_falls_back_to_poll_without_idle(monitors, mock_sched
     mock_imap.login = AsyncMock(return_value=("OK", [b"OK"]))
     mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
     mock_imap.logout = AsyncMock(return_value=("OK", [b"Bye"]))
-    mock_imap.capability = AsyncMock(return_value=("OK", [b"IMAP4rev1 UIDPLUS"]))
+    mock_imap.has_capability = MagicMock(return_value=False)
     mock_imap.noop = AsyncMock(return_value=("OK", [b"NOOP completed"]))
 
     call_count = 0
