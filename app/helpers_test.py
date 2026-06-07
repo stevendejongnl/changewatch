@@ -1,10 +1,12 @@
 import asyncio
+import logging
+from unittest.mock import AsyncMock, patch
 import pytest
 from aiohttp import web
 from aiohttp import web as aio_web
 from playwright.async_api import async_playwright
 
-from app.helpers import Monitor, ImapIdleConfig, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric
+from app.helpers import Monitor, ImapIdleConfig, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric, imap_connect, imap_fetch_unseen
 from app.db import Database
 from app.apprise_client import AppriseClient
 
@@ -321,3 +323,174 @@ async def test_record_metric_delegates_to_influx_client():
     assert stub.written[0][0] == "price"
     assert stub.written[0][1] == 42.5
     assert stub.written[0][2]["monitor"] == "test_mon"
+
+
+# ── imap_connect ──────────────────────────────────────────────────────────
+
+from app.runner import RunContext
+
+
+async def test_imap_connect_logs_in_and_selects_folder():
+    mock_imap = AsyncMock()
+    mock_imap.wait_hello_from_server = AsyncMock()
+    mock_imap.login = AsyncMock(return_value=("OK", [b"Logged in"]))
+    mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
+    mock_imap.logout = AsyncMock(return_value=("OK", [b"Bye"]))
+
+    config = ImapIdleConfig(
+        account="mail@stevenenanja.nl",
+        folder="INBOX",
+        search=["FROM", "@zitmaxx.nl"],
+    )
+    env = {"IMAP_URL_MAIL_STEVENENANJA_NL": "imaps://mail%40stevenenanja.nl:secret@host.nl:993"}
+
+    with patch("aioimaplib.IMAP4_SSL", return_value=mock_imap):
+        async with imap_connect(config, env) as imap:
+            assert imap is mock_imap
+
+    mock_imap.login.assert_called_once_with("mail@stevenenanja.nl", "secret")
+    mock_imap.select.assert_called_once_with("INBOX")
+    mock_imap.logout.assert_called_once()
+
+
+async def test_imap_connect_logs_out_even_on_exception():
+    mock_imap = AsyncMock()
+    mock_imap.wait_hello_from_server = AsyncMock()
+    mock_imap.login = AsyncMock(return_value=("OK", [b"OK"]))
+    mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
+    mock_imap.logout = AsyncMock(return_value=("OK", [b"Bye"]))
+
+    config = ImapIdleConfig(account="a@b.nl", folder="INBOX", search=[])
+    env = {"IMAP_URL_A_B_NL": "imaps://a%40b.nl:p@host:993"}
+
+    with patch("aioimaplib.IMAP4_SSL", return_value=mock_imap):
+        with pytest.raises(RuntimeError):
+            async with imap_connect(config, env) as _:
+                raise RuntimeError("boom")
+
+    mock_imap.logout.assert_called_once()
+
+
+async def test_imap_connect_uses_default_port_993():
+    mock_imap = AsyncMock()
+    mock_imap.wait_hello_from_server = AsyncMock()
+    mock_imap.login = AsyncMock(return_value=("OK", [b"OK"]))
+    mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
+    mock_imap.logout = AsyncMock(return_value=("OK", [b"Bye"]))
+
+    config = ImapIdleConfig(account="a@b.nl", folder="INBOX", search=[])
+    env = {"IMAP_URL_A_B_NL": "imaps://a%40b.nl:p@mail.host.nl"}
+
+    with patch("aioimaplib.IMAP4_SSL", return_value=mock_imap) as mock_cls:
+        async with imap_connect(config, env) as _:
+            pass
+
+    mock_cls.assert_called_once_with(host="mail.host.nl", port=993)
+
+
+async def test_imap_connect_suppresses_logout_error_on_exception():
+    mock_imap = AsyncMock()
+    mock_imap.wait_hello_from_server = AsyncMock()
+    mock_imap.login = AsyncMock(return_value=("OK", [b"OK"]))
+    mock_imap.select = AsyncMock(return_value=("OK", [b"1"]))
+    mock_imap.logout = AsyncMock(side_effect=OSError("connection lost"))
+
+    config = ImapIdleConfig(account="a@b.nl", folder="INBOX", search=[])
+    env = {"IMAP_URL_A_B_NL": "imaps://a%40b.nl:p@host:993"}
+
+    with patch("aioimaplib.IMAP4_SSL", return_value=mock_imap):
+        with pytest.raises(RuntimeError):
+            async with imap_connect(config, env) as _:
+                raise RuntimeError("body error")
+
+    mock_imap.logout.assert_called_once()
+
+
+# ── imap_fetch_unseen ─────────────────────────────────────────────────────
+
+@pytest.fixture
+async def imap_ctx(db):
+    return RunContext(
+        monitor_name="test_monitor",
+        logger=logging.getLogger("test"),
+        db=db,
+    )
+
+
+async def test_imap_fetch_unseen_first_run_stores_max_uid_returns_empty(db, imap_ctx):
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(return_value=("OK", [b"100 101 102"]))
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert result == []
+    assert await get_last_value(db, "test_monitor") == "102"
+    mock_imap.uid.assert_called_once_with("search", None, "ALL")
+
+
+async def test_imap_fetch_unseen_first_run_empty_inbox(db, imap_ctx):
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(return_value=("OK", [b""]))
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert result == []
+    assert await get_last_value(db, "test_monitor") == "0"
+
+
+async def test_imap_fetch_unseen_returns_new_messages(db, imap_ctx):
+    await set_value(db, "test_monitor", "102")
+
+    raw = b"From: sender@x.nl\r\nSubject: Test\r\n\r\nBody text"
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(side_effect=[
+        ("OK", [b"103"]),
+        ("OK", [(b"1 (UID 103 RFC822 {N})", raw), b")"]),
+    ])
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert len(result) == 1
+    assert result[0]["Subject"] == "Test"
+    assert await get_last_value(db, "test_monitor") == "103"
+
+
+async def test_imap_fetch_unseen_updates_max_uid(db, imap_ctx):
+    await set_value(db, "test_monitor", "100")
+
+    raw = b"From: a@x.nl\r\nSubject: S\r\n\r\nB"
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(side_effect=[
+        ("OK", [b"101 102 103"]),
+        ("OK", [(b"1 (UID 101 RFC822 {N})", raw), b")"]),
+        ("OK", [(b"2 (UID 102 RFC822 {N})", raw), b")"]),
+        ("OK", [(b"3 (UID 103 RFC822 {N})", raw), b")"]),
+    ])
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert len(result) == 3
+    assert await get_last_value(db, "test_monitor") == "103"
+
+
+async def test_imap_fetch_unseen_no_new_messages(db, imap_ctx):
+    await set_value(db, "test_monitor", "102")
+
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(return_value=("OK", [b""]))
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert result == []
+    assert await get_last_value(db, "test_monitor") == "102"
+
+
+async def test_imap_fetch_unseen_filters_uids_below_threshold(db, imap_ctx):
+    await set_value(db, "test_monitor", "102")
+
+    mock_imap = AsyncMock()
+    mock_imap.uid = AsyncMock(return_value=("OK", [b"102"]))
+
+    result = await imap_fetch_unseen(mock_imap, ["FROM", "@x.nl"], imap_ctx)
+
+    assert result == []

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -8,6 +9,7 @@ from app.db import Database
 if TYPE_CHECKING:  # pragma: no cover
     from app.apprise_client import AppriseClient
     from app.influx import InfluxClient
+    from app.runner import RunContext
 
 _CONSENT_SELECTORS = [
     "button:has-text('Accept all')",
@@ -111,3 +113,72 @@ async def record_metric(
     **tags: str,
 ) -> None:
     await influx_client.write(measurement, value, **tags)
+
+
+@asynccontextmanager
+async def imap_connect(config: "ImapIdleConfig", env: dict[str, str] | None = None):
+    import aioimaplib
+    from urllib.parse import urlparse, unquote
+    from app.imap_client import ImapClient
+
+    client = ImapClient.from_env(env)
+    url = client.get_url(config.account)
+    parsed = urlparse(url)
+    host = parsed.hostname
+    port = parsed.port or 993
+    user = unquote(parsed.username or "")
+    password = unquote(parsed.password or "")
+
+    imap = aioimaplib.IMAP4_SSL(host=host, port=port)
+    await imap.wait_hello_from_server()
+    await imap.login(user, password)
+    await imap.select(config.folder)
+    try:
+        yield imap
+    finally:
+        try:
+            await imap.logout()
+        except Exception:
+            pass
+
+
+async def imap_fetch_unseen(
+    imap: Any,
+    search: list[str],
+    ctx: "RunContext",
+) -> list[Any]:
+    import email as _email
+    from email.policy import default as _default_policy
+
+    last_uid_str = await get_last_value(ctx.db, ctx.monitor_name)
+
+    if last_uid_str is None:
+        typ, data = await imap.uid("search", None, "ALL")
+        uid_strs = data[0].decode().split() if data[0] else []
+        max_uid = max((int(u) for u in uid_strs), default=0)
+        await set_value(ctx.db, ctx.monitor_name, str(max_uid))
+        return []
+
+    last_uid = int(last_uid_str)
+    next_uid = last_uid + 1
+    criteria = list(search) + ["UID", f"{next_uid}:*"]
+
+    typ, data = await imap.uid("search", None, *criteria)
+    raw_uids = data[0].decode().split() if data[0] else []
+    uid_strs = [u for u in raw_uids if int(u) >= next_uid]
+
+    if not uid_strs:
+        return []
+
+    messages = []
+    for uid_str in uid_strs:
+        typ, msg_data = await imap.uid("fetch", uid_str, "(RFC822)")
+        for item in msg_data:
+            if isinstance(item, tuple) and len(item) >= 2:
+                msg = _email.message_from_bytes(item[1], policy=_default_policy)
+                messages.append(msg)
+                break
+
+    max_new_uid = max(int(u) for u in uid_strs)
+    await set_value(ctx.db, ctx.monitor_name, str(max_new_uid))
+    return messages

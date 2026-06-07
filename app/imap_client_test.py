@@ -50,3 +50,9 @@ def test_imap_client_get_url_multiple_accounts():
     client = ImapClient.from_env(env)
     assert client.get_url("a@b.nl") == "imaps://a:p@host:993"
     assert client.get_url("c@d.nl") == "imaps://c:q@host:993"
+
+
+def test_imap_client_from_env_none_reads_os_environ(monkeypatch):
+    monkeypatch.setenv("IMAP_URL_A_B_NL", "imaps://a:p@host:993")
+    client = ImapClient.from_env(None)
+    assert client.get_url("a@b.nl") == "imaps://a:p@host:993"
