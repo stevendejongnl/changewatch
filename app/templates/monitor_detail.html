@@ -150,6 +150,8 @@
   }
   @media (max-width: 700px) {
     .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .metric-card:not(.metric-key) { display: none; }
+    .detail-topbar-right { display: none; }
     .run-row-main {
       grid-template-columns: 20px 80px 1fr 20px;
       gap: 8px;
@@ -157,6 +159,41 @@
     }
     .run-row-main .chip { display: none; }
     .run-time { font-size: 10.5px; }
+  }
+
+  /* ── Mobile sticky action bar ───────────────────────────── */
+  .mob-action-bar { display: none; }
+  @media (max-width: 700px) {
+    .mob-action-bar {
+      display: flex;
+      gap: 8px;
+      position: fixed;
+      bottom: 72px;
+      left: 12px; right: 12px;
+      z-index: 90;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: -4px -4px 10px var(--raise), 4px 4px 14px var(--shadow);
+    }
+    .mob-action-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 8px;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer;
+      font: 500 12px var(--sans);
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
+    }
+    .mob-action-btn.primary { color: var(--accent); }
+    .mob-action-btn.danger  { color: var(--err); }
+    .mob-action-btn:active {
+      box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
+    }
+    .content-card { padding-bottom: 130px; }
   }
 </style>
 {% endblock %}
@@ -175,7 +212,7 @@
   </h1>
   <div class="topbar-sub">{{ schedule }} · {{ schedule | humanize_cron }}</div>
 </div>
-<div class="topbar-right">
+<div class="topbar-right detail-topbar-right">
   {% if product_url %}
   <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn">
     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
@@ -222,7 +259,7 @@
     <div class="eyebrow">schedule</div>
     <div class="metric-value mono" style="font-size:16px">{{ schedule }}</div>
   </div>
-  <div class="neu-raised-sm metric-card">
+  <div class="neu-raised-sm metric-card metric-key">
     <div class="eyebrow">status</div>
     <div class="metric-value" style="font-size:18px">
       <div class="led lg {{ current_status }}"></div>
@@ -245,7 +282,7 @@
     <div class="metric-sub">{{ err_runs }} error{{ 's' if err_runs != 1 }}</div>
     {% endif %}
   </div>
-  <div class="neu-raised-sm metric-card">
+  <div class="neu-raised-sm metric-card metric-key">
     <div class="eyebrow">total runs</div>
     <div class="metric-value num">{{ total_runs }}</div>
   </div>
@@ -368,6 +405,27 @@
 {% endif %}
 
 </div><!-- end .detail-body -->
+
+<!-- Mobile sticky action bar -->
+<div class="mob-action-bar" id="mob-action-bar">
+  <button class="mob-action-btn primary" id="mob-run-btn" onclick="runNow()">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
+    <span id="mob-run-label">Run now</span>
+  </button>
+  <button class="mob-action-btn" id="mob-pause-btn" onclick="togglePause()">
+    {% if paused %}
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
+    <span id="mob-pause-label">Resume</span>
+    {% else %}
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+    <span id="mob-pause-label">Pause</span>
+    {% endif %}
+  </button>
+  <button class="mob-action-btn danger" onclick="deleteMonitor()">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    Delete
+  </button>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -402,6 +460,10 @@
     const label = document.getElementById('run-label');
     btn.disabled = true;
     label.textContent = 'Queued…';
+    const mobBtn = document.getElementById('mob-run-btn');
+    const mobLabel = document.getElementById('mob-run-label');
+    if (mobBtn) mobBtn.disabled = true;
+    if (mobLabel) mobLabel.textContent = 'Queued…';
     const latestId = parseInt(document.querySelector('.run-row')?.id.replace('run-', '') || '0');
     try {
       const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
@@ -441,6 +503,17 @@
             svgEl.innerHTML = '<path d="M7 5l11 7-11 7V5z"/>';
           } else {
             svgEl.innerHTML = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+          }
+        }
+        const mobLabel = document.getElementById('mob-pause-label');
+        const mobBtn = document.getElementById('mob-pause-btn');
+        if (mobLabel) mobLabel.textContent = _paused ? 'Resume' : 'Pause';
+        if (mobBtn) {
+          const mobSvg = mobBtn.querySelector('svg');
+          if (mobSvg) {
+            mobSvg.innerHTML = _paused
+              ? '<path d="M7 5l11 7-11 7V5z"/>'
+              : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
           }
         }
       }
