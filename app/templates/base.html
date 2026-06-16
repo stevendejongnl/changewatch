@@ -340,6 +340,7 @@
       .topbar { flex-wrap: wrap; align-items: flex-start; gap: 8px; }
       .topbar-right { flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
       .topbar-right .btn { padding: 8px 10px; font-size: 11.5px; }
+      .btn.icon { min-width: 44px; min-height: 44px; padding: 12px; }
       .content-card {
         border-radius: 0;
         box-shadow: none;
@@ -372,12 +373,13 @@
         display: flex; flex-direction: column; align-items: center; gap: 3px;
         background: transparent; border: 0;
         color: var(--ink-3);
-        padding: 6px 4px; cursor: pointer;
+        padding: 4px 4px 2px; cursor: pointer;
         font: 500 9.5px var(--sans); letter-spacing: 0.05em; text-transform: uppercase;
+        min-height: 48px; justify-content: center;
       }
       .mobile-tab.active { color: var(--accent); }
       .mobile-tab-icon {
-        width: 36px; height: 28px;
+        width: 44px; height: 36px;
         border-radius: 8px;
         display: flex; align-items: center; justify-content: center;
       }
