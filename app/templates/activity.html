@@ -123,6 +123,9 @@
     box-shadow: -3px -3px 7px var(--raise-strong), 4px 4px 9px var(--shadow);
   }
 
+  /* ── Mobile monitor filter ─────────────────────────────── */
+  .mob-mon-filter { display: none; margin-bottom: 10px; }
+
   /* ── Responsive ─────────────────────────────────────────── */
   @media (max-width: 900px) {
     .activity-row {
@@ -131,6 +134,7 @@
     .act-value, .act-chip, .act-chevron { display: none; }
   }
   @media (max-width: 700px) {
+    .mob-mon-filter { display: block; }
     .activity-row {
       grid-template-columns: 20px 1fr 60px;
       gap: 10px;
@@ -157,13 +161,23 @@
 {% endblock %}
 
 {% block content %}
+<!-- Mobile monitor filter (native select, shown only on mobile) -->
+<div class="mob-mon-filter">
+  <select class="input" style="font-size:12px" onchange="filterActivity(null, null)" id="mon-filter-mobile">
+    <option value="">All monitors</option>
+    {% for name in monitor_names %}
+    <option value="{{ name }}">{{ name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
 <!-- Filters -->
 <div class="filter-row">
   <div class="seg">
-    <button class="on" onclick="filterActivity('all', this)">All</button>
-    <button onclick="filterActivity('error', this)">Errors</button>
-    <button onclick="filterActivity('changed', this)">Changes</button>
-    <button onclick="filterActivity('ok', this)">OK</button>
+    <button class="on" data-status="all" onclick="filterActivity('all', this)">All</button>
+    <button data-status="error" onclick="filterActivity('error', this)">Errors</button>
+    <button data-status="changed" onclick="filterActivity('changed', this)">Changes</button>
+    <button data-status="ok" onclick="filterActivity('ok', this)">OK</button>
   </div>
   <div class="mon-select-wrap">
     <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>
@@ -241,18 +255,18 @@
 {% block scripts %}
 <script>
   function filterActivity(status, btn) {
-    if (btn) {
-      document.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
+    if (status && btn) {
+      document.querySelectorAll('.filter-row .seg button').forEach(b => b.classList.remove('on'));
       btn.classList.add('on');
     }
-    const monFilter = document.getElementById('mon-filter').value;
-    const activeBtn = document.querySelector('.seg button.on');
-    const statusFilter = activeBtn ? activeBtn.textContent.trim().toLowerCase() : 'all';
-    const resolvedStatus = status !== null ? status : statusFilter;
-
-    document.querySelectorAll('#activity-feed .activity-row').forEach(row => {
-      const statusMatch = resolvedStatus === 'all' || row.dataset.status === resolvedStatus;
-      const monMatch = !monFilter || row.dataset.monitor === monFilter;
+    var activeStatus = document.querySelector('.filter-row .seg button.on')?.dataset.status || 'all';
+    var desktopSel = document.getElementById('mon-filter');
+    var mobileSel = document.getElementById('mon-filter-mobile');
+    var monName = (desktopSel && desktopSel.offsetParent ? desktopSel.value : '') ||
+                  (mobileSel && mobileSel.offsetParent ? mobileSel.value : '');
+    document.querySelectorAll('#activity-feed .activity-row').forEach(function(row) {
+      var statusMatch = activeStatus === 'all' || row.dataset.status === activeStatus;
+      var monMatch = !monName || row.dataset.monitor === monName;
       row.style.display = statusMatch && monMatch ? '' : 'none';
     });
   }
