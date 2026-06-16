@@ -115,7 +115,7 @@
   /* ── Two-column layout (runs + chart) ───────────────────── */
   .detail-body {
     display: grid;
-    grid-template-columns: 1fr 360px;
+    grid-template-columns: 1fr 480px;
     gap: 18px;
     align-items: start;
   }
@@ -351,9 +351,14 @@
   <div class="neu-raised-sm" style="padding:18px">
     <div class="chart-header">
       <h2>Value over time</h2>
-      <span class="mono t-3" style="font-size:10.5px">48h</span>
+      <div class="seg" style="transform:scale(.82);transform-origin:right">
+        <button class="on" id="range-48h"   onclick="setRange(48,    this)">48h</button>
+        <button          id="range-30d"   onclick="setRange(720,   this)">30d</button>
+        <button          id="range-90d"   onclick="setRange(2160,  this)">90d</button>
+        <button          id="range-1y"    onclick="setRange(8760,  this)">1y</button>
+      </div>
     </div>
-    <div class="neu-inset" style="padding:10px 12px;min-height:80px;position:relative">
+    <div style="min-height:80px;position:relative">
       <div id="cw-chart-loading" class="t-3 mono" style="font-size:11px;text-align:center;padding:20px 0">loading…</div>
       <div id="cw-chart-empty" class="t-4 mono" style="font-size:11px;text-align:center;padding:20px 0;display:none">no data</div>
       <div id="cw-chart-container"></div>
@@ -368,7 +373,14 @@
 {% block scripts %}
 {% if metric %}
 <script src="/static/chart.js?v={{ chart_version }}"></script>
-<script>CWChart.initChart({{ monitor_name | tojson }}, "", 48);</script>
+<script>
+  function setRange(hours, btn) {
+    document.querySelectorAll('.chart-col .seg button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    CWChart.initChart({{ monitor_name | tojson }}, "", hours);
+  }
+  CWChart.initChart({{ monitor_name | tojson }}, "", 48);
+</script>
 {% endif %}
 <script>
   function toggleRun(id, hasLogs) {

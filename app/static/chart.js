@@ -3947,40 +3947,58 @@
   function renderChart(container, data, unit2) {
     container.innerHTML = "";
     const totalW = container.clientWidth || 600;
-    const totalH = 180;
-    const margin = { top: 16, right: 20, bottom: 28, left: 42 };
+    const totalH = 260;
+    const margin = { top: 16, right: 16, bottom: 32, left: 52 };
     const w = totalW - margin.left - margin.right;
     const h = totalH - margin.top - margin.bottom;
     const svg = select(container).append("svg").attr("width", totalW).attr("height", totalH).style("display", "block");
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
     const xScale = time().domain(extent(data, (d) => d.t)).range([0, w]);
     const [minV, maxV] = extent(data, (d) => d.v);
-    const pad2 = (maxV - minV) * 0.1 || 1;
-    const yScale = linear().domain([minV - pad2, maxV + pad2]).range([h, 0]);
-    g.append("g").selectAll("line").data(yScale.ticks(4)).join("line").attr("x1", 0).attr("x2", w).attr("y1", (d) => yScale(d)).attr("y2", (d) => yScale(d)).attr("stroke", "var(--line)").attr("stroke-dasharray", "2 4");
-    const area$1 = area().x((d) => xScale(d.t)).y0(h).y1((d) => yScale(d.v)).curve(monotoneX);
-    const gradId = "cw-chart-grad-" + Math.random().toString(36).slice(2);
-    const defs = svg.append("defs");
-    const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0").attr("y1", "0").attr("x2", "0").attr("y2", "1");
-    grad.append("stop").attr("offset", "0%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0.28);
-    grad.append("stop").attr("offset", "100%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0);
-    g.append("path").datum(data).attr("fill", `url(#${gradId})`).attr("d", area$1);
-    const line$1 = line().x((d) => xScale(d.t)).y((d) => yScale(d.v)).curve(monotoneX);
-    g.append("path").datum(data).attr("fill", "none").attr("stroke", "var(--accent)").attr("stroke-width", 2).attr("filter", "drop-shadow(0 0 3px var(--accent-glow))").attr("d", line$1);
-    const last = data[data.length - 1];
-    g.append("circle").attr("cx", xScale(last.t)).attr("cy", yScale(last.v)).attr("r", 4).attr("fill", "var(--accent)").attr("filter", "drop-shadow(0 0 4px var(--accent-glow))");
+    const pad2 = (maxV - minV) * 0.08 || 1;
+    const yMin = Math.max(0, minV - pad2);
+    const yScale = linear().domain([yMin, maxV + pad2]).range([h, 0]).nice(5);
+    const gridTicks = yScale.ticks(5);
+    g.append("g").selectAll("line").data(gridTicks).join("line")
+      .attr("x1", 0).attr("x2", w)
+      .attr("y1", (d) => yScale(d)).attr("y2", (d) => yScale(d))
+      .attr("stroke", "rgba(255,255,255,0.06)").attr("stroke-width", 1);
+    const stepData = [];
+    for (let i = 0; i < data.length; i++) {
+      stepData.push(data[i]);
+      if (i < data.length - 1) stepData.push({ t: data[i + 1].t, v: data[i].v });
+    }
+    const line$1 = line().x((d) => xScale(d.t)).y((d) => yScale(d.v)).curve(curveLinear);
+    g.append("path").datum(stepData).attr("fill", "none")
+      .attr("stroke", "var(--accent)").attr("stroke-width", 1.5)
+      .attr("d", line$1);
+    const spanMs = data[data.length - 1].t - data[0].t;
+    const spanDays = spanMs / 864e5;
+    let xFmt;
+    if (spanDays > 60) xFmt = (d) => timeFormat("%b '%y")(d);
+    else if (spanDays > 3) xFmt = (d) => timeFormat("%d %b")(d);
+    else xFmt = (d) => timeFormat("%H:%M")(d);
     g.append("g").attr("transform", `translate(0,${h})`).call(
-      axisBottom(xScale).ticks(5).tickSize(0).tickFormat((d) => timeFormat("%H:%M")(d))
-    ).call((ax) => ax.select(".domain").remove()).selectAll("text").attr("fill", "var(--ink-3)").attr("font-size", "9.5px").attr("font-family", "var(--mono)").attr("dy", "1.2em");
+      axisBottom(xScale).ticks(6).tickSize(0).tickFormat(xFmt)
+    ).call((ax) => ax.select(".domain").remove())
+      .selectAll("text").attr("fill", "var(--ink-3)").attr("font-size", "10px")
+      .attr("font-family", "var(--sans)").attr("dy", "1.4em");
+    const yFmt = unit2 ? (d) => `${unit2}${d}` : (d) => `${d}`;
     g.append("g").call(
-      axisLeft(yScale).ticks(4).tickSize(0).tickFormat((d) => `${d}${unit2}`)
-    ).call((ax) => ax.select(".domain").remove()).selectAll("text").attr("fill", "var(--ink-3)").attr("font-size", "9.5px").attr("font-family", "var(--mono)");
+      axisLeft(yScale).tickValues(gridTicks).tickSize(0).tickFormat(yFmt)
+    ).call((ax) => ax.select(".domain").remove())
+      .selectAll("text").attr("fill", "var(--ink-3)").attr("font-size", "10px")
+      .attr("font-family", "var(--sans)").attr("dx", "-6px");
   }
   async function initChart(monitorName, unit2, hours) {
     const container = document.getElementById("cw-chart-container");
     if (!container) return;
     const loadingEl = document.getElementById("cw-chart-loading");
     const emptyEl = document.getElementById("cw-chart-empty");
+    if (loadingEl) loadingEl.style.display = "";
+    if (emptyEl) emptyEl.style.display = "none";
+    container.innerHTML = "";
+    if (container._cwResizeObserver) { container._cwResizeObserver.disconnect(); container._cwResizeObserver = null; }
     try {
       const resp = await fetch(
         `/api/monitors/${encodeURIComponent(monitorName)}/metrics?hours=${hours}`
@@ -3994,6 +4012,15 @@
       }
       const data = raw.map((d) => ({ t: new Date(d.t), v: d.v }));
       renderChart(container, data, unit2);
+      if (typeof ResizeObserver !== "undefined") {
+        let resizeTimer;
+        const ro = new ResizeObserver(() => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => renderChart(container, data, unit2), 100);
+        });
+        ro.observe(container);
+        container._cwResizeObserver = ro;
+      }
     } catch {
       if (loadingEl) loadingEl.style.display = "none";
       if (emptyEl) emptyEl.style.display = "";
