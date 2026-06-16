@@ -467,7 +467,7 @@
     const latestId = parseInt(document.querySelector('.run-row')?.id.replace('run-', '') || '0');
     try {
       const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
-      if (!res.ok) { label.textContent = 'Error'; btn.disabled = false; return; }
+      if (!res.ok) { label.textContent = 'Error'; btn.disabled = false; if (mobBtn) mobBtn.disabled = false; if (mobLabel) mobLabel.textContent = 'Run now'; return; }
       const poll = setInterval(async () => {
         try {
           const r = await fetch('/api/monitors/{{ monitor_name }}/runs');
@@ -482,6 +482,8 @@
     } catch (_) {
       label.textContent = 'Error';
       btn.disabled = false;
+      if (mobBtn) mobBtn.disabled = false;
+      if (mobLabel) mobLabel.textContent = 'Run now';
     }
   }
 
@@ -519,6 +521,8 @@
       }
     } finally {
       btn.disabled = false;
+      const mobPauseBtn = document.getElementById('mob-pause-btn');
+      if (mobPauseBtn) mobPauseBtn.disabled = false;
     }
   }
 

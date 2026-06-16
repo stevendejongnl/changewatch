@@ -487,19 +487,17 @@ document.querySelectorAll('.channel-checkbox').forEach(function(cb) {
   document.getElementById('helpers-close').addEventListener('click', closeHelpers);
   document.getElementById('helpers-backdrop').addEventListener('click', closeHelpers);
 
-  document.querySelector('form').addEventListener('submit', function() {
-    if (window.innerWidth <= 700) {
-      document.querySelectorAll('#raw-editor-container textarea').forEach(function(el) {
-        el.disabled = true;
-      });
-    } else {
-      var mob = document.getElementById('mob-code-editor');
-      if (mob) mob.disabled = true;
-    }
-  });
-
   function insertSnippet(snippet) {
     closeHelpers();
+    if (window.innerWidth <= 700) {
+      var mob = document.getElementById('mob-code-editor');
+      if (mob) {
+        var s = mob.selectionStart;
+        mob.setRangeText(snippet, s, mob.selectionEnd, 'end');
+        mob.focus();
+      }
+      return;
+    }
     var ta = document.querySelector('#raw-editor-container textarea.input-layer');
     if (!ta) {
       navigator.clipboard && navigator.clipboard.writeText(snippet);
