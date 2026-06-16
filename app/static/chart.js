@@ -4034,18 +4034,14 @@
     const xScale = time().domain(extent(data, (d) => d.t)).range([0, totalW]);
     const [minV, maxV] = extent(data, (d) => d.v);
     const pad2 = (maxV - minV) * 0.1 || 1;
-    const yScale = linear().domain([minV - pad2, maxV + pad2]).range([totalH, 0]);
-    const gradId = "cw-spark-grad-" + Math.random().toString(36).slice(2);
-    const defs = svg.append("defs");
-    const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0").attr("y1", "0").attr("x2", "0").attr("y2", "1");
-    grad.append("stop").attr("offset", "0%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0.3);
-    grad.append("stop").attr("offset", "100%").attr("stop-color", "var(--accent)").attr("stop-opacity", 0);
-    const area$1 = area().x((d) => xScale(d.t)).y0(totalH).y1((d) => yScale(d.v)).curve(monotoneX);
-    svg.append("path").datum(data).attr("fill", `url(#${gradId})`).attr("d", area$1);
-    const line$1 = line().x((d) => xScale(d.t)).y((d) => yScale(d.v)).curve(monotoneX);
-    svg.append("path").datum(data).attr("fill", "none").attr("stroke", "var(--accent)").attr("stroke-width", 1.5).attr("filter", "drop-shadow(0 0 2px var(--accent-glow))").attr("d", line$1);
-    const last = data[data.length - 1];
-    svg.append("circle").attr("cx", xScale(last.t)).attr("cy", yScale(last.v)).attr("r", 3).attr("fill", "var(--accent)").attr("filter", "drop-shadow(0 0 3px var(--accent-glow))");
+    const yScale = linear().domain([Math.max(0, minV - pad2), maxV + pad2]).range([totalH, 0]);
+    const stepData = [];
+    for (let i = 0; i < data.length; i++) {
+      stepData.push(data[i]);
+      if (i < data.length - 1) stepData.push({ t: data[i + 1].t, v: data[i].v });
+    }
+    const line$1 = line().x((d) => xScale(d.t)).y((d) => yScale(d.v)).curve(curveLinear);
+    svg.append("path").datum(stepData).attr("fill", "none").attr("stroke", "var(--accent)").attr("stroke-width", 1.5).attr("d", line$1);
   }
   async function initSparkline(monitorName, containerId) {
     const container = document.getElementById(containerId);
