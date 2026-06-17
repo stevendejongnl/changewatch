@@ -20,3 +20,8 @@ frontend/node_modules/
 .vscode/
 *.swp
 .playwright-mcp/
+
+# Local / generated
+.env
+.superpowers/
+*.png
