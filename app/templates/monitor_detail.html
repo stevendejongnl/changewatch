@@ -258,6 +258,7 @@
   <div class="neu-raised-sm metric-card">
     <div class="eyebrow">schedule</div>
     <div class="metric-value mono" style="font-size:16px">{{ schedule }}</div>
+    <div class="metric-sub">{{ schedule | humanize_cron }}</div>
   </div>
   <div class="neu-raised-sm metric-card metric-key">
     <div class="eyebrow">status</div>

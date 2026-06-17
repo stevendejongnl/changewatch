@@ -47,6 +47,10 @@
     letter-spacing: 0.04em;
   }
   .input.mono-input { font-family: var(--mono); font-size: 12.5px; }
+  .cron-builder { margin-top: 8px; }
+  .cron-fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .cron-part { text-align: center; padding: 5px 4px !important; }
+  #cron-desc { font-size: 11px; color: var(--ink-3); font-style: italic; margin-top: 6px; min-height: 16px; }
   .schedule-segs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .schedule-segs button {
     padding: 5px 10px;
@@ -257,6 +261,16 @@
           <label class="form-label" for="field-schedule">Schedule (cron)</label>
           <input id="field-schedule" class="input mono-input" type="text"
                  placeholder="*/30 * * * *">
+          <div class="cron-builder">
+            <div class="cron-fields">
+              <div><span class="form-label" style="text-align:center;display:block">min</span><input id="cron-min" class="input mono-input cron-part" placeholder="*"></div>
+              <div><span class="form-label" style="text-align:center;display:block">hour</span><input id="cron-hour" class="input mono-input cron-part" placeholder="*"></div>
+              <div><span class="form-label" style="text-align:center;display:block">dom</span><input id="cron-dom" class="input mono-input cron-part" placeholder="*"></div>
+              <div><span class="form-label" style="text-align:center;display:block">mon</span><input id="cron-mon" class="input mono-input cron-part" placeholder="*"></div>
+              <div><span class="form-label" style="text-align:center;display:block">dow</span><input id="cron-dow" class="input mono-input cron-part" placeholder="*"></div>
+            </div>
+            <div id="cron-desc"></div>
+          </div>
           <div class="schedule-segs">
             <button type="button" data-cron="*/5 * * * *">5 min</button>
             <button type="button" data-cron="*/15 * * * *">15 min</button>

@@ -256,6 +256,39 @@ function init(): void {
   const fieldInflux = document.getElementById("field-influx") as HTMLInputElement | null;
   const fieldNetworkIdle = document.getElementById("field-networkidle") as HTMLInputElement | null;
 
+  // Cron builder
+  const cronPartEls = ['cron-min', 'cron-hour', 'cron-dom', 'cron-mon', 'cron-dow']
+    .map(id => document.getElementById(id) as HTMLInputElement | null);
+  const cronDescEl = document.getElementById('cron-desc');
+
+  function describeCron(expr: string): string {
+    const p = expr.trim().split(/\s+/);
+    if (p.length !== 5) return '';
+    const [min, hr, dom, mon, dow] = p;
+    if (p.every(x => x === '*')) return 'every minute';
+    if (/^\*\/\d+$/.test(min) && hr === '*' && dom === '*' && mon === '*' && dow === '*') {
+      const n = min.slice(2);
+      return n === '1' ? 'every minute' : `every ${n} minutes`;
+    }
+    if (min === '0' && hr === '*' && dom === '*' && mon === '*' && dow === '*') return 'every hour';
+    if (min === '0' && /^\*\/\d+$/.test(hr) && dom === '*' && mon === '*' && dow === '*') return `every ${hr.slice(2)} hours`;
+    if (min === '0' && hr === '0' && dom === '*' && mon === '*' && dow === '*') return 'every day at midnight';
+    if (min === '0' && hr === '12' && dom === '*' && mon === '*' && dow === '*') return 'every day at noon';
+    if (/^\d+$/.test(min) && /^\d+$/.test(hr) && dom === '*' && mon === '*' && dow === '*') {
+      const h = parseInt(hr).toString().padStart(2, '0');
+      const m = parseInt(min).toString().padStart(2, '0');
+      return `every day at ${h}:${m}`;
+    }
+    return '';
+  }
+
+  function syncBuilderFromExpr(expr: string): void {
+    const p = expr.trim().split(/\s+/);
+    if (p.length !== 5) return;
+    cronPartEls.forEach((el, i) => { if (el) el.value = p[i] === '*' ? '' : p[i]; });
+    if (cronDescEl) cronDescEl.textContent = describeCron(expr);
+  }
+
   function getSource(): string {
     if (customFile) return editor!.getValue();
     const config = readForm();
@@ -289,6 +322,7 @@ function init(): void {
     if (fieldName) fieldName.value = config.name;
     if (fieldUrl) fieldUrl.value = config.url;
     if (fieldSchedule) fieldSchedule.value = config.schedule;
+    syncBuilderFromExpr(config.schedule);
     if (fieldSelector) fieldSelector.value = config.selector;
     if (fieldMetric) fieldMetric.value = config.metric ?? "";
     if (fieldInflux) fieldInflux.checked = config.recordToInflux;
@@ -323,13 +357,28 @@ function init(): void {
   document.querySelectorAll<HTMLButtonElement>("button[data-cron]").forEach(btn => {
     btn.addEventListener("click", () => {
       if (fieldSchedule) fieldSchedule.value = btn.dataset.cron!;
+      syncBuilderFromExpr(btn.dataset.cron!);
+      updatePreview();
+    });
+  });
+
+  // Cron builder parts → update schedule input
+  cronPartEls.forEach(el => {
+    el?.addEventListener('input', () => {
+      const expr = cronPartEls.map(e => e?.value.trim() || '*').join(' ');
+      if (fieldSchedule) fieldSchedule.value = expr;
+      if (cronDescEl) cronDescEl.textContent = describeCron(expr);
       updatePreview();
     });
   });
 
   // Form field changes → update preview (standard files only; custom has no form)
-  [fieldName, fieldUrl, fieldSchedule, fieldSelector, fieldMetric].forEach(el => {
+  [fieldName, fieldUrl, fieldSelector, fieldMetric].forEach(el => {
     el?.addEventListener("input", updatePreview);
+  });
+  fieldSchedule?.addEventListener("input", () => {
+    syncBuilderFromExpr(fieldSchedule.value);
+    updatePreview();
   });
   [fieldInflux, fieldNetworkIdle].forEach(el => {
     el?.addEventListener("change", updatePreview);
