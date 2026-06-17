@@ -188,10 +188,6 @@ async def get_influx() -> "InfluxClient | None":  # pragma: no cover
     return _influx
 
 
-def get_log_buf() -> AppLogBuffer:  # pragma: no cover
-    return get_log_buffer()
-
-
 async def get_browser():  # pragma: no cover
     return _browser
 
@@ -202,16 +198,12 @@ GitSyncDep = Annotated[Optional[GitSync], Depends(get_git_sync)]
 GitEditorDep = Annotated[GitEditor | None, Depends(get_git_editor)]
 AppraiseDep = Annotated[AppriseClient, Depends(get_apprise)]
 InfluxDep = Annotated[Optional[Any], Depends(get_influx)]
-LogBufDep = Annotated[AppLogBuffer, Depends(get_log_buf)]
+LogBufDep = Annotated[AppLogBuffer, Depends(get_log_buffer)]
 BrowserDep = Annotated[Any, Depends(get_browser)]
 EventBusDep = Annotated[EventBus, Depends(get_event_bus)]
 
 
 class _SaveBody(BaseModel):
-    source: str
-
-
-class _DryRunBody(BaseModel):
     source: str
 
 
@@ -626,7 +618,7 @@ async def api_monitor_delete(name: str, db: DbDep, git_editor: GitEditorDep, sch
 
 
 @app.post("/api/monitors/{name}/dry-run")
-async def api_monitor_dry_run(name: str, body: _DryRunBody, browser: BrowserDep, db: DbDep):
+async def api_monitor_dry_run(name: str, body: _SaveBody, browser: BrowserDep, db: DbDep):
     if browser is None:
         raise HTTPException(status_code=503, detail="Browser not available")
     monitor = await _load_monitor_from_source(body.source, name)

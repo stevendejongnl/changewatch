@@ -27,28 +27,20 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
     source_no_comments = "\n".join(non_comment_lines)
 
     # Extract name
-    name_match = re.search(r'\bname\s*=\s*"([^"]+)"', source_no_comments)
-    if not name_match:
-        name_match = re.search(r"\bname\s*=\s*'([^']+)'", source_no_comments)
+    name_match = re.search(r"""\bname\s*=\s*["']([^"']+)["']""", source_no_comments)
     if not name_match:
         return None
     name = name_match.group(1)
 
     # Extract schedule
-    schedule_match = re.search(r'\bschedule\s*=\s*"([^"]+)"', source_no_comments)
-    if not schedule_match:
-        schedule_match = re.search(r"\bschedule\s*=\s*'([^']+)'", source_no_comments)
+    schedule_match = re.search(r"""\bschedule\s*=\s*["']([^"']+)["']""", source_no_comments)
     if not schedule_match:
         return None
     schedule = schedule_match.group(1)
 
     # Extract url
-    url = ""
-    url_match = re.search(r'\burl\s*=\s*"([^"]+)"', source_no_comments)
-    if not url_match:
-        url_match = re.search(r"\burl\s*=\s*'([^']+)'", source_no_comments)
-    if url_match:
-        url = url_match.group(1)
+    url_match = re.search(r"""\burl\s*=\s*["']([^"']+)["']""", source_no_comments)
+    url = url_match.group(1) if url_match else ""
 
     # Extract notify_channels list
     notify_channels: list[str] = []
@@ -58,12 +50,8 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
         notify_channels = re.findall(r'["\']([^"\']+)["\']', raw)
 
     # Extract selector from extract_text call
-    selector = ""
-    selector_match = re.search(r'extract_text\s*\(\s*\w+\s*,\s*"([^"]+)"', source_no_comments)
-    if not selector_match:
-        selector_match = re.search(r"extract_text\s*\(\s*\w+\s*,\s*'([^']+)'", source_no_comments)
-    if selector_match:
-        selector = selector_match.group(1)
+    selector_match = re.search(r"""extract_text\s*\(\s*\w+\s*,\s*["']([^"']+)["']""", source_no_comments)
+    selector = selector_match.group(1) if selector_match else ""
 
     # Detect record_to_influx
     record_to_influx = "record_metric" in source_no_comments
@@ -73,12 +61,8 @@ def parse_monitor(source: str) -> Optional[MonitorConfig]:
                             "wait_for_load_state('networkidle')" in source_no_comments
 
     # Extract metric
-    metric: Optional[str] = None
-    metric_match = re.search(r'\bmetric\s*=\s*"([^"]+)"', source_no_comments)
-    if not metric_match:
-        metric_match = re.search(r"\bmetric\s*=\s*'([^']+)'", source_no_comments)
-    if metric_match:
-        metric = metric_match.group(1)
+    metric_match = re.search(r"""\bmetric\s*=\s*["']([^"']+)["']""", source_no_comments)
+    metric: Optional[str] = metric_match.group(1) if metric_match else None
 
     return MonitorConfig(
         name=name,

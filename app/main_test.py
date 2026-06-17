@@ -807,7 +807,8 @@ async def test_api_debug_log_stream_returns_history_as_sse(db):
     import logging as _stdlib_logging
     import app.main as main_module
     from app.log_stream import AppLogBuffer
-    from app.main import get_log_buf, get_db as _get_db
+    from app.log_stream import get_log_buffer
+    from app.main import get_db as _get_db
 
     buf = AppLogBuffer()
     record = _stdlib_logging.LogRecord(
@@ -824,10 +825,10 @@ async def test_api_debug_log_stream_returns_history_as_sse(db):
     original_gen = main_module._log_stream_generator
     main_module._log_stream_generator = _finite
     app.dependency_overrides[_get_db] = lambda: db
-    app.dependency_overrides[get_log_buf] = lambda: buf
+    app.dependency_overrides[get_log_buffer] = lambda: buf
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         response = await c.get("/api/debug/log-stream")
-    app.dependency_overrides.pop(get_log_buf, None)
+    app.dependency_overrides.pop(get_log_buffer, None)
     app.dependency_overrides.pop(_get_db, None)
     main_module._log_stream_generator = original_gen
 

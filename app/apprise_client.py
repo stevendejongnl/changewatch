@@ -15,7 +15,7 @@ class AppriseClient:
         }
 
     def resolved_channels(self) -> dict[str, str]:
-        return dict(self._channels)
+        return self._channels
 
     async def notify(self, title: str, body: str, tags: list[str] | None = None) -> None:
         targets = tags or []

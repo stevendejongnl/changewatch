@@ -1,12 +1,12 @@
 import asyncio
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 from aiohttp import web as aio_web
 from playwright.async_api import async_playwright
 
-from app.helpers import Monitor, ImapIdleConfig, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric, imap_connect, imap_fetch_unseen
+from app.helpers import Monitor, ImapIdleConfig, navigate, get_last_value, set_value, extract_text, extract_json, notify, record_metric, tweakers_price_check, imap_connect, imap_fetch_unseen
 from app.db import Database
 from app.apprise_client import AppriseClient
 
@@ -325,9 +325,78 @@ async def test_record_metric_delegates_to_influx_client():
     assert stub.written[0][2]["monitor"] == "test_mon"
 
 
-# ── imap_connect ──────────────────────────────────────────────────────────
+# ── tweakers_price_check ──────────────────────────────────────────────────
 
 from app.runner import RunContext
+
+
+async def test_tweakers_price_check_notifies_and_records_on_change(html_server, browser, db):
+    base_url, pages = html_server
+    pages["tw"] = '<html><body><div id="new-entity"><span class="lowest-price">€ 149,00</span></div></body></html>'
+
+    await set_value(db, "tw_mon", "€ 199,00")
+
+    notified = []
+    mock_apprise = MagicMock()
+    mock_apprise.notify = AsyncMock(side_effect=lambda **kw: notified.append(kw))
+
+    recorded = []
+
+    class StubInflux:
+        async def write(self, m, v, **tags):
+            recorded.append((m, v))
+
+    ctx = RunContext(monitor_name="tw_mon", logger=logging.getLogger("test"), db=db, apprise=mock_apprise, influx=StubInflux())
+    page = await browser.new_page()
+    await page.goto(f"{base_url}/tw")
+    await tweakers_price_check(page, ctx, "My Product", ["telegram"])
+    await page.close()
+
+    assert len(notified) == 1
+    assert "price changed" in notified[0]["title"]
+    assert len(recorded) == 1
+    assert recorded[0] == ("tw_mon", 149.0)
+
+
+async def test_tweakers_price_check_no_notify_on_first_run(html_server, browser, db):
+    base_url, pages = html_server
+    pages["tw2"] = '<html><body><div id="new-entity"><span class="lowest-price">€ 99,00</span></div></body></html>'
+
+    notified = []
+    mock_apprise = MagicMock()
+    mock_apprise.notify = AsyncMock(side_effect=lambda **kw: notified.append(kw))
+
+    ctx = RunContext(monitor_name="tw_mon2", logger=logging.getLogger("test"), db=db, apprise=mock_apprise)
+    page = await browser.new_page()
+    await page.goto(f"{base_url}/tw2")
+    await tweakers_price_check(page, ctx, "My Product", ["telegram"])
+    await page.close()
+
+    assert notified == []
+
+
+async def test_tweakers_price_check_invalid_float_no_crash(html_server, browser, db):
+    base_url, pages = html_server
+    pages["tw3"] = '<html><body><div id="new-entity"><span class="lowest-price">niet beschikbaar</span></div></body></html>'
+
+    await set_value(db, "tw_mon3", "iets anders")
+
+    recorded = []
+
+    class StubInflux:
+        async def write(self, m, v, **tags):
+            recorded.append((m, v))  # pragma: no cover
+
+    ctx = RunContext(monitor_name="tw_mon3", logger=logging.getLogger("test"), db=db, influx=StubInflux())
+    page = await browser.new_page()
+    await page.goto(f"{base_url}/tw3")
+    await tweakers_price_check(page, ctx, "My Product", [])
+    await page.close()
+
+    assert recorded == []
+
+
+# ── imap_connect ──────────────────────────────────────────────────────────
 
 
 async def test_imap_connect_logs_in_and_selects_folder():

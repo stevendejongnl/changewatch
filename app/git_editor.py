@@ -15,9 +15,6 @@ class GitEditor:
     def __init__(self, monitors_dir: Path) -> None:
         self._dir = monitors_dir
 
-    def _is_git_repo(self) -> bool:
-        return (self._dir / ".git").exists()
-
     async def _run(self, *args: str) -> tuple[int, str, str]:
         proc = await asyncio.create_subprocess_exec(
             *args,
@@ -33,7 +30,7 @@ class GitEditor:
         if path.exists():
             path.unlink()
 
-        if not self._is_git_repo():
+        if not (self._dir / ".git").exists():
             return SaveResult(status="ok")
 
         await self._run("git", "add", str(path))
@@ -62,7 +59,7 @@ class GitEditor:
         path = self._dir / f"{name}.py"
         path.write_text(source)
 
-        if not self._is_git_repo():
+        if not (self._dir / ".git").exists():
             return SaveResult(status="ok")
 
         # git add + commit

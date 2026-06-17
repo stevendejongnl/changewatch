@@ -84,16 +84,13 @@ async def navigate(page: Page, url: str) -> None:
 
 
 async def extract_json(page: Page, url: str, timeout: int = 10_000) -> Any:
-    """Fetch a JSON URL via httpx. The page parameter is kept for API compatibility."""
-    import httpx
-    timeout_s = timeout / 1000
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(url, timeout=timeout_s)
+    response = await page.request.get(url, timeout=timeout)
     try:
-        return response.json()
+        return await response.json()
     except Exception as exc:
+        body = await response.text()
         raise RuntimeError(
-            f"non-JSON response from {url}: status={response.status_code} body={response.text[:200]!r}"
+            f"non-JSON response from {url}: status={response.status} body={body[:200]!r}"
         ) from exc
 
 
@@ -113,6 +110,27 @@ async def record_metric(
     **tags: str,
 ) -> None:
     await influx_client.write(measurement, value, **tags)
+
+
+async def tweakers_price_check(
+    page: Page,
+    ctx: "RunContext",
+    product_name: str,
+    notify_channels: list[str],
+) -> None:
+    await page.wait_for_load_state("networkidle")
+    price = await extract_text(page, "#new-entity span.lowest-price")
+    prev = await get_last_value(ctx.db, ctx.monitor_name)
+    await set_value(ctx.db, ctx.monitor_name, price)
+    ctx.logger.info("%s: %s", product_name, price)
+    if prev is not None and price != prev and ctx.apprise:
+        await notify(ctx.apprise, title=f"{product_name} price changed", body=price, tags=notify_channels)
+    if ctx.influx:
+        try:
+            float_val = float(price.replace("€", "").replace(".", "").replace(",", ".").replace(" ", "").strip())
+            await record_metric(ctx.influx, ctx.monitor_name, float_val)
+        except ValueError:
+            pass
 
 
 @asynccontextmanager
