@@ -78,9 +78,11 @@ class Scheduler:
         self._browser = browser
         self._monitors = discover_monitors(self._monitors_dir)
         active_names = {m.name for m in self._monitors}
+        existing_files = {p.stem for p in self._monitors_dir.glob("*.py")} if self._monitors_dir.is_dir() else set()
         for row in await self._db.get_all_monitor_states():
-            if row["monitor_name"] not in active_names:
-                await self._db.delete_monitor(row["monitor_name"])
+            name = row["monitor_name"]
+            if name not in active_names and name not in existing_files:
+                await self._db.delete_monitor(name)
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         for monitor in self._monitors:
             if monitor.schedule is None:
@@ -106,10 +108,12 @@ class Scheduler:
         new_monitors = discover_monitors(self._monitors_dir)
         new_ids = {m.name for m in new_monitors}
         old_ids = {job.id for job in self._scheduler.get_jobs() if not job.id.startswith("__")}
+        existing_files = {p.stem for p in self._monitors_dir.glob("*.py")} if self._monitors_dir.is_dir() else set()
         runner = Runner(db=self._db, browser=self._browser, apprise=self._apprise, influx=self._influx, event_bus=self._event_bus)
         for job_id in old_ids - new_ids:
             self._scheduler.remove_job(job_id)
-            await self._db.delete_monitor(job_id)
+            if job_id not in existing_files:
+                await self._db.delete_monitor(job_id)
         for monitor in new_monitors:
             if monitor.schedule is None:
                 continue

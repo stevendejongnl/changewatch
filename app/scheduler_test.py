@@ -410,6 +410,41 @@ async def test_scheduler_start_skips_imap_only_monitors(monitors_dir, db):
     await sched.stop()
 
 
+async def test_scheduler_reload_preserves_state_for_broken_monitor(monitors_dir, tmp_path):
+    """If a monitor file exists but fails to import, its state must not be wiped."""
+    working_path = _make_monitor_module(monitors_dir, "working")
+    broken_path = _make_monitor_module(monitors_dir, "broken")
+    db = Database(str(tmp_path / "reload_broken.db"))
+    await db.init()
+    await db.record_run("broken", status="ok", last_value="old", error=None, duration_ms=5)
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+
+    broken_path.write_text("this is not valid python !!!")
+    await scheduler.reload()
+
+    states = await db.get_all_monitor_states()
+    await scheduler.stop()
+    await db.close()
+    assert any(s["monitor_name"] == "broken" for s in states)
+
+
+async def test_scheduler_start_preserves_state_for_broken_monitor(monitors_dir, tmp_path):
+    """At startup, state for a monitor whose file exists but won't import must not be deleted."""
+    _make_monitor_module(monitors_dir, "good")
+    (monitors_dir / "broken.py").write_text("this is not valid python !!!")
+    db = Database(str(tmp_path / "start_broken.db"))
+    await db.init()
+    await db.record_run("broken", status="ok", last_value="old", error=None, duration_ms=5)
+    scheduler = Scheduler(monitors_dir=monitors_dir, db=db)
+    await scheduler.start()
+
+    states = await db.get_all_monitor_states()
+    await scheduler.stop()
+    await db.close()
+    assert any(s["monitor_name"] == "broken" for s in states)
+
+
 async def test_scheduler_reload_skips_imap_only_monitors(monitors_dir, db):
     _make_imap_monitor_module(monitors_dir, "imap_check")
     sched = Scheduler(monitors_dir=monitors_dir, db=db)

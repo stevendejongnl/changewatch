@@ -5,10 +5,6 @@ metadata:
   namespace: changewatch
   labels:
     app: changewatch
-  annotations:
-    keel.sh/policy: minor
-    keel.sh/trigger: poll
-    keel.sh/pollSchedule: "@every 5m"
 spec:
   replicas: 1
   selector:

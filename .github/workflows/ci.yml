@@ -82,11 +82,12 @@ jobs:
   deploy:
     name: Deploy to k8s
     runs-on: [self-hosted, k8s]
-    needs: build
+    needs: [build, release]
     steps:
-      - name: Restart deployment
+      - name: Update image
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
         run: |
-          RESTART_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
           CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           curl -sf -X PATCH \
@@ -94,4 +95,4 @@ jobs:
             -H "Content-Type: application/strategic-merge-patch+json" \
             --cacert "$CA" \
             "https://kubernetes.default.svc/apis/apps/v1/namespaces/changewatch/deployments/changewatch" \
-            -d "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$RESTART_AT\"}}}}}"
+            -d "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"changewatch\",\"image\":\"ghcr.io/stevendejongnl/changewatch:v${VERSION}\"}]}}}}"
