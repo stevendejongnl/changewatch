@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -7,6 +8,11 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from app.db import Database
 from app.helpers import Monitor, notify
+
+# ponytail: single global cap; add per-monitor override if one legitimately needs longer
+RUN_TIMEOUT_S = 90
+
+_runner_logger = logging.getLogger("changewatch.runner")
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.apprise_client import AppriseClient
@@ -66,7 +72,7 @@ class Runner:
             context = await self._browser.new_context()
             page = await context.new_page()
             prev_value = await self._db.get_last_value(monitor.name)
-            await monitor.fn(page, ctx)
+            await asyncio.wait_for(monitor.fn(page, ctx), timeout=RUN_TIMEOUT_S)
             if dry_run:
                 return list(log_buffer.lines)
             duration_ms = int((time.monotonic() - start) * 1000)
@@ -97,6 +103,7 @@ class Runner:
                 log_buffer.lines.append(("ERROR", str(exc)))
                 return list(log_buffer.lines)
             duration_ms = int((time.monotonic() - start) * 1000)
+            _runner_logger.warning("monitor %s failed: %s", monitor.name, exc)
             run_id = await self._db.record_run(
                 monitor_name=monitor.name,
                 status="error",

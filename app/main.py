@@ -75,6 +75,16 @@ async def lifespan(app: FastAPI):  # pragma: no cover
     _lb = get_log_buffer()
     _lb.setLevel(_logging.INFO)
     _logging.getLogger().addHandler(_lb)
+
+    # Silence health-check and sensor-poll spam from kubectl logs
+    class _SuppressHealthFilter(_logging.Filter):
+        _SKIP = {"/healthz", "/ha/sensors"}
+        def filter(self, record: _logging.LogRecord) -> bool:
+            args = record.args
+            if isinstance(args, tuple) and len(args) >= 2:
+                return not any(p in str(args[1]) for p in self._SKIP)
+            return True
+    _logging.getLogger("uvicorn.access").addFilter(_SuppressHealthFilter())
     _scheduler = Scheduler(monitors_dir=MONITORS_DIR, db=_db, apprise=_apprise, influx=_influx, timezone=DISPLAY_TZ, event_bus=get_event_bus())
     await _scheduler.start(_browser)
 

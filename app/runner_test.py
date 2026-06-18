@@ -470,3 +470,35 @@ async def test_runner_normal_run_returns_empty_list(db, browser):
     result = await runner.run(m)
 
     assert result == []
+
+
+async def test_runner_records_error_when_check_exceeds_timeout(db, browser, monkeypatch):
+    import app.runner as runner_mod
+    monkeypatch.setattr(runner_mod, "RUN_TIMEOUT_S", 0.01)
+
+    m = Monitor(name="timeout_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        await asyncio.sleep(10)
+
+    runner = Runner(db=db, browser=browser)
+    await runner.run(m)
+
+    runs = await db.get_recent_runs("timeout_mon")
+    assert runs[0]["status"] == "error"
+    assert runs[0]["error"] is not None
+
+
+async def test_runner_logs_warning_on_failure(db, browser, caplog):
+    m = Monitor(name="warn_log_mon", schedule="0 * * * *", notify_channels=[])
+
+    @m.check
+    async def check(page, ctx):
+        raise RuntimeError("intentional failure")
+
+    with caplog.at_level("WARNING", logger="changewatch.runner"):
+        runner = Runner(db=db, browser=browser)
+        await runner.run(m)
+
+    assert any("warn_log_mon" in r.message and "intentional failure" in r.message for r in caplog.records)

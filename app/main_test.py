@@ -1218,3 +1218,24 @@ async def test_tag_detail_404_unknown_tag(client):
 async def test_get_imap_watcher_returns_none_by_default():
     result = await get_imap_watcher()
     assert result is None
+
+
+def test_suppress_health_filter():
+    import logging
+    # re-create the filter inline (same logic as in lifespan pragma: no cover)
+    class _SuppressHealthFilter(logging.Filter):
+        _SKIP = {"/healthz", "/ha/sensors"}
+        def filter(self, record):
+            args = record.args
+            if isinstance(args, tuple) and len(args) >= 2:
+                return not any(p in str(args[1]) for p in self._SKIP)
+            return True
+
+    f = _SuppressHealthFilter()
+    mk = lambda path: logging.makeLogRecord({"args": ("1.2.3.4:1234", f"GET {path} HTTP/1.1", "200 OK")})
+    assert f.filter(mk("/healthz")) is False
+    assert f.filter(mk("/ha/sensors")) is False
+    assert f.filter(mk("/api/monitors")) is True
+    # non-tuple args (e.g. plain string) → always pass through
+    r = logging.makeLogRecord({"args": None})
+    assert f.filter(r) is True
