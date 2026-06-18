@@ -119,7 +119,7 @@ async def tweakers_price_check(
     notify_channels: list[str],
 ) -> None:
     # ponytail: networkidle removed — extract_text already waits for the price selector
-    price = await extract_text(page, "#new-entity span.lowest-price")
+    price = await extract_text(page, "span.lowest-price")
     prev = await get_last_value(ctx.db, ctx.monitor_name)
     await set_value(ctx.db, ctx.monitor_name, price)
     ctx.logger.info("%s: %s", product_name, price)
