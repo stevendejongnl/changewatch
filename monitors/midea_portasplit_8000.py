@@ -54,14 +54,17 @@ def _is_unavailable(text: str) -> bool:
 
 async def _fetch(page, name: str, url: str, selector: str | None) -> dict:
     try:
-        resp = await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+        wait = "networkidle" if selector else "domcontentloaded"
+        resp = await page.goto(url, wait_until=wait, timeout=30_000)
         # Redirect away from product page = not found
         if resp and resp.url != url and "product" not in resp.url:
             return {"store": name, "available": False, "price": None, "reason": "redirected"}
 
         if selector:
             try:
-                text = await page.locator(selector).first.inner_text(timeout=5_000)
+                sel_text = await page.locator(selector).first.inner_text(timeout=5_000)
+                # Fall back to body if selector returned a template placeholder or nothing
+                text = sel_text if sel_text and "{{" not in sel_text else await page.evaluate("() => document.body.innerText")
             except Exception:
                 text = await page.evaluate("() => document.body.innerText")
         else:
