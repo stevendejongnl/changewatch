@@ -38,6 +38,7 @@ def discover_monitors(monitors_dir):
 MONITORS_REPO_URL = os.getenv("MONITORS_REPO_URL", "")
 MONITORS_REPO_TOKEN = os.getenv("MONITORS_REPO_TOKEN", "")
 MONITORS_REPO_SYNC_INTERVAL = os.getenv("MONITORS_REPO_SYNC_INTERVAL", "0 * * * *")
+APP_VERSION = os.getenv("APP_VERSION", "dev")
 
 DB_PATH = os.getenv("DB_PATH", "/data/state.db")
 DISPLAY_TZ = os.getenv("DISPLAY_TZ", "Europe/Amsterdam")
@@ -138,6 +139,7 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["editor_version"] = int(
     (Path(__file__).parent / "static" / "editor.js").stat().st_mtime
 )
