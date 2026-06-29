@@ -185,8 +185,10 @@ async def test_runner_captures_logs_on_error(db, browser):
     runs = await db.get_recent_runs("err_log_mon")
     run_id = runs[0]["id"]
     logs = await db.get_run_logs(run_id)
-    assert len(logs) == 1
-    assert "before crash" in logs[0]["message"]
+    # one log line per attempt (1 initial + RETRY_COUNT retries)
+    from app.runner import RETRY_COUNT
+    assert len(logs) == 1 + RETRY_COUNT
+    assert all("before crash" in log["message"] for log in logs)
 
 
 async def test_runner_records_changed_status_when_value_differs(db, browser):

@@ -89,3 +89,7 @@ SQLite has two tables:
 - GitHub Actions: `test` → `release` (semantic-release, `main` only) → `build` (pushes GHCR image as `latest` + `vX.Y.Z`)
 - Conventional commits (`feat:`, `fix:`) drive semver bumps per `.releaserc.json`
 - k8s secrets are committed as `.example.yaml` only; real secret files are gitignored
+
+## MR / PR Descriptions
+
+Never include a "Test plan" section. Summary of changes only.

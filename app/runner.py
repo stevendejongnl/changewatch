@@ -11,6 +11,11 @@ from app.helpers import Monitor, notify
 
 # ponytail: single global cap; add per-monitor override if one legitimately needs longer
 RUN_TIMEOUT_S = 90
+# ponytail: global semaphore caps concurrent browser sessions; raise if monitors grow and timeouts persist
+_CONCURRENCY = 3
+_sem = asyncio.Semaphore(_CONCURRENCY)
+RETRY_COUNT = 2
+RETRY_DELAY_S = 5
 
 _runner_logger = logging.getLogger("changewatch.runner")
 
@@ -68,11 +73,36 @@ class Runner:
         logger.addHandler(log_buffer)
         start = time.monotonic()
         page = None
+        last_exc: Exception | None = None
+        prev_value = await self._db.get_last_value(monitor.name)
         try:
-            context = await self._browser.new_context()
-            page = await context.new_page()
-            prev_value = await self._db.get_last_value(monitor.name)
-            await asyncio.wait_for(monitor.fn(page, ctx), timeout=RUN_TIMEOUT_S)
+            for attempt in range(1 + RETRY_COUNT):
+                if attempt > 0:
+                    _runner_logger.info("monitor %s retry %d/%d", monitor.name, attempt, RETRY_COUNT)
+                    await asyncio.sleep(RETRY_DELAY_S)
+                try:
+                    async with _sem:
+                        context = await self._browser.new_context()
+                        page = await context.new_page()
+                        try:
+                            await asyncio.wait_for(monitor.fn(page, ctx), timeout=RUN_TIMEOUT_S)
+                        finally:
+                            await page.close()
+                            await page.context.close()
+                            page = None
+                    last_exc = None
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    if page is not None:
+                        try:
+                            await page.close()
+                            await page.context.close()
+                        except Exception:
+                            pass
+                        page = None
+            if last_exc is not None:
+                raise last_exc
             if dry_run:
                 return list(log_buffer.lines)
             duration_ms = int((time.monotonic() - start) * 1000)
@@ -123,7 +153,6 @@ class Runner:
                     "error": str(exc),
                 })
             if self._apprise is not None and monitor.notify_channels:
-                # TODO(user): customise title/body — terse vs rich, every-failure vs transition-only
                 try:
                     await notify(
                         self._apprise,
@@ -136,6 +165,9 @@ class Runner:
         finally:
             logger.removeHandler(log_buffer)
             if page is not None:
-                await page.close()
-                await page.context.close()
+                try:
+                    await page.close()
+                    await page.context.close()
+                except Exception:
+                    pass
         return []
