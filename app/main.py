@@ -653,7 +653,10 @@ def _single_check_url(monitor) -> list[tuple[str, str]]:
     if not url:
         return []
     host = urlparse(url).hostname or url
-    return [(host.removeprefix("www."), url)]
+    # keep only the registered domain: last two parts (e.g. nl.bauhaus.nl → bauhaus.nl)
+    parts = host.split(".")
+    label = ".".join(parts[-2:]) if len(parts) >= 2 else host
+    return [(label, url)]
 
 
 @app.get("/monitors/{name}", response_class=HTMLResponse)
