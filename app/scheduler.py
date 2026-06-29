@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import logging
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -17,6 +18,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from app.influx import InfluxClient
 
 
+_discover_logger = logging.getLogger("changewatch.discover")
+
+
 def discover_monitors(monitors_dir: Path) -> list[Monitor]:
     if not monitors_dir.is_dir():
         return []
@@ -26,7 +30,8 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
         module = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(module)
-        except Exception:
+        except Exception as exc:
+            _discover_logger.warning("skipping %s: failed to import: %s", path.name, exc)
             continue
         monitor = getattr(module, "monitor", None)
         if isinstance(monitor, Monitor):
