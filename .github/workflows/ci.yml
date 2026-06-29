@@ -95,4 +95,4 @@ jobs:
             -H "Content-Type: application/strategic-merge-patch+json" \
             --cacert "$CA" \
             "https://kubernetes.default.svc/apis/apps/v1/namespaces/changewatch/deployments/changewatch" \
-            -d "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"changewatch\",\"image\":\"ghcr.io/stevendejongnl/changewatch:v${VERSION}\"}]}}}}"
+            -d "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}},\"spec\":{\"containers\":[{\"name\":\"changewatch\",\"image\":\"ghcr.io/stevendejongnl/changewatch:v${VERSION}\"}]}}}}"
