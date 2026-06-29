@@ -1264,8 +1264,8 @@ def test_single_check_url():
     m = Monitor(name="x", schedule=None, notify_channels=[], url="https://www.example.com/path")
     assert _single_check_url(m) == [("example.com", "https://www.example.com/path")]
 
-    m3 = Monitor(name="x", schedule=None, notify_channels=[], url="https://nl.bauhaus.nl/path")
-    assert _single_check_url(m3) == [("bauhaus.nl", "https://nl.bauhaus.nl/path")]
+    m3 = Monitor(name="x", schedule=None, notify_channels=[], url="https://sub.example.nl/path")
+    assert _single_check_url(m3) == [("example.nl", "https://sub.example.nl/path")]
 
     m2 = Monitor(name="x", schedule=None, notify_channels=[])
     assert _single_check_url(m2) == []

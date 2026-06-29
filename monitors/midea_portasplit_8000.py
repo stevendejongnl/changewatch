@@ -8,8 +8,8 @@ from app.helpers import Monitor, get_last_value, notify, record_metric, set_valu
 # (store_name, url, price_selector)
 # ponytail: selector=None falls back to body text scan — only use when no specific price element exists
 STORES: list[tuple[str, str, str | None]] = [
-    ("Bauhaus 8000",   "https://nl.bauhaus.nl/split-aircos/midea-split-airco-portasplit-cool-8000-btu/p/33946696", ".price"),
-    ("Bauhaus 12000",  "https://nl.bauhaus.nl/split-aircos/midea-split-airco-portasplit-12000-btu/p/31934233",     ".price"),
+    ("Bauhaus 8000",   "https://nl.bauhaus/split-aircos/midea-split-airco-portasplit-cool-8000-btu/p/33946696", ".price"),
+    ("Bauhaus 12000",  "https://nl.bauhaus/split-aircos/midea-split-airco-portasplit-12000-btu/p/31934233",     ".price"),
     ("Praxis 8000",    "https://www.praxis.nl/verwarmingen-airco-s/airco-s/mobiele-airco-s/midea-mobiele-airco-portasplit-8000-btu/10693023", None),
     ("Praxis 12000",   "https://www.praxis.nl/verwarmingen-airco-s/airco-s/vaste-airco-s/split-airco-s/midea-mobiele-split-airco-portasplit-12000-btu-koelt-verwarmt/10700978", None),
     ("Recharged",      "https://recharged.nl/airco/midea-portasplit/", None),
@@ -23,14 +23,18 @@ monitor = Monitor(
     check_urls=[(name, url) for name, url, _ in STORES],
 )
 
-_PRICE_RE = re.compile(r"(\d{1,4}[,.]\d{2})")
+# Matches prices like "1.299,00" or "1299,00" or "1.299.00" — comma or dot as decimal separator
+# Thousands separator dot only appears before exactly 3 digits (e.g. 1.299), never in "5.00"
+_PRICE_RE = re.compile(r"(\d{1,3}(?:[.,]\d{3})?[.,]\d{2})")
 
 
 def _parse_price(text: str) -> float | None:
     candidates = []
     for m in _PRICE_RE.findall(text):
         try:
-            v = float(m.replace(".", "").replace(",", "."))
+            # Strip thousands separator (dot/comma before 3 digits), normalise decimal to dot
+            normalised = re.sub(r"[.,](\d{3})", r"\1", m).replace(",", ".")
+            v = float(normalised)
             if 300 <= v <= 2000:
                 candidates.append(v)
         except ValueError:
