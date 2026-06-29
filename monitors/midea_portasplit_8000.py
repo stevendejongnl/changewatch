@@ -6,7 +6,7 @@ import re
 from app.helpers import Monitor, get_last_value, notify, record_metric, set_value
 
 # (store_name, url, price_selector)
-# ponytail: selector=None falls back to body text scan — only use when no specific price element exists
+# selector=None → body text scan; price_selector only used when available
 STORES: list[tuple[str, str, str | None]] = [
     ("Bauhaus 8000",   "https://nl.bauhaus/split-aircos/midea-split-airco-portasplit-cool-8000-btu/p/33946696", ".price"),
     ("Bauhaus 12000",  "https://nl.bauhaus/split-aircos/midea-split-airco-portasplit-12000-btu/p/31934233",     ".price"),
@@ -23,70 +23,112 @@ monitor = Monitor(
     check_urls=[(name, url) for name, url, _ in STORES],
 )
 
-# Matches prices like "1.299,00" or "1299,00" or "1.299.00" — comma or dot as decimal separator
-# Thousands separator dot only appears before exactly 3 digits (e.g. 1.299), never in "5.00"
-_PRICE_RE = re.compile(r"(\d{1,3}(?:[.,]\d{3})?[.,]\d{2})")
+# Matches Dutch price format: 599,00 or 1.299,00 (dot thousands, comma decimal)
+_PRICE_RE = re.compile(r"\d{1,3}(?:\.\d{3})?(?:,\d{2})")
+
+# Unavailability signals per store (lowercase match)
+_UNAVAILABLE_SIGNALS = [
+    "niet te koop",
+    "uitverkocht",
+    "niet beschikbaar",
+    "niet leverbaar",
+    "out of stock",
+]
 
 
 def _parse_price(text: str) -> float | None:
-    candidates = []
     for m in _PRICE_RE.findall(text):
         try:
-            # Strip thousands separator (dot/comma before 3 digits), normalise decimal to dot
-            normalised = re.sub(r"[.,](\d{3})", r"\1", m).replace(",", ".")
-            v = float(normalised)
+            v = float(m.replace(".", "").replace(",", "."))
             if 300 <= v <= 2000:
-                candidates.append(v)
+                return v
         except ValueError:
             pass
-    return min(candidates) if candidates else None
+    return None
 
 
-async def _fetch(page, name: str, url: str, selector: str | None) -> tuple[str, float] | None:
+def _is_unavailable(text: str) -> bool:
+    lower = text.lower()
+    return any(s in lower for s in _UNAVAILABLE_SIGNALS)
+
+
+async def _fetch(page, name: str, url: str, selector: str | None) -> dict:
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+        resp = await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+        # Redirect away from product page = not found
+        if resp and resp.url != url and "product" not in resp.url:
+            return {"store": name, "available": False, "price": None, "reason": "redirected"}
+
         if selector:
-            text = await page.locator(selector).first.inner_text(timeout=10_000)
+            try:
+                text = await page.locator(selector).first.inner_text(timeout=5_000)
+            except Exception:
+                text = await page.evaluate("() => document.body.innerText")
         else:
             text = await page.evaluate("() => document.body.innerText")
+
+        if _is_unavailable(text):
+            return {"store": name, "available": False, "price": None, "reason": "unavailable"}
+
         price = _parse_price(text)
         if price is None:
-            return None
-        return (name, price)
-    except Exception:
-        return None
+            return {"store": name, "available": False, "price": None, "reason": "no price found"}
+
+        return {"store": name, "available": True, "price": price}
+    except Exception as e:
+        return {"store": name, "available": False, "price": None, "reason": str(e)[:80]}
 
 
 @monitor.check
 async def check(page, ctx):
-    results: list[tuple[str, float]] = []
+    results = []
     for name, url, selector in STORES:
         r = await _fetch(page, name, url, selector)
-        if r:
-            results.append(r)
-            ctx.logger.info("%s: %.2f EUR", r[0], r[1])
+        results.append(r)
+        if r["available"]:
+            ctx.logger.info("%s: available at €%.2f", name, r["price"])
         else:
-            ctx.logger.warning("%s: no price found", name)
+            ctx.logger.info("%s: unavailable (%s)", name, r.get("reason", ""))
 
-    if not results:
-        ctx.logger.error("no prices found across all stores")
-        return
-
-    lowest_store, lowest_price = min(results, key=lambda x: x[1])
-    payload = {"lowest_price": lowest_price, "lowest_store": lowest_store, "all_prices": dict(results)}
+    payload = {s["store"]: {"available": s["available"], "price": s["price"]} for s in results}
 
     prev_raw = await get_last_value(ctx.db, monitor.name)
-    prev = json.loads(prev_raw) if prev_raw else None
+    prev = json.loads(prev_raw) if prev_raw else {}
 
     await set_value(ctx.db, monitor.name, json.dumps(payload))
 
-    if ctx.influx:
-        await record_metric(ctx.influx, monitor.name, lowest_price, store=lowest_store)
+    # Track lowest available price for InfluxDB
+    available = [s for s in results if s["available"] and s["price"]]
+    if available and ctx.influx:
+        lowest = min(available, key=lambda s: s["price"])
+        await record_metric(ctx.influx, monitor.name, lowest["price"], store=lowest["store"])
 
-    if prev and lowest_price < prev["lowest_price"] and ctx.apprise:
+    if not ctx.apprise:
+        return
+
+    # Notify on availability change: unavailable → available
+    newly_available = [
+        s for s in results
+        if s["available"]
+        and not prev.get(s["store"], {}).get("available", False)
+    ]
+    for s in newly_available:
         await notify(
             ctx.apprise,
-            title="Midea PortaSplit 8000 price drop",
-            body=f"€{prev['lowest_price']:.2f} → €{lowest_price:.2f} at {lowest_store}",
+            title=f"Midea PortaSplit beschikbaar bij {s['store']}!",
+            body=f"€{s['price']:.2f}" if s["price"] else "Prijs onbekend",
             tags=monitor.notify_channels,
         )
+
+    # Notify on price drop (only for available stores that were already available)
+    for s in results:
+        if not s["available"] or not s["price"]:
+            continue
+        prev_store = prev.get(s["store"], {})
+        if prev_store.get("available") and prev_store.get("price") and s["price"] < prev_store["price"]:
+            await notify(
+                ctx.apprise,
+                title=f"Midea PortaSplit prijsdaling bij {s['store']}",
+                body=f"€{prev_store['price']:.2f} → €{s['price']:.2f}",
+                tags=monitor.notify_channels,
+            )
