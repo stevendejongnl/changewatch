@@ -40,13 +40,15 @@ def _parse_price(text: str) -> float | None:
 async def _fetch(page, name: str, url: str, selector: str | None) -> tuple[str, float] | None:
     try:
         await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
-        target = page.locator(selector) if selector else page.locator("body")
-        text = await target.first.inner_text(timeout=10_000)
+        if selector:
+            text = await page.locator(selector).first.inner_text(timeout=10_000)
+        else:
+            text = await page.evaluate("() => document.body.innerText")
         price = _parse_price(text)
         if price is None:
             return None
         return (name, price)
-    except Exception as exc:
+    except Exception:
         return None
 
 
