@@ -28,7 +28,12 @@ from app.git_editor import GitEditor
 from app.git_sync import GitSync
 from app.helpers import Monitor
 from app.monitor_parser import generate_monitor, parse_monitor, slugify
-from app.scheduler import Scheduler, discover_monitors
+from app.scheduler import Scheduler, discover_monitors as _discover_monitors
+
+
+def discover_monitors(monitors_dir):
+    monitors, _ = _discover_monitors(monitors_dir)
+    return monitors
 
 MONITORS_REPO_URL = os.getenv("MONITORS_REPO_URL", "")
 MONITORS_REPO_TOKEN = os.getenv("MONITORS_REPO_TOKEN", "")
@@ -340,7 +345,7 @@ async def settings_page(request: Request):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
+async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep, scheduler: SchedulerDep):
     monitors = await db.get_all_monitor_states()
     known = discover_monitors(MONITORS_DIR)
     all_names = {m.name for m in known}
@@ -370,6 +375,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
     favorites = [m for m in monitors if m.get("favorite")]
     favorites_mode = bool(favorites)
     display_monitors = favorites if favorites_mode else monitors
+    broken_files = scheduler._broken if scheduler else {}
 
     return templates.TemplateResponse(
         request, "dashboard.html", {
@@ -377,6 +383,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep):
             "all_monitors": monitors if favorites_mode else [],
             "favorites_mode": favorites_mode,
             "git_sync_enabled": git_sync is not None,
+            "broken_files": broken_files,
         }
     )
 

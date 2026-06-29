@@ -21,10 +21,12 @@ if TYPE_CHECKING:  # pragma: no cover
 _discover_logger = logging.getLogger("changewatch.discover")
 
 
-def discover_monitors(monitors_dir: Path) -> list[Monitor]:
+def discover_monitors(monitors_dir: Path) -> tuple[list[Monitor], dict[str, str]]:
+    """Return (monitors, broken) where broken maps filename → error string."""
     if not monitors_dir.is_dir():
-        return []
+        return [], {}
     monitors = []
+    broken: dict[str, str] = {}
     for path in sorted(monitors_dir.glob("*.py")):
         spec = importlib.util.spec_from_file_location(path.stem, path)
         module = importlib.util.module_from_spec(spec)
@@ -32,6 +34,7 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
             spec.loader.exec_module(module)
         except Exception as exc:
             _discover_logger.warning("skipping %s: failed to import: %s", path.name, exc)
+            broken[path.name] = str(exc)
             continue
         monitor = getattr(module, "monitor", None)
         if isinstance(monitor, Monitor):
@@ -44,7 +47,7 @@ def discover_monitors(monitors_dir: Path) -> list[Monitor]:
             monitors.append(monitor)
     if len(monitors) > 1:
         monitors = [m for m in monitors if m.name != "example_price"]
-    return monitors
+    return monitors, broken
 
 
 class Scheduler:
@@ -66,6 +69,7 @@ class Scheduler:
         self._browser: Any = None
         self._scheduler = AsyncIOScheduler()
         self._monitors: list[Monitor] = []
+        self._broken: dict[str, str] = {}
 
     @property
     def running(self) -> bool:
@@ -81,7 +85,7 @@ class Scheduler:
 
     async def start(self, browser: Any = None) -> None:
         self._browser = browser
-        self._monitors = discover_monitors(self._monitors_dir)
+        self._monitors, self._broken = discover_monitors(self._monitors_dir)
         active_names = {m.name for m in self._monitors}
         existing_files = {p.stem for p in self._monitors_dir.glob("*.py")} if self._monitors_dir.is_dir() else set()
         for row in await self._db.get_all_monitor_states():
@@ -110,7 +114,7 @@ class Scheduler:
         return [{"name": job.name, "id": job.id} for job in self._scheduler.get_jobs()]
 
     async def reload(self) -> None:
-        new_monitors = discover_monitors(self._monitors_dir)
+        new_monitors, new_broken = discover_monitors(self._monitors_dir)
         new_ids = {m.name for m in new_monitors}
         old_ids = {job.id for job in self._scheduler.get_jobs() if not job.id.startswith("__")}
         existing_files = {p.stem for p in self._monitors_dir.glob("*.py")} if self._monitors_dir.is_dir() else set()
@@ -131,6 +135,7 @@ class Scheduler:
                 replace_existing=True,
             )
         self._monitors = new_monitors
+        self._broken = new_broken
 
     async def trigger(self, monitor_name: str, browser: Any) -> None:
         all_monitors = discover_monitors(self._monitors_dir)
