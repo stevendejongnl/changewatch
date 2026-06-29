@@ -31,13 +31,13 @@ async def check(page, ctx):
 
 def test_discover_monitors_finds_python_files(monitors_dir):
     _make_monitor_module(monitors_dir, "price_check")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert any(m.name == "price_check" for m in monitors)
 
 
 def test_discover_monitors_returns_monitor_with_schedule(monitors_dir):
     _make_monitor_module(monitors_dir, "stock_check", schedule="0 * * * *")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "stock_check")
     assert m.schedule == "0 * * * *"
 
@@ -45,14 +45,14 @@ def test_discover_monitors_returns_monitor_with_schedule(monitors_dir):
 def test_discover_monitors_ignores_non_python_files(monitors_dir):
     monitors_dir.mkdir(exist_ok=True)
     (monitors_dir / "readme.txt").write_text("not a monitor")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert not any(m.name == "readme" for m in monitors)
 
 
 def test_discover_monitors_ignores_files_without_monitor_object(monitors_dir):
     monitors_dir.mkdir(exist_ok=True)
     (monitors_dir / "helper_funcs.py").write_text("def helper(): pass")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert not any(m.name == "helper_funcs" for m in monitors)
 
 
@@ -66,7 +66,7 @@ monitor = Monitor(name="zitmaxx", schedule="0 * * * *", notify_channels=[], url=
 async def check(page, ctx): pass
 '''
     (monitors_dir / "zitmaxx.py").write_text(code)
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "zitmaxx")
     assert m.display_url == "https://www.zitmaxx.nl/kleurstalen-aanvragen"
 
@@ -80,7 +80,7 @@ monitor = Monitor(name="tplink", schedule="0 * * * *", notify_channels=[], url="
 async def check(page, ctx): pass
 '''
     (monitors_dir / "tplink.py").write_text(code)
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "tplink")
     assert m.display_url == "https://tweakers.net/pricewatch/123"
 
@@ -95,27 +95,27 @@ monitor = Monitor(name="tp_link", schedule="0 * * * *", notify_channels=[])
 async def check(page, ctx): pass
 '''
     (monitors_dir / "tp_link.py").write_text(code)
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "tp_link")
     assert m.display_name == "TP-Link Deco X50"
 
 
 def test_discover_monitors_display_name_empty_when_no_product_name(monitors_dir):
     _make_monitor_module(monitors_dir, "no_name")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "no_name")
     assert m.display_name == ""
 
 
 def test_discover_monitors_empty_dir_returns_empty_list(monitors_dir):
     monitors_dir.mkdir()
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert monitors == []
 
 
 def test_discover_monitors_nonexistent_dir_returns_empty_list(tmp_path):
     missing = tmp_path / "does_not_exist"
-    assert discover_monitors(missing) == []
+    assert discover_monitors(missing) == ([], {})
 
 
 async def test_scheduler_starts_and_stops_cleanly(monitors_dir, tmp_path):
@@ -148,7 +148,7 @@ async def test_scheduler_registers_one_job_per_monitor(monitors_dir, tmp_path):
 def test_discover_monitors_skips_file_with_syntax_error(monitors_dir):
     monitors_dir.mkdir(exist_ok=True)
     (monitors_dir / "broken.py").write_text("this is not valid python !!!")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert not any(m.name == "broken" for m in monitors)
 
 
@@ -186,7 +186,7 @@ async def test_scheduler_trigger_raises_for_unknown_monitor(monitors_dir, tmp_pa
 def test_discover_monitors_hides_example_when_others_exist(monitors_dir):
     _make_monitor_module(monitors_dir, "example_price")
     _make_monitor_module(monitors_dir, "real_monitor")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     names = [m.name for m in monitors]
     assert "example_price" not in names
     assert "real_monitor" in names
@@ -194,7 +194,7 @@ def test_discover_monitors_hides_example_when_others_exist(monitors_dir):
 
 def test_discover_monitors_shows_example_when_it_is_the_only_monitor(monitors_dir):
     _make_monitor_module(monitors_dir, "example_price")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert len(monitors) == 1
     assert monitors[0].name == "example_price"
 
@@ -390,13 +390,13 @@ async def check(page, ctx):
 
 def test_discover_monitors_finds_imap_only_monitor(monitors_dir):
     _make_imap_monitor_module(monitors_dir, "imap_check")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     assert any(m.name == "imap_check" for m in monitors)
 
 
 def test_discover_monitors_imap_monitor_has_none_schedule(monitors_dir):
     _make_imap_monitor_module(monitors_dir, "imap_check")
-    monitors = discover_monitors(monitors_dir)
+    monitors, _ = discover_monitors(monitors_dir)
     m = next(m for m in monitors if m.name == "imap_check")
     assert m.schedule is None
 

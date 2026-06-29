@@ -197,8 +197,17 @@ async def test_api_monitor_runs_empty_returns_empty_list(client):
     assert response.json() == []
 
 
-async def test_metrics_endpoint_no_influx(client):
+async def test_metrics_endpoint_no_influx(client, tmp_path, monkeypatch):
     """Returns empty list when influx not configured."""
+    import app.main as main_module
+    monitors_dir = tmp_path / "mons_metrics"
+    monitors_dir.mkdir()
+    (monitors_dir / "example_price.py").write_text(
+        "from app.helpers import Monitor\n"
+        "monitor = Monitor(name='example_price', schedule='*/5 * * * *', notify_channels=[])\n"
+        "@monitor.check\nasync def check(page, ctx): pass\n"
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
     resp = await client.get("/api/monitors/example_price/metrics")
     assert resp.status_code == 200
     assert resp.json() == []
