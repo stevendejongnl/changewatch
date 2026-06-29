@@ -1255,3 +1255,14 @@ def test_suppress_health_filter():
     # non-tuple args (e.g. plain string) → always pass through
     r = logging.makeLogRecord({"args": None})
     assert f.filter(r) is True
+
+
+def test_single_check_url():
+    from app.main import _single_check_url
+    from app.helpers import Monitor
+
+    m = Monitor(name="x", schedule=None, notify_channels=[], url="https://www.example.com/path")
+    assert _single_check_url(m) == [("example.com", "https://www.example.com/path")]
+
+    m2 = Monitor(name="x", schedule=None, notify_channels=[])
+    assert _single_check_url(m2) == []

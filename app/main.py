@@ -647,6 +647,15 @@ async def api_monitor_dry_run(name: str, body: _SaveBody, browser: BrowserDep, d
     return {"lines": [{"level": level, "message": msg} for level, msg in lines]}
 
 
+def _single_check_url(monitor) -> list[tuple[str, str]]:
+    from urllib.parse import urlparse
+    url = monitor.display_url or monitor.url
+    if not url:
+        return []
+    host = urlparse(url).hostname or url
+    return [(host.removeprefix("www."), url)]
+
+
 @app.get("/monitors/{name}", response_class=HTMLResponse)
 async def monitor_detail(name: str, request: Request, db: DbDep):
     known = {m.name: m for m in discover_monitors(MONITORS_DIR)}
@@ -669,7 +678,7 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
             "changed_at": config["changed_at"],
             "avg_duration": avg_duration,
             "metric": monitor.metric,
-            "check_urls": monitor.check_urls or ([(monitor.display_url or monitor.url, monitor.display_url or monitor.url)] if (monitor.display_url or monitor.url) else []),
+            "check_urls": monitor.check_urls or _single_check_url(monitor),
         }
     )
 
