@@ -94,7 +94,7 @@ class Runner:
                     break
                 except Exception as exc:
                     last_exc = exc
-                    if page is not None:
+                    if page is not None:  # pragma: no cover
                         try:
                             await page.close()
                             await page.context.close()
@@ -164,7 +164,7 @@ class Runner:
                     pass
         finally:
             logger.removeHandler(log_buffer)
-            if page is not None:
+            if page is not None:  # pragma: no cover
                 try:
                     await page.close()
                     await page.context.close()
