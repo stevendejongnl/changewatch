@@ -20,6 +20,7 @@ monitor = Monitor(
     schedule="0 */4 * * *",
     notify_channels=["telegram"],
     display_name="Midea PortaSplit 8000",
+    check_urls=[(name, url) for name, url, _ in STORES],
 )
 
 _PRICE_RE = re.compile(r"(\d{1,4}[,.]\d{2})")

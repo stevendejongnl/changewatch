@@ -669,6 +669,7 @@ async def monitor_detail(name: str, request: Request, db: DbDep):
             "changed_at": config["changed_at"],
             "avg_duration": avg_duration,
             "metric": monitor.metric,
+            "check_urls": monitor.check_urls or ([(monitor.display_url or monitor.url, monitor.display_url or monitor.url)] if (monitor.display_url or monitor.url) else []),
         }
     )
 

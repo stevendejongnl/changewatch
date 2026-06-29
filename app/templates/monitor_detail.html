@@ -299,6 +299,18 @@
   </div>
 </div>
 
+{% if check_urls %}
+<div class="neu-raised-sm" style="padding:14px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+  <span class="eyebrow" style="margin-right:4px;flex-shrink:0">sources</span>
+  {% for label, url in check_urls %}
+  <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:11px;gap:5px">
+    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="detail-body {% if not metric %}no-chart{% endif %}">
 <!-- Left col: error banner + runs -->
 <div class="runs-col">

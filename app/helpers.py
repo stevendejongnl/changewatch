@@ -44,6 +44,7 @@ class Monitor:
     tags: list[str] = field(default_factory=list)
     display_name: str = ""
     display_url: str = ""
+    check_urls: list[tuple[str, str]] = field(default_factory=list)
     imap_idle: Optional["ImapIdleConfig"] = None
     fn: Optional[Callable] = field(default=None, repr=False)
 
