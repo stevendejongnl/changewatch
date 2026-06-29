@@ -104,23 +104,21 @@ async def test_api_monitors_empty_returns_empty_list(client):
     assert response.json() == []
 
 
-async def test_run_now_queues_known_monitor(db, tmp_path):
+async def test_run_now_queues_known_monitor(db, tmp_path, monkeypatch):
     import asyncio
+    import app.main as main_module
     from app.helpers import Monitor
 
     monitors_dir = tmp_path / "monitors"
     monitors_dir.mkdir()
+    (monitors_dir / "example_price.py").write_text(
+        "from app.helpers import Monitor\n"
+        "monitor = Monitor(name='example_price', schedule='*/5 * * * *', notify_channels=[])\n"
+        "@monitor.check\nasync def check(page, ctx): pass\n"
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
     sched = Scheduler(monitors_dir=monitors_dir, db=db)
     await sched.start()
-
-    m = Monitor(name="example_price", schedule="*/5 * * * *", notify_channels=[])
-
-    @m.check
-    async def check(page, ctx):
-        pass
-
-    await check(None, None)
-    sched._monitors.append(m)
 
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_scheduler] = lambda: sched
@@ -140,7 +138,16 @@ async def test_run_now_returns_404_for_unknown_monitor(client):
     assert response.status_code == 404
 
 
-async def test_run_now_returns_503_when_scheduler_not_ready(db):
+async def test_run_now_returns_503_when_scheduler_not_ready(db, tmp_path, monkeypatch):
+    import app.main as main_module
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir()
+    (monitors_dir / "example_price.py").write_text(
+        "from app.helpers import Monitor\n"
+        "monitor = Monitor(name='example_price', schedule='*/5 * * * *', notify_channels=[])\n"
+        "@monitor.check\nasync def check(page, ctx): pass\n"
+    )
+    monkeypatch.setattr(main_module, "MONITORS_DIR", monitors_dir)
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_scheduler] = lambda: None
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

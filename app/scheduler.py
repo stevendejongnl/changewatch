@@ -138,7 +138,7 @@ class Scheduler:
         self._broken = new_broken
 
     async def trigger(self, monitor_name: str, browser: Any) -> None:
-        all_monitors = discover_monitors(self._monitors_dir)
+        all_monitors, _ = discover_monitors(self._monitors_dir)
         monitor = next((m for m in all_monitors if m.name == monitor_name), None)
         if monitor is None:
             raise KeyError(f"No monitor named {monitor_name!r}")
