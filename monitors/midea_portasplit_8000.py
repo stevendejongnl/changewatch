@@ -8,11 +8,11 @@ from app.helpers import Monitor, get_last_value, notify, record_metric, set_valu
 # (store_name, url, price_selector)
 # ponytail: selector=None falls back to body text scan — only use when no specific price element exists
 STORES: list[tuple[str, str, str | None]] = [
-    ("bauhaus", "https://nl.bauhaus.nl/split-aircos/midea-split-airco-portasplit-cool-8000-btu/p/33946696", ".price"),
-    # Add product-page URLs when found:
-    # ("mediamarkt", "https://www.mediamarkt.nl/...", ".price-box"),
-    # ("hornbach",   "https://www.hornbach.nl/...",   ".price"),
-    # ("praxis",     "https://www.praxis.nl/...",     ".price"),
+    ("bauhaus_8000",  "https://nl.bauhaus.nl/split-aircos/midea-split-airco-portasplit-cool-8000-btu/p/33946696", ".price"),
+    ("bauhaus_12000", "https://nl.bauhaus.nl/split-aircos/midea-split-airco-portasplit-12000-btu/p/31934233",     ".price"),
+    ("praxis_8000",   "https://www.praxis.nl/verwarmingen-airco-s/airco-s/mobiele-airco-s/midea-mobiele-airco-portasplit-8000-btu/10693023", None),
+    ("praxis_12000",  "https://www.praxis.nl/verwarmingen-airco-s/airco-s/vaste-airco-s/split-airco-s/midea-mobiele-split-airco-portasplit-12000-btu-koelt-verwarmt/10700978", None),
+    ("recharged",     "https://recharged.nl/airco/midea-portasplit/", None),
 ]
 
 monitor = Monitor(
