@@ -20,6 +20,18 @@ _PARKED_SIGNALS = [
     "upload your website",
 ]
 
+_LOGIN_SIGNALS = [
+    "inloggen",
+    "inlog",
+    "log in",
+    "login",
+    "wachtwoord",
+    "password",
+    "gebruikersnaam",
+    "username",
+    "sign in",
+]
+
 
 @monitor.check
 async def check(page, ctx):
@@ -34,7 +46,8 @@ async def check(page, ctx):
         body = (await page.inner_text("body")).lower()[:500]
         combined = title + " " + body
         is_parked = any(signal in combined for signal in _PARKED_SIGNALS)
-        state = "not_live" if is_parked else "live"
+        is_login = any(signal in combined for signal in _LOGIN_SIGNALS)
+        state = "not_live" if (is_parked or is_login) else "live"
     else:
         state = "not_live"
 
