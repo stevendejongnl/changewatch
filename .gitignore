@@ -12,6 +12,10 @@ docs/superpowers/plans/*.md.bak
 k8s/secrets/*.yaml
 !k8s/secrets/*.example.yaml
 
+# Personal monitors stay local — only the example is tracked
+monitors/*.py
+!monitors/example_price.py
+
 # Frontend
 frontend/node_modules/
 
