@@ -8,7 +8,7 @@ RUN npm run build
 # Output is at /app/static/editor.js (vite outDir: "../app/static")
 
 # ── Python app ─────────────────────────────────────────────────────
-FROM mcr.microsoft.com/playwright/python:v1.59.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.61.0-jammy
 
 WORKDIR /app
 
