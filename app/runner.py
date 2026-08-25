@@ -17,6 +17,15 @@ _sem = asyncio.Semaphore(_CONCURRENCY)
 RETRY_COUNT = 2
 RETRY_DELAY_S = 5
 
+# Playwright's default headless Chromium reports "HeadlessChrome" in its UA and
+# navigator.webdriver=true, which bot managers (e.g. Tweakers' Akamai) block on
+# sight. Spoof a normal desktop Chrome fingerprint for every monitor.
+_DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+)
+_HIDE_WEBDRIVER_SCRIPT = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+
 _runner_logger = logging.getLogger("changewatch.runner")
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -82,7 +91,8 @@ class Runner:
                     await asyncio.sleep(RETRY_DELAY_S)
                 try:
                     async with _sem:
-                        context = await self._browser.new_context()
+                        context = await self._browser.new_context(user_agent=_DEFAULT_USER_AGENT)
+                        await context.add_init_script(_HIDE_WEBDRIVER_SCRIPT)
                         page = await context.new_page()
                         try:
                             await asyncio.wait_for(monitor.fn(page, ctx), timeout=RUN_TIMEOUT_S)
