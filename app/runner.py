@@ -6,8 +6,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
-from playwright_stealth import Stealth
-
 from app.db import Database
 from app.helpers import Monitor, notify
 
@@ -18,19 +16,6 @@ _CONCURRENCY = 3
 _sem = asyncio.Semaphore(_CONCURRENCY)
 RETRY_COUNT = 2
 RETRY_DELAY_S = 5
-
-# Playwright's default headless Chromium reports "HeadlessChrome" in its UA and
-# navigator.webdriver=true, which bot managers (e.g. Tweakers' Akamai) block on
-# sight. Spoof a normal desktop Chrome fingerprint for every monitor. The UA's
-# Chrome version must track the bundled Chromium build (see Dockerfile pin) —
-# a mismatch between navigator.userAgent and the browser's real Sec-CH-UA
-# client-hint headers (which Playwright's userAgent option does not rewrite)
-# is itself a bot-manager tell.
-_DEFAULT_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
-)
-_stealth = Stealth()
 
 _runner_logger = logging.getLogger("changewatch.runner")
 
@@ -97,8 +82,7 @@ class Runner:
                     await asyncio.sleep(RETRY_DELAY_S)
                 try:
                     async with _sem:
-                        context = await self._browser.new_context(user_agent=_DEFAULT_USER_AGENT)
-                        await _stealth.apply_stealth_async(context)
+                        context = await self._browser.new_context()
                         page = await context.new_page()
                         try:
                             await asyncio.wait_for(monitor.fn(page, ctx), timeout=RUN_TIMEOUT_S)

@@ -16,7 +16,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from playwright.async_api import async_playwright
+from patchright.async_api import async_playwright
 from pydantic import BaseModel
 
 from app.apprise_client import AppriseClient

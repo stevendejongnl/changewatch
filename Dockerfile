@@ -16,6 +16,9 @@ RUN pip install uv
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --frozen
+# patchright bundles its own patched Chromium build, separate from the
+# base image's stock playwright browser cache - must be installed explicitly.
+RUN uv run patchright install chromium --with-deps
 
 COPY app/ ./app/
 COPY monitors/ ./monitors/
