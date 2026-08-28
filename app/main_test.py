@@ -162,6 +162,49 @@ async def test_healthz_returns_ok(client):
     assert response.json() == {"status": "ok"}
 
 
+async def test_service_worker_served_at_root_with_no_cache(client):
+    response = await client.get("/sw.js")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/javascript")
+    assert response.headers["cache-control"] == "no-cache"
+    assert "skipWaiting" in response.text
+
+
+async def test_html_pages_get_no_cache_header(client):
+    response = await client.get("/")
+    assert response.headers["cache-control"] == "no-cache"
+
+
+async def test_vapid_public_key_empty_when_not_configured(client, monkeypatch):
+    monkeypatch.delenv("VAPID_PUBLIC_KEY", raising=False)
+    response = await client.get("/api/push/vapid-public-key")
+    assert response.status_code == 200
+    assert response.json() == {"key": ""}
+
+
+async def test_vapid_public_key_returns_configured_key(client, monkeypatch):
+    monkeypatch.setenv("VAPID_PUBLIC_KEY", "test-public-key")
+    response = await client.get("/api/push/vapid-public-key")
+    assert response.json() == {"key": "test-public-key"}
+
+
+async def test_push_subscribe_stores_subscription(client, db):
+    response = await client.post(
+        "/api/push/subscribe",
+        json={"endpoint": "https://push.example/ep1", "keys": {"p256dh": "p", "auth": "a"}},
+    )
+    assert response.status_code == 200
+    subs = await db.get_push_subscriptions()
+    assert subs == [{"endpoint": "https://push.example/ep1", "p256dh": "p", "auth": "a"}]
+
+
+async def test_push_unsubscribe_removes_subscription(client, db):
+    await db.add_push_subscription("https://push.example/ep1", "p", "a")
+    response = await client.post("/api/push/unsubscribe", json={"endpoint": "https://push.example/ep1"})
+    assert response.status_code == 200
+    assert await db.get_push_subscriptions() == []
+
+
 async def test_sync_returns_503_when_git_sync_not_configured(db, scheduler):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_scheduler] = lambda: scheduler

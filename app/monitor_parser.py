@@ -118,10 +118,12 @@ def generate_monitor(config: MonitorConfig) -> str:
     body_lines.append('    prev = await get_last_value(ctx.db, {name})'.format(name=json.dumps(config.name)))
     body_lines.append('    await set_value(ctx.db, {name}, value)'.format(name=json.dumps(config.name)))
     body_lines.append('    if prev is not None and value != prev and ctx.apprise:')
-    body_lines.append('        await notify(ctx.apprise, title={title}, body=value, tags={channels_repr})'.format(
-        title=json.dumps(config.name + " changed"),
-        channels_repr=channels_repr,
-    ))
+    body_lines.append(
+        '        await notify(ctx.apprise, title={title}, body=value, tags={channels_repr}, db=ctx.db)'.format(
+            title=json.dumps(config.name + " changed"),
+            channels_repr=channels_repr,
+        )
+    )
 
     if config.record_to_influx:
         body_lines.append('    if ctx.influx:')

@@ -159,6 +159,7 @@ class Runner:
                         title=f"[changewatch] {monitor.name} failed",
                         body=str(exc),
                         tags=monitor.notify_channels,
+                        db=self._db,
                     )
                 except Exception:
                     pass

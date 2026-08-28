@@ -48,6 +48,12 @@ class Database:
             CREATE TABLE IF NOT EXISTS tag_vocab (
                 tag TEXT PRIMARY KEY
             );
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                endpoint   TEXT PRIMARY KEY,
+                p256dh     TEXT NOT NULL,
+                auth       TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
         """)
         await self.conn.commit()
         try:  # pragma: no cover
@@ -96,6 +102,26 @@ class Database:
             (monitor_name, value),
         )
         await self.conn.commit()
+
+    async def add_push_subscription(self, endpoint: str, p256dh: str, auth: str) -> None:
+        await self.conn.execute(
+            """INSERT INTO push_subscriptions (endpoint, p256dh, auth)
+               VALUES (?, ?, ?)
+               ON CONFLICT(endpoint) DO UPDATE SET p256dh=excluded.p256dh, auth=excluded.auth""",
+            (endpoint, p256dh, auth),
+        )
+        await self.conn.commit()
+
+    async def remove_push_subscription(self, endpoint: str) -> None:
+        await self.conn.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
+        await self.conn.commit()
+
+    async def get_push_subscriptions(self) -> list[dict]:
+        async with self.conn.execute(
+            "SELECT endpoint, p256dh, auth FROM push_subscriptions"
+        ) as cur:
+            rows = await cur.fetchall()
+        return [dict(row) for row in rows]
 
     async def record_run(
         self,

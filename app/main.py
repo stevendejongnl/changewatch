@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.triggers.cron import CronTrigger
 from cron_descriptor import get_description as _cron_get_description
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from patchright.async_api import async_playwright
@@ -28,6 +28,7 @@ from app.git_editor import GitEditor
 from app.git_sync import GitSync
 from app.helpers import Monitor
 from app.monitor_parser import generate_monitor, parse_monitor, slugify
+from app.push_client import vapid_public_key
 from app.scheduler import Scheduler, discover_monitors as _discover_monitors
 
 
@@ -138,6 +139,27 @@ async def lifespan(app: FastAPI):  # pragma: no cover
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+
+_SW_PATH = Path(__file__).parent / "sw.js"
+
+
+@app.middleware("http")
+async def _no_cache_shell(request: Request, call_next):
+    # Cloudflare sits in front of this app and will cache sw.js with its
+    # own edge TTL regardless of this header (same fight as stash/fuel/
+    # money/weerfusion) - but the origin should still say no-cache so the
+    # PWA update mechanism at least works correctly once that cache entry
+    # naturally expires.
+    response = await call_next(request)
+    is_html = response.headers.get("content-type", "").startswith("text/html")
+    if request.url.path == "/sw.js" or is_html:
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/sw.js")
+async def service_worker():
+    return Response(content=_SW_PATH.read_text(), media_type="text/javascript")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["editor_version"] = int(
@@ -278,6 +300,32 @@ async def events(bus: EventBusDep):
 
 @app.get("/healthz")
 async def healthz():
+    return {"status": "ok"}
+
+
+class PushSubscriptionIn(BaseModel):
+    endpoint: str
+    keys: dict[str, str]
+
+
+class PushUnsubscribeIn(BaseModel):
+    endpoint: str
+
+
+@app.get("/api/push/vapid-public-key")
+async def api_push_vapid_public_key():
+    return {"key": vapid_public_key()}
+
+
+@app.post("/api/push/subscribe")
+async def api_push_subscribe(sub: PushSubscriptionIn, db: DbDep):
+    await db.add_push_subscription(sub.endpoint, sub.keys["p256dh"], sub.keys["auth"])
+    return {"status": "ok"}
+
+
+@app.post("/api/push/unsubscribe")
+async def api_push_unsubscribe(sub: PushUnsubscribeIn, db: DbDep):
+    await db.remove_push_subscription(sub.endpoint)
     return {"status": "ok"}
 
 

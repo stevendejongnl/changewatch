@@ -100,8 +100,13 @@ async def notify(
     title: str,
     body: str,
     tags: list[str] | None = None,
+    db: Optional[Database] = None,
 ) -> None:
     await apprise_client.notify(title=title, body=body, tags=tags or [])
+    if db is not None:
+        from app.push_client import PushClient
+
+        await PushClient(db).notify(title, body)
 
 
 async def record_metric(
@@ -125,7 +130,9 @@ async def tweakers_price_check(
     await set_value(ctx.db, ctx.monitor_name, price)
     ctx.logger.info("%s: %s", product_name, price)
     if prev is not None and price != prev and ctx.apprise:
-        await notify(ctx.apprise, title=f"{product_name} price changed", body=price, tags=notify_channels)
+        await notify(
+            ctx.apprise, title=f"{product_name} price changed", body=price, tags=notify_channels, db=ctx.db
+        )
     if ctx.influx:
         try:
             float_val = float(price.replace("€", "").replace(".", "").replace(",", ".").replace(" ", "").strip())

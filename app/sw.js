@@ -1,4 +1,7 @@
-const CACHE = 'cw-v2';
+// v3: moved from /static/sw.js to /sw.js so its scope covers the whole
+// origin, not just /static/ - a scoped-to-/static/ worker can never
+// control the actual page requests (/, /activity) it was meant to cache.
+const CACHE = 'cw-v3';
 const APP_SHELL = ['/', '/activity'];
 
 self.addEventListener('install', e => {
@@ -46,4 +49,30 @@ self.addEventListener('fetch', e => {
         .catch(() => caches.match(request))
     );
   }
+});
+
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {};
+  const title = data.title || 'Changewatch';
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: '/static/icon-192.png',
+      badge: '/static/icon-192.png',
+      data: { url: data.url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then(clients => {
+      for (const client of clients) {
+        if (client.url === url && 'focus' in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

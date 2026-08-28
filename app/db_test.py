@@ -451,3 +451,29 @@ async def test_get_all_monitor_states_favorite_defaults_to_zero(db):
     states = await db.get_all_monitor_states()
     mon = next(s for s in states if s["monitor_name"] == "mon_a")
     assert mon["favorite"] == 0
+
+
+async def test_add_push_subscription_and_get_all(db):
+    await db.add_push_subscription("https://push.example/ep1", "p256dh-1", "auth-1")
+    subs = await db.get_push_subscriptions()
+    assert subs == [{"endpoint": "https://push.example/ep1", "p256dh": "p256dh-1", "auth": "auth-1"}]
+
+
+async def test_add_push_subscription_upserts_on_same_endpoint(db):
+    await db.add_push_subscription("https://push.example/ep1", "old-p256dh", "old-auth")
+    await db.add_push_subscription("https://push.example/ep1", "new-p256dh", "new-auth")
+    subs = await db.get_push_subscriptions()
+    assert len(subs) == 1
+    assert subs[0]["p256dh"] == "new-p256dh"
+    assert subs[0]["auth"] == "new-auth"
+
+
+async def test_remove_push_subscription(db):
+    await db.add_push_subscription("https://push.example/ep1", "p256dh-1", "auth-1")
+    await db.remove_push_subscription("https://push.example/ep1")
+    assert await db.get_push_subscriptions() == []
+
+
+async def test_remove_push_subscription_missing_endpoint_is_a_noop(db):
+    await db.remove_push_subscription("https://push.example/does-not-exist")
+    assert await db.get_push_subscriptions() == []

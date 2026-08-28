@@ -20,6 +20,7 @@ async def check(page, ctx):
             title=f"{monitor.name}: content changed",
             body=f"{last!r} → {heading!r}",
             tags=monitor.notify_channels,
+            db=ctx.db,
         )
 
     await set_value(ctx.db, monitor.name, heading)
