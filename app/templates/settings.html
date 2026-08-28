@@ -150,6 +150,11 @@
     <button class="btn" id="push-toggle-btn" onclick="togglePush()" style="display:none"></button>
   </div>
 
+  <div class="neu-raised-sm settings-card" id="install-card" style="display:none">
+    <div class="settings-card-title">App</div>
+    <button class="btn" id="install-btn" onclick="promptInstall()">Install app</button>
+  </div>
+
   <div class="neu-raised-sm settings-card">
     <div class="settings-card-title">Tags</div>
     <div id="tags-list" class="tags-list">
@@ -183,6 +188,26 @@
 
 {% block scripts %}
 <script>
+  // ── Install app ───────────────────────────────────────────
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    document.getElementById('install-card').style.display = '';
+  });
+  function promptInstall() {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(function() {
+      deferredInstallPrompt = null;
+      document.getElementById('install-card').style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', function() {
+    deferredInstallPrompt = null;
+    document.getElementById('install-card').style.display = 'none';
+  });
+
   // ── Push notifications ─────────────────────────────────────
   function urlBase64ToUint8Array(base64String) {
     var padding = '='.repeat((4 - base64String.length % 4) % 4);
