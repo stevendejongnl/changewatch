@@ -169,7 +169,7 @@
       display: flex;
       gap: 8px;
       position: fixed;
-      bottom: 72px;
+      bottom: 108px; /* .mobile-tabs renders ~100px tall, not the 72px this assumed — was overlapping/clipping these buttons */
       left: 12px; right: 12px;
       z-index: 90;
       padding: 10px 12px;
@@ -195,7 +195,7 @@
       box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
     }
     /* base.html's own .content-card rule (same specificity, later in <head>) would otherwise win with its 80px */
-    .content-card { padding-bottom: 130px !important; }
+    .content-card { padding-bottom: 190px !important; }
   }
 </style>
 {% endblock %}
