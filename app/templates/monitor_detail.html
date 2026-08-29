@@ -151,7 +151,8 @@
   @media (max-width: 700px) {
     .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .metric-card:not(.metric-key) { display: none; }
-    .detail-topbar-right { display: none; }
+    /* hide only the run/pause/delete duplicates (mob-action-bar covers those); Open/Edit have no mobile equivalent */
+    .detail-topbar-right > *:not(.topbar-mobile-visible) { display: none; }
     .run-row-main {
       grid-template-columns: 20px 80px 1fr 20px;
       gap: 8px;
@@ -193,7 +194,8 @@
     .mob-action-btn:active {
       box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
     }
-    .content-card { padding-bottom: 130px; }
+    /* base.html's own .content-card rule (same specificity, later in <head>) would otherwise win with its 80px */
+    .content-card { padding-bottom: 130px !important; }
   }
 </style>
 {% endblock %}
@@ -214,12 +216,12 @@
 </div>
 <div class="topbar-right detail-topbar-right">
   {% if product_url %}
-  <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn">
+  <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn topbar-mobile-visible">
     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
     Open
   </a>
   {% endif %}
-  <a href="/monitors/{{ monitor_name }}/edit" class="btn">Edit</a>
+  <a href="/monitors/{{ monitor_name }}/edit" class="btn topbar-mobile-visible">Edit</a>
   <button class="btn" id="pause-btn" onclick="togglePause()">
     {% if paused %}
     <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
