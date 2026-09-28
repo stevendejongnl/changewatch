@@ -997,8 +997,8 @@ def test_monitor_tags_default_empty():
 
 def test_monitor_tags_can_be_set():
     from app.helpers import Monitor
-    m = Monitor(name="test", schedule="* * * * *", notify_channels=[], tags=["findthatproduct"])
-    assert m.tags == ["findthatproduct"]
+    m = Monitor(name="test", schedule="* * * * *", notify_channels=[], tags=["sample"])
+    assert m.tags == ["sample"]
 
 
 def test_monitor_tags_multiple_values():
@@ -1015,7 +1015,7 @@ async def test_api_monitors_tag_filter_returns_matching(db, tmp_path, monkeypatc
     monitors_dir.mkdir()
     (monitors_dir / "tagged_mon.py").write_text(
         'from app.helpers import Monitor\n'
-        'monitor = Monitor(name="tagged_mon", schedule="0 8 * * *", notify_channels=[], tags=["findthatproduct"])\n'
+        'monitor = Monitor(name="tagged_mon", schedule="0 8 * * *", notify_channels=[], tags=["sample"])\n'
         '@monitor.check\nasync def check(page, ctx): pass\n'
     )
     (monitors_dir / "other_mon.py").write_text(
@@ -1029,7 +1029,7 @@ async def test_api_monitors_tag_filter_returns_matching(db, tmp_path, monkeypatc
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_scheduler] = lambda: None
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        response = await c.get("/api/monitors?tag=findthatproduct")
+        response = await c.get("/api/monitors?tag=sample")
     app.dependency_overrides.clear()
     assert response.status_code == 200
     data = response.json()
