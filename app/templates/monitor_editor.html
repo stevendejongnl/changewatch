@@ -5,15 +5,13 @@
 
 {% block topbar %}
 <div class="topbar-left">
-  <div class="topbar-breadcrumb">
-    <a href="/">monitors</a>
-    <span style="color:var(--ink-4)">›</span>
-    {% if mode == "edit" %}<a href="/monitors/{{ monitor_name }}">{{ monitor_name }}</a>
-    <span style="color:var(--ink-4)">›</span>{% endif %}
-    <span>{% if mode == "new" %}new{% else %}edit{% endif %}</span>
-  </div>
-  <h1>{% if mode == "new" %}New monitor{% else %}Adjust monitor{% endif %}</h1>
-  <div class="topbar-sub">{% if mode == "new" %}Create a new Python monitor{% else %}Adjust the Python monitor file{% endif %}</div>
+  <nav class="topbar-breadcrumb" aria-label="Breadcrumb">
+    <a href="/">Monitors</a><span>/</span>
+    {% if mode == "edit" %}<a href="/monitors/{{ monitor_name }}">{{ monitor_name }}</a><span>/</span>{% endif %}
+    <span>{% if mode == "new" %}New{% else %}Edit{% endif %}</span>
+  </nav>
+  <h1>{% if mode == "new" %}New monitor{% else %}Edit monitor{% endif %}</h1>
+  <div class="topbar-sub">{% if mode == "new" %}Create a Python monitor file{% else %}Change the Python monitor file{% endif %}</div>
 </div>
 <div class="topbar-right">
   <span id="git-status" class="t-3" style="font-size:12px"></span>
@@ -25,209 +23,96 @@
 
 {% block content %}
 <style>
-  .editor-grid {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap: 20px;
-    align-items: start;
-  }
+  .editor-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: start; }
   .editor-grid.custom-file { grid-template-columns: 1fr; }
   .editor-grid.custom-file .editor-left { display: none; }
   .custom-file .raw-wrap { height: 560px; }
-  .editor-left, .editor-right { padding: 20px; }
-  .form-section { margin-bottom: 24px; }
-  .form-section:last-child { margin-bottom: 0; }
-  .form-row { margin-bottom: 12px; }
-  .form-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--ink-3);
-    margin-bottom: 5px;
-    letter-spacing: 0.04em;
-  }
-  .input.mono-input { font-family: var(--mono); font-size: 12.5px; }
+
+  .form-section { padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+  .form-section:last-child { border-bottom: 0; margin-bottom: 0; }
+  .form-section h2 { font: 600 15px var(--sans); margin-bottom: 14px; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+  .input.mono-input { font-family: var(--mono); font-size: 13px; }
   .cron-builder { margin-top: 8px; }
   .cron-fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .cron-part { text-align: center; padding: 5px 4px !important; }
-  #cron-desc { font-size: 11px; color: var(--ink-3); font-style: italic; margin-top: 6px; min-height: 16px; }
-  .schedule-segs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .cron-part { text-align: center; padding: 0 4px !important; }
+  #cron-desc { font-size: 12px; color: var(--ink-3); margin-top: 6px; min-height: 16px; }
+  .schedule-segs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .schedule-segs button {
-    padding: 5px 10px;
-    border-radius: 8px;
-    font: 500 10.5px var(--mono);
-    color: var(--ink-3);
-    background: var(--bg);
-    border: 0;
-    cursor: pointer;
-    box-shadow: -2px -2px 5px var(--raise), 2px 2px 5px var(--shadow);
-    transition: color .12s;
+    min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-3);
+    background: transparent; color: var(--ink-2); font: 500 12px var(--sans); cursor: pointer;
   }
-  .schedule-segs button:hover { color: var(--ink-2); }
-  .channel-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-  }
+  .schedule-segs button:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  .channel-row { display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .channel-row:last-child { border-bottom: 0; }
-  .channel-check {
-    width: 18px; height: 18px;
-    border-radius: 5px;
-    flex-shrink: 0;
-    box-shadow: inset 2px 2px 4px var(--shadow), inset -1px -1px 3px var(--raise);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-  }
+  .channel-check { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; border: 1px solid var(--line-3); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+  .channel-check:has(svg[style=""]) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .toggle-row:last-child { border-bottom: 0; }
-  .toggle-label { font-size: 13px; color: var(--ink-2); }
-  .toggle-desc { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
-  /* Toggle switch */
-  .switch { position: relative; display: inline-block; width: 38px; height: 22px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch-track {
-    position: absolute; inset: 0;
-    border-radius: 11px;
-    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 4px var(--raise);
-    background: var(--bg);
-    transition: background .15s;
+  .toggle-label { font-size: 14px; color: var(--ink); }
+  .toggle-desc { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 24px; flex-shrink: 0; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; width: 100%; height: 100%; }
+  .switch-track { position: absolute; inset: 0; border-radius: 12px; border: 1px solid var(--line-3); background: transparent; transition: background .15s; }
+  .switch-thumb { position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink-3); transition: transform .15s, background .15s; }
+  .switch input:checked ~ .switch-track { background: var(--ink); border-color: var(--ink); }
+  .switch input:checked ~ .switch-thumb { transform: translateX(16px); background: var(--bg); }
+  .switch input:focus-visible ~ .switch-track { outline: 2px solid var(--ink-2); outline-offset: 2px; }
+
+  .raw-wrap { display: flex; height: 400px; overflow: hidden; border: 1px solid var(--line-2); border-radius: 6px; font: 13px/1.6 var(--mono); color: var(--ink); }
+  .preview-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .file-name { font: 13px var(--mono); color: var(--ink-2); display: inline-flex; align-items: center; gap: 8px; }
+  .right-title { font: 600 15px var(--sans); }
+
+  .conflict-panel { border: 1px solid var(--line-2); border-left: 3px solid var(--err); border-radius: 6px; padding: 16px; margin-top: 16px; }
+  .conflict-diff { font: 12px/1.6 var(--mono); overflow: auto; max-height: 200px; margin: 12px 0; white-space: pre; }
+
+  .tags-sec { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .tags-sec h2 { font: 600 15px var(--sans); margin-bottom: 12px; }
+  .tag-pick { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-3); border-radius: 999px; cursor: pointer; font: 13px var(--mono); color: var(--ink-2); }
+  .tag-pick:has(input:checked) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tag-pick input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .mob-code-editor { display: none; font-family: var(--mono); font-size: 13px; line-height: 1.5; height: auto; min-height: 200px; max-height: 60vh; overflow: auto; resize: vertical; white-space: pre; }
+  .mob-helpers-btn { display: none; margin-top: 10px; width: 100%; }
+
+  .helpers-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; }
+  .helpers-drawer {
+    position: fixed; right: 0; top: 0; bottom: 0; width: 360px;
+    background: var(--bg); border-left: 1px solid var(--line-2);
+    z-index: 101; transform: translateX(100%); transition: transform .2s ease;
+    display: flex; flex-direction: column; overflow: hidden;
   }
-  .switch-thumb {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--ink-3);
-    box-shadow: 1px 1px 3px var(--shadow);
-    transition: transform .15s, background .15s;
-  }
-  .switch input:checked ~ .switch-thumb {
-    transform: translateX(16px);
-    background: var(--accent);
-  }
-  /* Raw editor panel */
-  .raw-wrap {
-    display: flex;
-    height: 400px;
-    overflow: hidden;
-    border-radius: 12px;
-    box-shadow: inset 3px 3px 7px var(--shadow), inset -2px -2px 5px var(--raise);
-    font: 12.5px/1.6 var(--mono);
-    color: var(--ink);
-  }
-  /* Code preview */
-  .preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  /* Conflict panel */
-  .conflict-panel {
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 16px;
-    box-shadow: inset 3px 3px 7px var(--shadow), inset -2px -2px 5px var(--raise);
-  }
-  .conflict-diff {
-    font: 11px/1.6 var(--mono);
-    overflow-x: auto;
-    max-height: 200px;
-    overflow-y: auto;
-    margin: 12px 0;
-    white-space: pre;
-  }
-  @media (max-width: 900px) {
-    .editor-grid { grid-template-columns: 1fr; }
-  }
-  .mob-code-editor {
-    display: none;
-    font-family: var(--mono);
-    font-size: 13px;
-    line-height: 1.5;
-    height: auto;
-    min-height: 200px;
-    max-height: 60vh;
-    overflow-y: auto;
-    resize: vertical;
-    white-space: pre;
-    overflow-x: auto;
-  }
-  .mob-helpers-btn { display: none; margin-top: 10px; width: 100%; justify-content: center; }
+  .helpers-drawer.open { transform: translateX(0); }
+  .helpers-drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line-2); flex-shrink: 0; }
+  .helpers-drawer-title { font: 600 15px var(--sans); }
+  .helpers-close { background: none; border: 0; cursor: pointer; color: var(--ink-2); font-size: 18px; width: 44px; height: 44px; border-radius: 6px; }
+  .helpers-close:hover { color: var(--ink); }
+  .helpers-drawer-body { overflow-y: auto; flex: 1; }
+  .helper-entry { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .helper-sig { font: 12.5px var(--mono); color: var(--ink); margin-bottom: 4px; overflow-wrap: anywhere; }
+  .helper-desc { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+  .helper-btn { flex-shrink: 0; min-height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line-3); background: transparent; color: var(--ink); font: 500 12px var(--sans); cursor: pointer; }
+  .helper-btn:hover { border-color: var(--ink-3); }
+  .import-row { padding: 12px 16px; border-bottom: 1px solid var(--line-2); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .import-line { font: 12px var(--mono); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; gap: 32px; } }
   @media (max-width: 700px) {
     .raw-wrap { display: none !important; }
     .mob-code-editor { display: block; }
     .mob-helpers-btn { display: flex; }
-    .editor-left, .editor-right { padding: 14px; }
-    .helpers-drawer {
-      top: auto !important;
-      bottom: 0 !important;
-      right: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 70vh;
-      border-radius: 20px 20px 0 0;
-      transform: translateY(100%) !important;
-    }
-    .helpers-drawer.open { transform: translateY(0) !important; }
+    .cron-fields { gap: 4px; }
+    .helpers-drawer { top: auto; left: 0; width: 100%; height: 70vh; border-left: 0; border-top: 1px solid var(--line-2); border-radius: 12px 12px 0 0; transform: translateY(100%); }
+    .helpers-drawer.open { transform: translateY(0); }
+    .topbar-right { position: fixed; left: 0; right: 0; bottom: 56px; z-index: 20; background: var(--bg); border-top: 1px solid var(--line-2); padding: 8px 16px; display: grid !important; grid-template-columns: 1fr 1fr 2fr; gap: 8px; }
+    #git-status { display: none; }
+    #btn-helpers { display: none; }
+    .content-body { padding-bottom: 72px; }
   }
-  /* Helpers overlay drawer */
-  .helpers-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.3); z-index: 100;
-  }
-  .helpers-drawer {
-    position: fixed; right: 0; top: 0; bottom: 0; width: 320px;
-    background: var(--surface);
-    box-shadow: -6px 0 24px rgba(0,0,0,.35);
-    z-index: 101;
-    transform: translateX(100%);
-    transition: transform .22s cubic-bezier(.4,0,.2,1);
-    display: flex; flex-direction: column; overflow: hidden;
-  }
-  .helpers-drawer.open { transform: translateX(0); }
-  .helpers-drawer-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 16px 12px;
-    border-bottom: 1px solid var(--line);
-    flex-shrink: 0;
-  }
-  .helpers-drawer-title {
-    font: 600 10px var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
-  }
-  .helpers-close {
-    background: none; border: 0; cursor: pointer; color: var(--ink-3);
-    font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color .12s;
-  }
-  .helpers-close:hover { color: var(--ink-2); }
-  .helpers-drawer-body { overflow-y: auto; flex: 1; }
-  .helper-entry {
-    padding: 9px 14px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-  }
-  .helper-entry:last-child { border-bottom: 0; }
-  .helper-sig { font: 11.5px var(--mono); color: var(--accent); margin-bottom: 3px; }
-  .helper-desc { font: 11px var(--sans); color: var(--ink-3); }
-  .helper-btn {
-    flex-shrink: 0; padding: 5px 10px; border-radius: 8px;
-    font: 500 10px var(--sans); color: var(--ink-3); background: var(--bg); border: 0;
-    cursor: pointer; box-shadow: -2px -2px 4px var(--raise), 2px 2px 4px var(--shadow);
-    white-space: nowrap; transition: color .12s;
-  }
-  .helper-btn:hover { color: var(--ink-2); }
-  .import-row {
-    padding: 9px 14px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px;
-  }
-  .import-line { font: 11px var(--mono); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 
 <script>
@@ -236,13 +121,13 @@
 
 <div class="editor-grid{% if custom_file %} custom-file{% endif %}">
   <!-- LEFT PANEL (form only; hidden for custom files) -->
-  <div class="editor-left neu-raised">
+  <div class="editor-left">
 
     <!-- FORM PANEL -->
     <div id="panel-form">
 
       <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">1 · Basics</div>
+        <h2>Basics</h2>
 
         <div class="form-row">
           <label class="form-label" for="field-name">Name</label>
@@ -295,7 +180,7 @@
 
       {% if available_channels %}
       <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">2 · Notify on change</div>
+        <h2>Notify on change</h2>
         {% for ch in available_channels %}
         <label class="channel-row">
           <input type="checkbox" class="channel-checkbox" value="{{ ch }}"
@@ -305,14 +190,14 @@
               <path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span style="font-size:13px;color:var(--ink-2)">{{ ch }}</span>
+          <span style="font-size:14px">{{ ch }}</span>
         </label>
         {% endfor %}
       </div>
       {% endif %}
 
       <div class="form-section">
-        <div class="eyebrow" style="margin-bottom:14px">{% if available_channels %}3{% else %}2{% endif %} · Advanced</div>
+        <h2>Advanced</h2>
         <div class="toggle-row">
           <div>
             <div class="toggle-label">Record to InfluxDB</div>
@@ -342,11 +227,11 @@
   </div><!-- /editor-left -->
 
   <!-- RIGHT PANEL -->
-  <div class="editor-right neu-raised">
+  <div class="editor-right">
 
     <div class="preview-header">
-      <div class="chip">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="file-name">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
         </svg>
@@ -380,8 +265,8 @@
 
     <!-- CONFLICT PANEL -->
     <div id="conflict-panel" class="conflict-panel" style="display:none">
-      <div style="font-size:13px;font-weight:600;color:var(--err);margin-bottom:8px">&#9888; Conflict detected</div>
-      <div class="t-3" style="font-size:11.5px;margin-bottom:8px">Someone pushed changes while you were editing. Choose:</div>
+      <div style="font-size:14px;font-weight:600;color:var(--err);margin-bottom:8px">Conflict detected</div>
+      <div class="t-2" style="font-size:13px;margin-bottom:8px">Someone pushed changes while you were editing. Pick one:</div>
       <pre id="conflict-diff" class="conflict-diff t-3"></pre>
       <div style="display:flex;gap:8px;margin-top:12px">
         <button id="btn-force" class="btn danger">Force mine</button>
@@ -390,8 +275,8 @@
     </div>
 
     <!-- DRY-RUN -->
-    <div style="margin-top:16px">
-      <div class="eyebrow" style="margin-bottom:10px">Dry run</div>
+    <div style="margin-top:24px">
+      <h2 class="right-title" style="margin-bottom:10px">Dry run</h2>
       <div id="dry-run-console" class="console" style="min-height:80px">
         <span class="t-3">Run the monitor once without saving or sending notifications.</span>
       </div>
@@ -410,29 +295,29 @@
 
 <!-- TAGS (shown for all monitors, including custom files) -->
 {% if monitor_name %}
-<div class="neu-raised" style="margin-top:20px;padding:20px 24px">
-  <div class="eyebrow" style="margin-bottom:14px">Tags</div>
-  <div style="display:flex;flex-wrap:wrap;gap:10px">
+<section class="tags-sec">
+  <h2>Tags</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
     {% for tag in all_tags %}
-    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+    <label class="tag-pick">
       <input type="checkbox" class="tag-checkbox" value="{{ tag }}"
         {% if tag in monitor_tags %}checked{% endif %}
         onchange="saveTags()">
-      <span style="font:500 12px var(--mono);color:var(--ink-2)">{{ tag }}</span>
+      <span>{{ tag }}</span>
     </label>
     {% endfor %}
     {% if not all_tags %}
-    <span style="font:11px var(--mono);color:var(--ink-4)">No tags defined yet — create them in <a href="/settings" style="color:var(--accent)">Settings</a></span>
+    <span class="t-3" style="font-size:13px">No tags yet. Create them in <a href="/settings" style="text-decoration:underline">Settings</a>.</span>
     {% endif %}
   </div>
-</div>
+</section>
 {% endif %}
 
 <!-- HELPERS OVERLAY DRAWER -->
 <div class="helpers-backdrop" id="helpers-backdrop" style="display:none"></div>
 <div class="helpers-drawer" id="helpers-drawer">
   <div class="helpers-drawer-header">
-    <span class="helpers-drawer-title">Available helpers</span>
+    <span class="helpers-drawer-title">Helpers</span>
     <button class="helpers-close" id="helpers-close" aria-label="Close">&#x2715;</button>
   </div>
   <div class="helpers-drawer-body">
