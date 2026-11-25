@@ -6,143 +6,51 @@
 
 {% block head %}
 <style>
-  /* ── Filter row ─────────────────────────────────────────── */
-  .filter-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-  }
-  .filter-count {
-    margin-left: auto;
-    font: 400 11px var(--mono);
-    color: var(--ink-3);
-  }
+  .filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line-2); }
+  .filter-row .seg { border-bottom: 0; }
+  .filter-tools { display: flex; align-items: center; gap: 16px; padding-bottom: 6px; flex-wrap: wrap; }
+  .filter-tools label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+  .filter-tools select.input { width: auto; min-height: 36px; font-size: 13px; padding: 0 10px; }
+  .filter-count { font: 12px var(--mono); color: var(--ink-3); }
+  .mob-mon-filter { display: none; }
 
-  /* ── Monitor select (inset well style) ──────────────────── */
-  .mon-select-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 9px;
-    box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
-  }
-  .mon-select {
-    background: transparent;
-    border: 0;
-    color: var(--ink-2);
-    font: 11px var(--mono);
-    outline: none;
-    cursor: pointer;
-  }
-  .mon-select option { background: #2a2d35; }
+  .day-header { padding: 18px 12px 8px; font-size: 12px; font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--line-2); }
 
-  /* ── Live chip ───────────────────────────────────────────── */
-  .live-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    font: 500 10.5px/1 var(--sans);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-    background: var(--surface);
-    box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--raise);
-  }
-  .live-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--ok);
-    box-shadow: 0 0 6px var(--ok-glow);
-  }
-
-  /* ── Day group ───────────────────────────────────────────── */
-  .day-group { margin-bottom: 18px; }
-  .day-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .day-label {
-    font: 500 10px/1 var(--sans);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-2);
-  }
-  .day-line {
-    flex: 1; height: 1px;
-    background: var(--line);
-  }
-  .day-count {
-    font: 400 10px var(--mono);
-    color: var(--ink-3);
-  }
-
-  /* ── Activity row ────────────────────────────────────────── */
-  .activity-row {
+  .act-cols, .activity-row {
     display: grid;
-    grid-template-columns: 20px 100px 220px 1fr 70px 90px 28px;
-    gap: 16px;
+    grid-template-columns: 90px minmax(0, 260px) 110px minmax(0, 1fr) 80px;
+    gap: 14px;
     align-items: center;
-    padding: 12px 18px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: opacity .1s;
   }
-  .activity-row:hover { opacity: .9; }
-  .act-time  { font: 400 11.5px var(--mono); color: var(--ink-2); white-space: nowrap; }
-  .act-name  { font: 400 13px var(--mono); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act-value { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .act-dur   { font: 400 11px var(--mono); color: var(--ink-3); text-align: right; }
-  .act-chevron { color: var(--ink-3); }
+  .act-cols { padding: 10px 12px; font-size: 12px; color: var(--ink-2); border-bottom: 1px solid var(--line-2); margin-top: 4px; }
+  .activity-row { padding: 12px; border-bottom: 1px solid var(--line); min-height: 44px; }
+  .activity-row:hover { background: rgba(255,255,255,0.025); }
+  .act-time  { grid-area: time; font: 13px var(--mono); white-space: nowrap; }
+  .act-name  { grid-area: name; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act-status { grid-area: status; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+  .act-value { grid-area: value; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .act-value.t-err { font: 12px var(--mono); }
+  .act-dur   { grid-area: dur; font: 12px var(--mono); color: var(--ink-3); text-align: right; }
+  .activity-row { grid-template-areas: "time name status value dur"; }
 
-  /* ── Pagination ──────────────────────────────────────────── */
-  .pagination {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    padding: 16px 0 4px;
-    font: 400 12px var(--sans);
-  }
-  .page-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 10px;
-    color: var(--accent);
-    background: var(--surface);
-    box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
-    transition: box-shadow .12s;
-  }
-  .page-btn:hover {
-    box-shadow: -3px -3px 7px var(--raise-strong), 4px 4px 9px var(--shadow);
-  }
+  .pagination { display: flex; gap: 12px; justify-content: center; padding: 20px 0 4px; }
 
-  /* ── Mobile monitor filter ─────────────────────────────── */
-  .mob-mon-filter { display: none; margin-bottom: 10px; }
-
-  /* ── Responsive ─────────────────────────────────────────── */
-  @media (max-width: 900px) {
-    .activity-row {
-      grid-template-columns: 20px 90px 1fr 60px;
-    }
-    .act-value, .act-chip, .act-chevron { display: none; }
-  }
   @media (max-width: 700px) {
-    .mob-mon-filter { display: block; }
-    .activity-row {
-      grid-template-columns: 20px 1fr 60px;
-      gap: 10px;
-      padding: 11px 13px;
-    }
-    .act-time { display: none; }
+    .mob-mon-filter { display: block; margin-bottom: 8px; }
+    .filter-tools label { display: none; }
     .filter-count { display: none; }
-    .mon-select-wrap { display: none; }
+    .filter-tools { padding-bottom: 0; }
+    .filter-row .seg { gap: 16px; overflow-x: auto; flex-wrap: nowrap; }
+    .act-cols { display: none; }
+    .day-header { padding: 14px 0 6px; }
+    .activity-row {
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "name status" "value time" ;
+      gap: 4px 12px;
+      padding: 12px 0;
+    }
+    .act-dur { display: none; }
+    .act-time { color: var(--ink-3); font-size: 12px; justify-self: end; }
   }
 </style>
 {% endblock %}
@@ -150,20 +58,14 @@
 {% block topbar %}
 <div class="topbar-left">
   <h1>Activity</h1>
-  <div class="topbar-sub">Every run, across every monitor</div>
-</div>
-<div class="topbar-right">
-  <div class="live-chip">
-    <div class="live-dot"></div>
-    Live
-  </div>
+  <div class="topbar-sub">Every run, newest first. Updates live.</div>
 </div>
 {% endblock %}
 
 {% block content %}
-<!-- Mobile monitor filter (native select, shown only on mobile) -->
 <div class="mob-mon-filter">
-  <select class="input" style="font-size:12px" onchange="filterActivity(null, null)" id="mon-filter-mobile">
+  <label class="t-2" style="font-size:12px;display:block;margin-bottom:4px" for="mon-filter-mobile">Monitor</label>
+  <select class="input" onchange="filterActivity(null, null)" id="mon-filter-mobile">
     <option value="">All monitors</option>
     {% for name in monitor_names %}
     <option value="{{ name }}">{{ name }}</option>
@@ -171,47 +73,44 @@
   </select>
 </div>
 
-<!-- Filters -->
 <div class="filter-row">
-  <div class="seg">
+  <div class="seg" role="group" aria-label="Filter by status">
     <button class="on" data-status="all" onclick="filterActivity('all', this)">All</button>
     <button data-status="error" onclick="filterActivity('error', this)">Errors</button>
     <button data-status="changed" onclick="filterActivity('changed', this)">Changes</button>
     <button data-status="ok" onclick="filterActivity('ok', this)">OK</button>
   </div>
-  <div class="mon-select-wrap">
-    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg>
-    <select class="mon-select" id="mon-filter" onchange="filterActivity(null, null)">
-      <option value="">All monitors</option>
-      {% for name in monitor_names %}
-      <option value="{{ name }}">{{ name }}</option>
-      {% endfor %}
-    </select>
+  <div class="filter-tools">
+    <label>Monitor
+      <select class="input" id="mon-filter" onchange="filterActivity(null, null)">
+        <option value="">All monitors</option>
+        {% for name in monitor_names %}
+        <option value="{{ name }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <span class="filter-count">showing {{ runs | length }}{% if has_more %}+{% endif %} events</span>
   </div>
-  <span class="filter-count">showing {{ runs | length }}{% if has_more %}+{% endif %} events</span>
 </div>
 
-<!-- Activity stream grouped by date -->
+{% if runs %}<div class="act-cols" aria-hidden="true"><span>Time</span><span>Monitor</span><span>Status</span><span>Value or error</span><span style="text-align:right">Duration</span></div>{% endif %}
+
 <div id="activity-feed">
 {% if runs %}
-  {% set ns = namespace(current_date='', group_count=0) %}
+  {% set ns = namespace(current_date='') %}
   {% for run in runs %}
     {% set run_date = (run.ran_at | localtime)[:10] if run.ran_at else 'unknown' %}
     {% if run_date != ns.current_date %}
       {% if ns.current_date != '' %}</div>{% endif %}
       {% set ns.current_date = run_date %}
       <div class="day-group">
-        <div class="day-header">
-          <span class="day-label">{{ run_date }}</span>
-          <div class="day-line"></div>
-        </div>
+        <div class="day-header">{{ run_date }}</div>
     {% endif %}
-    <a href="/monitors/{{ run.monitor_name }}" class="neu-raised-sm activity-row"
-      data-status="{{ run.status }}" data-monitor="{{ run.monitor_name }}" style="text-decoration:none">
-      <div class="led {{ run.status }}"></div>
+    <a href="/monitors/{{ run.monitor_name }}" class="activity-row" data-status="{{ run.status }}" data-monitor="{{ run.monitor_name }}">
       <span class="act-time">{{ (run.ran_at | localtime)[11:19] if run.ran_at else '—' }}</span>
       <span class="act-name">{{ run.monitor_name }}</span>
-      <span class="act-value {% if run.status == 'error' %}t-err mono{% elif run.status == 'changed' %}t-chg mono{% else %}t-2{% endif %}">
+      <span class="act-status"><span class="led {{ run.status }}"></span>{{ {'ok': 'OK', 'error': 'Failing', 'changed': 'Changed', 'pending': 'Pending'}.get(run.status, run.status) }}</span>
+      <span class="act-value {% if run.status == 'error' %}t-err{% elif run.status == 'changed' %}t-chg{% else %}t-2{% endif %}">
         {%- if run.error -%}
           {{ run.error[:80] }}{% if run.error | length > 80 %}…{% endif %}
         {%- elif run.last_value -%}
@@ -220,34 +119,24 @@
           —
         {%- endif -%}
       </span>
-      <span class="act-dur mono num">{{ run.duration_ms }}ms</span>
-      <span class="chip {{ run.status }} act-chip" style="padding:3px 8px;font-size:9px">{{ run.status }}</span>
-      <span class="act-chevron">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
-      </span>
+      <span class="act-dur num">{{ run.duration_ms }} ms</span>
     </a>
   {% endfor %}
   {% if ns.current_date != '' %}</div>{% endif %}
 {% else %}
-  <div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
-    <div style="font:500 14px var(--sans)">No runs yet</div>
+  <div style="text-align:center;padding:64px 0">
+    <div style="font:600 15px var(--sans)">No runs yet</div>
+    <div class="t-2" style="font-size:13px;margin-top:6px">Runs show up here as soon as a monitor has run.</div>
   </div>
 {% endif %}
 </div>
 
-<!-- Pagination -->
 <div class="pagination">
   {% if offset > 0 %}
-  <a class="page-btn" href="/activity?offset={{ [offset - limit, 0] | max }}&amp;limit={{ limit }}">
-    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-    Newer
-  </a>
+  <a class="btn" href="/activity?offset={{ [offset - limit, 0] | max }}&amp;limit={{ limit }}">← Newer</a>
   {% endif %}
   {% if has_more %}
-  <a class="page-btn" href="/activity?offset={{ offset + limit }}&amp;limit={{ limit }}">
-    Older
-    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
-  </a>
+  <a class="btn" href="/activity?offset={{ offset + limit }}&amp;limit={{ limit }}">Older →</a>
   {% endif %}
 </div>
 {% endblock %}
@@ -271,6 +160,8 @@
     });
   }
 
+  const STATUS_LABEL = { ok: 'OK', error: 'Failing', changed: 'Changed', pending: 'Pending' };
+
   function _buildRow(e) {
     const statusClass = String(e.status || '');
     const name        = String(e.monitor_name || '');
@@ -278,17 +169,13 @@
     const rawVal      = e.error
       ? String(e.error).slice(0, 80) + (String(e.error).length > 80 ? '…' : '')
       : (e.last_value ? String(e.last_value) : '—');
-    const dur         = e.duration_ms != null ? String(e.duration_ms) + 'ms' : '—';
+    const dur         = e.duration_ms != null ? String(e.duration_ms) + ' ms' : '—';
 
     const a = document.createElement('a');
     a.href  = '/monitors/' + encodeURIComponent(name);
-    a.className = 'neu-raised-sm activity-row';
+    a.className = 'activity-row';
     a.dataset.status  = statusClass;
     a.dataset.monitor = name;
-    a.style.textDecoration = 'none';
-
-    const led = document.createElement('div');
-    led.className = 'led ' + statusClass;
 
     const tTime = document.createElement('span');
     tTime.className = 'act-time';
@@ -298,49 +185,36 @@
     tName.className = 'act-name';
     tName.textContent = name;
 
-    const valCls = statusClass === 'error' ? 'act-value t-err mono'
-                 : statusClass === 'changed' ? 'act-value t-chg mono'
-                 : 'act-value t-2';
+    const tStatus = document.createElement('span');
+    tStatus.className = 'act-status';
+    const dot = document.createElement('span');
+    dot.className = 'led ' + statusClass;
+    tStatus.append(dot, STATUS_LABEL[statusClass] || statusClass);
+
     const tVal = document.createElement('span');
-    tVal.className = valCls;
+    tVal.className = 'act-value ' + (statusClass === 'error' ? 't-err' : statusClass === 'changed' ? 't-chg' : 't-2');
     tVal.textContent = rawVal;
 
     const tDur = document.createElement('span');
-    tDur.className = 'act-dur mono num';
+    tDur.className = 'act-dur num';
     tDur.textContent = dur;
 
-    const chip = document.createElement('span');
-    chip.className = 'chip ' + statusClass + ' act-chip';
-    chip.style.cssText = 'padding:3px 8px;font-size:9px';
-    chip.textContent = statusClass;
-
-    const chevron = document.createElement('span');
-    chevron.className = 'act-chevron';
-    chevron.setAttribute('aria-hidden', 'true');
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', '13');
-    svg.setAttribute('height', '13');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.6');
-    svg.setAttribute('stroke-linecap', 'round');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M9 6l6 6-6 6');
-    svg.appendChild(path);
-    chevron.appendChild(svg);
-
-    a.append(led, tTime, tName, tVal, tDur, chip, chevron);
+    a.append(tTime, tName, tStatus, tVal, tDur);
     return a;
   }
 
   (function () {
-    const liveDot = document.querySelector('.live-dot');
+    const dot = document.querySelector('.conn-indicator .led');
+    const indicator = document.querySelector('.conn-indicator');
 
     function setConn(ok) {
-      if (!liveDot) return;
-      liveDot.style.background = ok ? '' : 'var(--ink-4)';
-      liveDot.style.boxShadow  = ok ? '' : 'none';
+      if (!dot || !indicator) return;
+      dot.className = 'led ' + (ok ? 'ok' : 'pending');
+      indicator.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          node.textContent = ok ? 'connected' : 'reconnecting…';
+        }
+      });
     }
 
     const onFirstPage = !new URLSearchParams(location.search).get('offset');
