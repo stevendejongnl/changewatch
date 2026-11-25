@@ -406,6 +406,7 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep, scheduler
         monitors = [m for m in monitors if m["monitor_name"] != "example_price"]
     seen = {m["monitor_name"] for m in monitors}
     for name in sorted(all_names - seen):
+        config = await db.get_config(name)
         monitors.append({
             "monitor_name": name,
             "status": "pending",
@@ -413,8 +414,9 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep, scheduler
             "error": None,
             "duration_ms": 0,
             "ran_at": None,
-            "paused": 0,
+            "paused": config["paused"],
             "changed_at": None,
+            "favorite": config["favorite"],
         })
     for m in monitors:
         m["metric"] = metric_map.get(m["monitor_name"])

@@ -1229,6 +1229,29 @@ async def test_dashboard_favorites_mode_when_favorites_exist(client, db):
     assert "favorites" in response.text.lower()
 
 
+async def test_dashboard_favorites_mode_shows_favorited_monitor_before_first_run(client, db, tmp_path):
+    monitors_dir = tmp_path / "monitors"
+    monitors_dir.mkdir(exist_ok=True)
+    (monitors_dir / "new_mon.py").write_text(
+        'from app.helpers import Monitor\n'
+        'monitor = Monitor(name="new_mon", schedule="0 * * * *", notify_channels=[])\n'
+        '@monitor.check\nasync def check(page, ctx): pass\n'
+    )
+    await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
+    await db.set_favorite("mon_a", True)
+    await db.set_favorite("new_mon", True)
+    import app.main as main_mod
+    orig = main_mod.MONITORS_DIR
+    main_mod.MONITORS_DIR = monitors_dir
+    try:
+        response = await client.get("/")
+    finally:
+        main_mod.MONITORS_DIR = orig
+    assert response.status_code == 200
+    assert 'data-monitor="new_mon"' in response.text
+    assert 'data-monitor="mon_a"' in response.text
+
+
 async def test_dashboard_shows_all_when_no_favorites(client, db):
     await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
     await db.record_run("mon_b", status="ok", last_value="v", error=None, duration_ms=10)
