@@ -774,11 +774,17 @@ async def tag_detail(tag: str, request: Request, db: DbDep, git_sync: GitSyncDep
     metric_map = {m.name: m.metric for m in known}
     display_name_map = {m.name: m.display_name or m.name for m in known}
     display_url_map = {m.name: m.display_url for m in known}
+    schedule_map = {m.name: m.schedule for m in known}
+    history = await db.get_run_history(24)
     all_monitor_tags = await db.get_all_monitor_tags()
     tagged = []
     for m in monitors:
         tags_for_monitor = all_monitor_tags.get(m["monitor_name"], [])
         if tag in tags_for_monitor:
+            m["schedule"] = schedule_map.get(m["monitor_name"])
+            runs = history.get(m["monitor_name"], [])
+            m["history"] = [r["status"] for r in reversed(runs)]
+            m["previous_value"] = runs[1]["last_value"] if m["status"] == "changed" and len(runs) > 1 else None
             m["metric"] = metric_map.get(m["monitor_name"])
             m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])
             m["product_url"] = display_url_map.get(m["monitor_name"], "")
