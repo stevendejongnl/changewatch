@@ -6,247 +6,111 @@
 
 {% block head %}
 <style>
-  /* ── Metric strip ────────────────────────────────────────── */
-  .metric-strip {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-  .metric-card {
-    padding: 14px 16px;
-  }
-  .metric-value {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    margin-top: 7px;
-    font: 600 22px/1 var(--mono);
-    letter-spacing: -0.01em;
-    color: var(--ink);
-  }
-  .metric-unit {
-    font-size: 12px;
-    color: var(--ink-3);
-    font-weight: 500;
-    font-family: var(--sans);
-  }
-  .metric-sub {
-    font-size: 10.5px;
-    color: var(--ink-3);
-    margin-top: 5px;
-  }
+  h2.sec-title { font: 600 15px var(--sans); }
 
-  /* ── Run rows ────────────────────────────────────────────── */
-  .runs-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-  .runs-header h2 { font: 600 15px var(--sans); }
+  .facts { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0 0 28px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+  .facts > div { padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; }
+  .facts > div:last-child { border-right: 0; }
+  .facts dt { font-size: 12px; color: var(--ink-2); }
+  .facts dd { margin: 6px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; word-break: break-word; }
+  .facts dd.sm { font: 500 13px/1.4 var(--mono); }
+  .facts .sub { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
 
-  .run-row {
-    margin-bottom: 8px;
-    overflow: hidden;
-  }
-  .run-row-main {
+  .banner { border: 1px solid var(--line-2); border-left: 3px solid var(--err); border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; }
+
+  .sources { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 28px; }
+  .sources .lab { font-size: 12px; color: var(--ink-2); margin-right: 4px; }
+  .sources .btn { min-height: 32px; font-size: 12px; gap: 5px; }
+
+  .chart-col { margin-bottom: 32px; }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+
+  .runs-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--line-2); }
+  .runs-header h2 { font: 600 15px var(--sans); padding-bottom: 10px; }
+  .runs-header .seg { border-bottom: 0; }
+
+  .runs-cols, .run-row-main {
     display: grid;
-    grid-template-columns: 20px 120px 70px 70px 1fr 24px;
+    grid-template-columns: 170px 120px 90px 1fr 20px;
     gap: 14px;
-    padding: 12px 16px;
     align-items: center;
-    cursor: pointer;
   }
-  .run-row-main:hover { opacity: .9; }
-  .run-time  { font: 400 11.5px var(--mono); color: var(--ink-2); white-space: nowrap; }
-  .run-dur   { font: 400 11px var(--mono); color: var(--ink-3); }
-  .run-value { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .run-chevron { color: var(--ink-3); transition: transform .15s; }
-  .run-row.open .run-chevron { transform: none; }
+  .runs-cols { padding: 10px 12px; font-size: 12px; color: var(--ink-2); border-bottom: 1px solid var(--line-2); }
+  .run-row { border-bottom: 1px solid var(--line); }
+  .run-row-main { padding: 12px; cursor: pointer; min-height: 44px; }
+  .run-row-main:hover { background: rgba(255,255,255,0.025); }
+  .run-time  { grid-area: time; font: 13px var(--mono); color: var(--ink); white-space: nowrap; }
+  .run-status { grid-area: status; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+  .run-dur   { grid-area: dur; font: 12px var(--mono); color: var(--ink-3); }
+  .run-value { grid-area: value; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .run-value.t-err { font: 12px var(--mono); }
+  .run-chevron { grid-area: chev; color: var(--ink-3); transition: transform .15s; display: inline-flex; }
   .run-row:not(.open) .run-chevron { transform: rotate(-90deg); }
-
-  .run-logs {
-    padding: 0 16px 14px;
-    display: none;
-  }
+  .run-logs { padding: 0 12px 14px; display: none; }
   .run-row.open .run-logs { display: block; }
 
-  .log-line {
-    display: flex;
-    gap: 12px;
-    font: 11px/1.8 var(--mono);
-  }
+  .log-line { display: flex; gap: 12px; font: 12px/1.8 var(--mono); }
   .log-time  { color: var(--ink-4); white-space: nowrap; }
-  .log-INFO  { color: var(--accent-dim); width: 50px; flex-shrink: 0; }
+  .log-INFO  { color: var(--ink-3); width: 50px; flex-shrink: 0; }
   .log-WARN  { color: var(--chg); width: 50px; flex-shrink: 0; }
   .log-ERROR { color: var(--err); width: 50px; flex-shrink: 0; }
   .log-DEBUG { color: var(--ink-4); width: 50px; flex-shrink: 0; }
   .log-msg   { color: var(--ink-2); }
 
-  /* ── Error banner ────────────────────────────────────────── */
-  .error-banner {
-    position: relative;
-    overflow: hidden;
-    padding: 14px;
-    margin-bottom: 6px;
-  }
-  .error-banner-glow {
-    position: absolute;
-    inset: 0;
-    background: var(--err-glow);
-    opacity: .18;
-    pointer-events: none;
-  }
-
-  /* ── Source preview ──────────────────────────────────────── */
-  .source-block {
-    padding: 18px;
-    margin-top: 18px;
-  }
-  .source-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .source-header h2 { font: 600 14px var(--sans); }
-
-  /* ── Two-column layout (runs + chart) ───────────────────── */
-  .detail-body {
-    display: grid;
-    grid-template-columns: 1fr 480px;
-    gap: 18px;
-    align-items: start;
-  }
-  .detail-body.no-chart {
-    grid-template-columns: 1fr;
-  }
-  .chart-col {
-    position: sticky;
-    top: 18px;
-  }
-  .chart-col .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .chart-col h2 { font: 600 14px var(--sans); margin: 0; }
-
-  /* ── Responsive ─────────────────────────────────────────── */
-  @media (max-width: 1100px) {
-    .detail-body { grid-template-columns: 1fr; }
-    .detail-body.no-chart { grid-template-columns: 1fr; }
-    .chart-col { position: static; }
-  }
   @media (max-width: 900px) {
-    .metric-strip { grid-template-columns: repeat(3, 1fr); }
-    .run-row-main {
-      grid-template-columns: 20px 90px 60px 1fr 20px;
-      gap: 10px;
-    }
-    .run-dur { display: none; }
+    .facts { grid-template-columns: repeat(2, 1fr); }
+    .facts > div { border-bottom: 1px solid var(--line); }
+    .facts > div:nth-child(2n) { border-right: 0; }
+    .facts > div:last-child { grid-column: 1 / -1; border-bottom: 0; }
   }
   @media (max-width: 700px) {
-    .metric-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .metric-card:not(.metric-key) { display: none; }
-    /* hide only the run/pause/delete duplicates (mob-action-bar covers those); Open/Edit have no mobile equivalent */
-    .detail-topbar-right > *:not(.topbar-mobile-visible) { display: none; }
+    .detail-topbar-right { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .detail-topbar-right .btn { width: 100%; }
+    .detail-topbar-right #delete-btn { grid-column: 1 / -1; }
+    .runs-cols { display: none; }
     .run-row-main {
-      grid-template-columns: 20px 80px 1fr 20px;
-      gap: 8px;
-      padding: 10px 13px;
+      grid-template-columns: 1fr auto 20px;
+      grid-template-areas: "time status chev" "value value dur";
+      gap: 4px 12px;
+      padding: 12px 0;
     }
-    .run-row-main .chip { display: none; }
-    .run-time { font-size: 10.5px; }
-  }
-
-  /* ── Mobile sticky action bar ───────────────────────────── */
-  .mob-action-bar { display: none; }
-  @media (max-width: 700px) {
-    .mob-action-bar {
-      display: flex;
-      gap: 8px;
-      position: fixed;
-      bottom: 108px; /* .mobile-tabs renders ~100px tall, not the 72px this assumed — was overlapping/clipping these buttons */
-      left: 12px; right: 12px;
-      z-index: 90;
-      padding: 10px 12px;
-      border-radius: 16px;
-      background: var(--surface);
-      box-shadow: -4px -4px 10px var(--raise), 4px 4px 14px var(--shadow);
-    }
-    .mob-action-btn {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 12px 8px;
-      border-radius: 10px;
-      border: 0;
-      cursor: pointer;
-      font: 500 12px var(--sans);
-      color: var(--ink);
-      background: var(--surface);
-      box-shadow: -2px -2px 5px var(--raise), 3px 3px 7px var(--shadow);
-    }
-    .mob-action-btn.primary { color: var(--accent); }
-    .mob-action-btn.danger  { color: var(--err); }
-    .mob-action-btn:active {
-      box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--raise);
-    }
-    /* base.html's own .content-card rule (same specificity, later in <head>) would otherwise win with its 80px */
-    .content-card { padding-bottom: 190px !important; }
+    .run-logs { padding: 0 0 14px; }
+    .log-line { flex-wrap: wrap; gap: 2px 10px; }
+    .facts dd { font-size: 17px; }
   }
 </style>
 {% endblock %}
 
 {% block topbar %}
 <div class="topbar-left">
-  <div class="topbar-breadcrumb">
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    <a href="/" class="t-3">monitors</a>
-    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
-    <span class="t-2">{{ monitor_name }}</span>
-  </div>
-  <h1 style="display:flex;align-items:center;gap:12px">
-    <div class="led lg {{ current_status }}" style="transform:translateY(-2px);flex-shrink:0"></div>
-    <span style="font-weight:600;font-size:20px">{{ display_name }}</span>
+  <nav class="topbar-breadcrumb" aria-label="Breadcrumb">
+    <a href="/">Monitors</a><span>/</span><span>{{ monitor_name }}</span>
+  </nav>
+  <h1 style="display:flex;align-items:flex-start;gap:10px">
+    <span class="led lg {{ current_status }}" style="margin-top:9px"></span>
+    <span>{{ display_name }}</span>
   </h1>
-  <div class="topbar-sub">{{ schedule }} · {{ schedule | humanize_cron }}</div>
+  <div class="topbar-sub mono" style="font-size:12px;color:var(--ink-3)">{{ schedule }} · {{ schedule | humanize_cron }}{% if paused %} · paused{% endif %}</div>
 </div>
 <div class="topbar-right detail-topbar-right">
   {% if product_url %}
-  <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn topbar-mobile-visible">
-    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-    Open
-  </a>
+  <a href="{{ product_url }}" target="_blank" rel="noopener noreferrer" class="btn">Open product ↗</a>
   {% endif %}
-  <a href="/monitors/{{ monitor_name }}/edit" class="btn topbar-mobile-visible">Edit</a>
+  <a href="/monitors/{{ monitor_name }}/edit" class="btn">Edit</a>
   <button class="btn" id="pause-btn" onclick="togglePause()">
     {% if paused %}
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
-      <path d="M7 5l11 7-11 7V5z"/>
-    </svg>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
     <span id="pause-label">Resume</span>
     {% else %}
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
-      <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
-    </svg>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
     <span id="pause-label">Pause</span>
     {% endif %}
   </button>
   <button class="btn primary" id="run-btn" onclick="runNow()">
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
-      <path d="M7 5l11 7-11 7V5z"/>
-    </svg>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
     <span id="run-label">Run now</span>
   </button>
-  <button class="btn danger" id="delete-btn" onclick="deleteMonitor()">
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-    </svg>
-    Delete
-  </button>
+  <button class="btn danger" id="delete-btn" onclick="deleteMonitor()">Delete</button>
 </div>
 {% endblock %}
 
@@ -255,192 +119,131 @@
 {% set ok_runs    = runs | selectattr('status', 'equalto', 'ok')    | list | length %}
 {% set err_runs   = runs | selectattr('status', 'equalto', 'error') | list | length %}
 
-<!-- Metric strip -->
-<div class="metric-strip">
-  <div class="neu-raised-sm metric-card">
-    <div class="eyebrow">schedule</div>
-    <div class="metric-value mono" style="font-size:16px">{{ schedule }}</div>
-    <div class="metric-sub">{{ schedule | humanize_cron }}</div>
+{% if current_status == 'error' and runs %}
+<div class="banner" role="alert">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="led error"></span>
+    <strong class="t-err" style="font-size:13px">Last error</strong>
   </div>
-  <div class="neu-raised-sm metric-card metric-key">
-    <div class="eyebrow">status</div>
-    <div class="metric-value" style="font-size:18px">
-      <div class="led lg {{ current_status }}"></div>
-      <span class="{% if current_status == 'ok' %}t-ok{% elif current_status == 'error' %}t-err{% elif current_status == 'changed' %}t-chg{% else %}t-pen{% endif %}">{{ current_status }}</span>
-    </div>
-    {% if changed_at %}
-    <div class="metric-sub">changed: {{ changed_at | localtime }}</div>
-    {% endif %}
-  </div>
-  <div class="neu-raised-sm metric-card">
-    <div class="eyebrow">success rate</div>
-    <div class="metric-value {% if total_runs > 0 and ok_runs / total_runs < 0.9 %}t-err{% else %}t-ok{% endif %}">
-      {% if total_runs > 0 %}
-        {{ "%.1f" | format(ok_runs / total_runs * 100) }}<span class="metric-unit">%</span>
-      {% else %}
-        <span class="t-4">—</span>
-      {% endif %}
-    </div>
-    {% if err_runs > 0 %}
-    <div class="metric-sub">{{ err_runs }} error{{ 's' if err_runs != 1 }}</div>
-    {% endif %}
-  </div>
-  <div class="neu-raised-sm metric-card metric-key">
-    <div class="eyebrow">total runs</div>
-    <div class="metric-value num">{{ total_runs }}</div>
-  </div>
-  <div class="neu-raised-sm metric-card">
-    <div class="eyebrow">avg duration</div>
-    <div class="metric-value num">
-      {% if avg_duration is not none %}
-        {{ avg_duration }}<span class="metric-unit">ms</span>
-      {% else %}
-        <span class="t-4">—</span>
-      {% endif %}
-    </div>
-  </div>
+  <div class="mono t-2" style="font-size:12px;margin-top:8px;line-height:1.5;word-break:break-word">{{ runs[0].error or 'Unknown error' }}</div>
 </div>
+{% endif %}
+
+<dl class="facts">
+  <div>
+    <dt>Last value</dt>
+    {% set last = runs[0] if runs else none %}
+    {% if last and last.last_value %}<dd class="{{ 'sm' if last.last_value | length > 14 }}">{{ last.last_value }}</dd>
+    {% else %}<dd class="t-3">no value</dd>{% endif %}
+  </div>
+  <div>
+    <dt>Status</dt>
+    <dd><span class="led {{ current_status }}"></span><span class="{% if current_status == 'error' %}t-err{% elif current_status == 'changed' %}t-chg{% endif %}">{{ {'ok': 'OK', 'error': 'Failing', 'changed': 'Changed', 'pending': 'Pending'}.get(current_status, current_status) }}</span></dd>
+    {% if changed_at %}<div class="sub">changed {{ changed_at | localtime }}</div>{% endif %}
+  </div>
+  <div>
+    <dt>Success rate</dt>
+    <dd class="{% if total_runs > 0 and ok_runs / total_runs < 0.9 %}t-err{% endif %}">{% if total_runs > 0 %}{{ "%.1f" | format(ok_runs / total_runs * 100) }}%{% else %}<span class="t-3">—</span>{% endif %}</dd>
+    {% if err_runs > 0 %}<div class="sub">{{ err_runs }} error{{ 's' if err_runs != 1 }}</div>{% endif %}
+  </div>
+  <div>
+    <dt>Total runs</dt>
+    <dd class="num">{{ total_runs }}</dd>
+  </div>
+  <div>
+    <dt>Avg duration</dt>
+    <dd class="num">{% if avg_duration is not none %}{{ "%.1f" | format(avg_duration / 1000) }} s{% else %}<span class="t-3">—</span>{% endif %}</dd>
+  </div>
+</dl>
 
 {% if check_urls %}
-<div class="neu-raised-sm" style="padding:14px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-  <span class="eyebrow" style="margin-right:4px;flex-shrink:0">sources</span>
+<div class="sources">
+  <span class="lab">Sources</span>
   {% for label, url in check_urls %}
-  <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:11px;gap:5px">
-    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-    {{ label }}
-  </a>
+  <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="btn">{{ label }} ↗</a>
   {% endfor %}
 </div>
 {% endif %}
 
-<div class="detail-body {% if not metric %}no-chart{% endif %}">
-<!-- Left col: error banner + runs -->
-<div class="runs-col">
-
-{% if current_status == 'error' and runs %}
-<!-- Error banner -->
-<div class="neu-raised-sm error-banner" style="margin-bottom:18px">
-  <div class="error-banner-glow"></div>
-  <div style="position:relative">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <div class="led error"></div>
-      <span class="eyebrow t-err">Last error</span>
-    </div>
-    <div class="mono" style="font-size:11px;color:var(--ink-2);line-height:1.45">
-      {{ runs[0].error or 'Unknown error' }}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- Run history header -->
-<div class="runs-header">
-  <h2>Recent runs</h2>
-  <div class="seg" style="transform:scale(.9);transform-origin:right">
-    <button class="on" onclick="filterRuns('all', this)">All</button>
-    <button onclick="filterRuns('error', this)">Errors</button>
-    <button onclick="filterRuns('changed', this)">Changes</button>
-  </div>
-</div>
-
-<!-- Run rows -->
-{% if runs %}
-<div id="runs-list">
-{% for run in runs %}
-<div class="neu-raised-sm run-row {% if run.status == 'error' and loop.first %}open{% endif %}"
-  data-status="{{ run.status }}" id="run-{{ run.id }}">
-  <div class="run-row-main" onclick="toggleRun('{{ run.id }}', {{ 'true' if run.logs else 'false' }})">
-    <div class="led {{ run.status }}"></div>
-    <span class="run-time mono num">{{ run.ran_at | localtime if run.ran_at else '—' }}</span>
-    <span class="chip {{ run.status }}" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">{{ run.status }}</span>
-    <span class="run-dur mono num">{{ run.duration_ms }}ms</span>
-    <span class="run-value {% if run.status == 'error' %}t-err mono{% elif run.status == 'changed' %}t-chg mono{% else %}t-2{% endif %}">
-      {{- run.last_value or run.error.split('\n')[0] if run.error else '—' -}}
-    </span>
-    <span class="run-chevron">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-    </span>
-  </div>
-  {% if run.error or run.logs %}
-  <div class="run-logs">
-    {% if run.error %}
-    <div class="t-err mono" style="font-size:11px;margin-bottom:8px;line-height:1.4">{{ run.error }}</div>
-    {% endif %}
-    {% if run.logs %}
-    <div class="console">
-      {% for line in run.logs %}
-      <div class="log-line">
-        <span class="log-time">{{ line.logged_at | localtime if line.logged_at else '' }}</span>
-        <span class="log-{{ line.level }}">{{ line.level }}</span>
-        <span class="log-msg">{{ line.message }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-</div>
-{% endfor %}
-</div>
-{% else %}
-<div style="text-align:center;padding:3rem 2rem;color:var(--ink-4)">
-  <div style="font:500 14px var(--sans)">No runs yet</div>
-  <div style="font:11px var(--mono);margin-top:8px">Hit "Run now" to trigger a manual run</div>
-</div>
-{% endif %}
-
-<div id="load-more-wrap" style="text-align:center;margin-top:16px">
-  {% if runs | length == 50 %}
-  <button class="btn" id="load-more-btn" onclick="loadMoreRuns()">Load more</button>
-  {% endif %}
-</div>
-
-</div><!-- end .runs-col -->
-
 {% if metric %}
-<!-- Right col: chart -->
-<div class="chart-col">
-  <div class="neu-raised-sm" style="padding:18px">
-    <div class="chart-header">
-      <h2>Value over time</h2>
-      <div class="seg" style="transform:scale(.82);transform-origin:right">
-        <button class="on" id="range-48h"   onclick="setRange(48,    this)">48h</button>
-        <button          id="range-30d"   onclick="setRange(720,   this)">30d</button>
-        <button          id="range-90d"   onclick="setRange(2160,  this)">90d</button>
-        <button          id="range-1y"    onclick="setRange(8760,  this)">1y</button>
-      </div>
-    </div>
-    <div style="min-height:80px;position:relative">
-      <div id="cw-chart-loading" class="t-3 mono" style="font-size:11px;text-align:center;padding:20px 0">loading…</div>
-      <div id="cw-chart-empty" class="t-4 mono" style="font-size:11px;text-align:center;padding:20px 0;display:none">no data</div>
-      <div id="cw-chart-container"></div>
+<section class="chart-col" aria-label="Value over time">
+  <div class="chart-header">
+    <h2 class="sec-title">Value over time</h2>
+    <div class="seg" role="group" aria-label="Range">
+      <button class="on" id="range-48h"   onclick="setRange(48,    this)">48h</button>
+      <button          id="range-30d"   onclick="setRange(720,   this)">30d</button>
+      <button          id="range-90d"   onclick="setRange(2160,  this)">90d</button>
+      <button          id="range-1y"    onclick="setRange(8760,  this)">1y</button>
     </div>
   </div>
-</div>
+  <div style="min-height:80px;position:relative">
+    <div id="cw-chart-loading" class="t-3 mono" style="font-size:12px;text-align:center;padding:20px 0">loading…</div>
+    <div id="cw-chart-empty" class="t-3 mono" style="font-size:12px;text-align:center;padding:20px 0;display:none">no data</div>
+    <div id="cw-chart-container"></div>
+  </div>
+</section>
 {% endif %}
 
-</div><!-- end .detail-body -->
+<section aria-label="Recent runs">
+  <div class="runs-header">
+    <h2>Recent runs</h2>
+    <div class="seg" role="group" aria-label="Filter runs">
+      <button class="on" onclick="filterRuns('all', this)">All</button>
+      <button onclick="filterRuns('error', this)">Errors</button>
+      <button onclick="filterRuns('changed', this)">Changes</button>
+    </div>
+  </div>
 
-<!-- Mobile sticky action bar -->
-<div class="mob-action-bar" id="mob-action-bar">
-  <button class="mob-action-btn primary" id="mob-run-btn" onclick="runNow()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
-    <span id="mob-run-label">Run now</span>
-  </button>
-  <button class="mob-action-btn" id="mob-pause-btn" onclick="togglePause()">
-    {% if paused %}
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><path d="M7 5l11 7-11 7V5z"/></svg>
-    <span id="mob-pause-label">Resume</span>
-    {% else %}
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-    <span id="mob-pause-label">Pause</span>
+  {% if runs %}
+  <div class="runs-cols" aria-hidden="true"><span>Time</span><span>Status</span><span>Duration</span><span>Value</span><span></span></div>
+  <div id="runs-list">
+  {% for run in runs %}
+  <div class="run-row {% if run.status == 'error' and loop.first %}open{% endif %}" data-status="{{ run.status }}" id="run-{{ run.id }}">
+    <div class="run-row-main" onclick="toggleRun('{{ run.id }}', {{ 'true' if run.logs else 'false' }})">
+      <span class="run-time num">{{ run.ran_at | localtime if run.ran_at else '—' }}</span>
+      <span class="run-status"><span class="led {{ run.status }}"></span>{{ {'ok': 'OK', 'error': 'Failing', 'changed': 'Changed', 'pending': 'Pending'}.get(run.status, run.status) }}</span>
+      <span class="run-dur num">{{ run.duration_ms }} ms</span>
+      <span class="run-value {% if run.status == 'error' %}t-err{% elif run.status == 'changed' %}t-chg{% endif %}">
+        {{- run.last_value or run.error.split('\n')[0] if run.error else '—' -}}
+      </span>
+      <span class="run-chevron">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+    </div>
+    {% if run.error or run.logs %}
+    <div class="run-logs">
+      {% if run.error %}
+      <div class="t-err mono" style="font-size:12px;margin-bottom:8px;line-height:1.4">{{ run.error }}</div>
+      {% endif %}
+      {% if run.logs %}
+      <div class="console">
+        {% for line in run.logs %}
+        <div class="log-line">
+          <span class="log-time">{{ line.logged_at | localtime if line.logged_at else '' }}</span>
+          <span class="log-{{ line.level }}">{{ line.level }}</span>
+          <span class="log-msg">{{ line.message }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
     {% endif %}
-  </button>
-  <button class="mob-action-btn danger" onclick="deleteMonitor()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-    Delete
-  </button>
-</div>
+  </div>
+  {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px 0">
+    <div style="font:600 15px var(--sans)">No runs yet</div>
+    <div class="t-2" style="font-size:13px;margin-top:6px">Press Run now to start the first run.</div>
+  </div>
+  {% endif %}
+
+  <div id="load-more-wrap" style="text-align:center;margin-top:16px">
+    {% if runs | length == 50 %}
+    <button class="btn" id="load-more-btn" onclick="loadMoreRuns()">Load more</button>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -456,6 +259,8 @@
 </script>
 {% endif %}
 <script>
+  const STATUS_LABEL = { ok: 'OK', error: 'Failing', changed: 'Changed', pending: 'Pending' };
+
   function toggleRun(id, hasLogs) {
     if (!hasLogs) return;
     const row = document.getElementById('run-' + id);
@@ -463,7 +268,7 @@
   }
 
   function filterRuns(status, btn) {
-    document.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('.runs-header .seg button').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     document.querySelectorAll('#runs-list .run-row').forEach(row => {
       row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
@@ -475,14 +280,10 @@
     const label = document.getElementById('run-label');
     btn.disabled = true;
     label.textContent = 'Queued…';
-    const mobBtn = document.getElementById('mob-run-btn');
-    const mobLabel = document.getElementById('mob-run-label');
-    if (mobBtn) mobBtn.disabled = true;
-    if (mobLabel) mobLabel.textContent = 'Queued…';
     const latestId = parseInt(document.querySelector('.run-row')?.id.replace('run-', '') || '0');
     try {
       const res = await fetch('/monitors/{{ monitor_name }}/run', { method: 'POST' });
-      if (!res.ok) { label.textContent = 'Error'; btn.disabled = false; if (mobBtn) mobBtn.disabled = false; if (mobLabel) mobLabel.textContent = 'Run now'; return; }
+      if (!res.ok) { label.textContent = 'Error'; btn.disabled = false; return; }
       const poll = setInterval(async () => {
         try {
           const r = await fetch('/api/monitors/{{ monitor_name }}/runs');
@@ -497,8 +298,6 @@
     } catch (_) {
       label.textContent = 'Error';
       btn.disabled = false;
-      if (mobBtn) mobBtn.disabled = false;
-      if (mobLabel) mobLabel.textContent = 'Run now';
     }
   }
 
@@ -522,22 +321,9 @@
             svgEl.innerHTML = '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
           }
         }
-        const mobLabel = document.getElementById('mob-pause-label');
-        const mobBtn = document.getElementById('mob-pause-btn');
-        if (mobLabel) mobLabel.textContent = _paused ? 'Resume' : 'Pause';
-        if (mobBtn) {
-          const mobSvg = mobBtn.querySelector('svg');
-          if (mobSvg) {
-            mobSvg.innerHTML = _paused
-              ? '<path d="M7 5l11 7-11 7V5z"/>'
-              : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
-          }
-        }
       }
     } finally {
       btn.disabled = false;
-      const mobPauseBtn = document.getElementById('mob-pause-btn');
-      if (mobPauseBtn) mobPauseBtn.disabled = false;
     }
   }
 
@@ -572,7 +358,7 @@
       const list = document.getElementById('runs-list');
       runs.forEach(run => {
         const row = document.createElement('div');
-        row.className = 'neu-raised-sm run-row';
+        row.className = 'run-row';
         row.dataset.status = run.status;
         row.id = 'run-' + run.id;
 
@@ -580,17 +366,15 @@
         main.className = 'run-row-main';
         main.onclick = () => toggleRun(String(run.id), !!(run.error || (run.logs && run.logs.length)));
 
-        const led = document.createElement('div');
-        led.className = 'led ' + run.status;
-
         const time = document.createElement('span');
         time.className = 'run-time mono num';
         time.textContent = run.ran_at || '—';
 
         const chip = document.createElement('span');
-        chip.className = 'chip ' + run.status;
-        chip.style.cssText = 'padding:3px 8px;font-size:9px;letter-spacing:0.1em';
-        chip.textContent = run.status;
+        chip.className = 'run-status';
+        const dot = document.createElement('span');
+        dot.className = 'led ' + run.status;
+        chip.append(dot, STATUS_LABEL[run.status] || run.status);
 
         const dur = document.createElement('span');
         dur.className = 'run-dur mono num';
@@ -605,7 +389,7 @@
         chev.className = 'run-chevron';
         chev.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
 
-        main.append(led, time, chip, dur, val, chev);
+        main.append(time, chip, dur, val, chev);
         row.appendChild(main);
         if (run.error || (run.logs && run.logs.length)) {
           const logsDiv = document.createElement('div');
