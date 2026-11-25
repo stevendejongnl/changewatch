@@ -36,6 +36,7 @@
   .monitor-schedule { font: 12px var(--mono); color: var(--ink-3); margin-top: 3px; }
   .paused-chip { font: 500 12px var(--sans); color: var(--ink-3); margin-left: 8px; }
   @media (min-width: 701px) { .mon-table td.c-value { min-width: 220px; max-width: 320px; } }
+  .monitor-value, .prev { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
   .monitor-value { font-size: 14px; font-weight: 500; line-height: 1.4; }
   .monitor-value.err { font: 12px/1.4 var(--mono); color: var(--err); }
   .monitor-value.chg { color: var(--chg); }
@@ -185,8 +186,8 @@ async function deleteBroken(name, btn) {
       {% elif m.status == 'pending' %}
         <div class="monitor-value none">waiting for first run</div>
       {% else %}
-        <div class="monitor-value{% if m.status == 'changed' %} chg{% endif %}{% if not m.last_value %} none{% endif %}">{{ m.last_value or '—' }}</div>
-        {% if m.status == 'changed' and m.previous_value %}<div class="prev">was {{ m.previous_value }}</div>{% endif %}
+        <div class="monitor-value{% if m.status == 'changed' %} chg{% endif %}{% if not m.last_value %} none{% endif %}">{{ (m.last_value | truncate(300, true, '…')) if m.last_value else '—' }}</div>
+        {% if m.status == 'changed' and m.previous_value %}<div class="prev">was {{ m.previous_value | truncate(300, true, '…') }}</div>{% endif %}
       {% endif %}
     </td>
     <td class="c-hist">
