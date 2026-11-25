@@ -1,7 +1,7 @@
 // v3: moved from /static/sw.js to /sw.js so its scope covers the whole
 // origin, not just /static/ - a scoped-to-/static/ worker can never
 // control the actual page requests (/, /activity) it was meant to cache.
-const CACHE = 'cw-v3';
+const CACHE = 'cw-v4';
 const APP_SHELL = ['/', '/activity'];
 
 self.addEventListener('install', e => {
