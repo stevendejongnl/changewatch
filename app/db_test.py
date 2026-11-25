@@ -477,3 +477,12 @@ async def test_remove_push_subscription(db):
 async def test_remove_push_subscription_missing_endpoint_is_a_noop(db):
     await db.remove_push_subscription("https://push.example/does-not-exist")
     assert await db.get_push_subscriptions() == []
+
+
+async def test_get_run_history_returns_last_runs_per_monitor_newest_first(db):
+    for i in range(5):
+        await db.record_run("mon_a", status="ok", last_value=f"v{i}", error=None, duration_ms=1)
+    await db.record_run("mon_b", status="error", last_value=None, error="x", duration_ms=1)
+    history = await db.get_run_history(3)
+    assert [r["last_value"] for r in history["mon_a"]] == ["v4", "v3", "v2"]
+    assert history["mon_b"] == [{"status": "error", "last_value": None}]

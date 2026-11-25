@@ -402,6 +402,8 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep, scheduler
     metric_map = {m.name: m.metric for m in known}
     display_name_map = {m.name: m.display_name or m.name for m in known}
     display_url_map = {m.name: m.display_url for m in known}
+    schedule_map = {m.name: m.schedule for m in known}
+    history = await db.get_run_history(24)
     if "example_price" not in all_names and all_names:
         monitors = [m for m in monitors if m["monitor_name"] != "example_price"]
     seen = {m["monitor_name"] for m in monitors}
@@ -422,6 +424,10 @@ async def dashboard(request: Request, db: DbDep, git_sync: GitSyncDep, scheduler
         m["metric"] = metric_map.get(m["monitor_name"])
         m["display_name"] = display_name_map.get(m["monitor_name"], m["monitor_name"])
         m["product_url"] = display_url_map.get(m["monitor_name"], "")
+        m["schedule"] = schedule_map.get(m["monitor_name"])
+        runs = history.get(m["monitor_name"], [])
+        m["history"] = [r["status"] for r in reversed(runs)]
+        m["previous_value"] = runs[1]["last_value"] if m["status"] == "changed" and len(runs) > 1 else None
         m["tags"] = await db.get_tags(m["monitor_name"])
 
     favorites = [m for m in monitors if m.get("favorite")]

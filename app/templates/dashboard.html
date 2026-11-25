@@ -6,194 +6,128 @@
 
 {% block head %}
 <style>
-  /* ── Stat tiles ─────────────────────────────────────────── */
-  .stat-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 22px;
+  .tabs { display: flex; flex-wrap: wrap; gap: 20px; border-bottom: 1px solid var(--line-2); }
+  .tabs button {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 40px; padding: 0 2px; margin-bottom: -1px;
+    background: transparent; border: 0; border-bottom: 2px solid transparent;
+    font: 500 13px/1 var(--sans); color: var(--ink-2); cursor: pointer;
   }
-  .stat-tile {
-    padding: 18px 22px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .stat-tile .count {
-    font: 600 30px/1 var(--sans);
-    letter-spacing: -0.02em;
-    color: var(--ink);
-  }
-  .stat-tile .count.zero { color: var(--ink-4); }
+  .tabs button:hover { color: var(--ink); }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--ink); }
+  .tabs .cnt { font: 12px var(--mono); color: var(--ink-3); }
 
-  /* ── Filter row ─────────────────────────────────────────── */
-  .filter-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
+  .banner { border: 1px solid var(--line-2); border-left: 3px solid var(--err); border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; }
+  .banner-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; color: var(--err); }
+  .banner-file { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
 
-  /* ── Monitor grid ───────────────────────────────────────── */
-  .monitor-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+  .mon-table { width: 100%; border-collapse: collapse; }
+  .mon-table th {
+    text-align: left; font: 500 12px var(--sans); color: var(--ink-2);
+    padding: 10px 12px; border-bottom: 1px solid var(--line-2); white-space: nowrap;
   }
-  .monitor-card {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    min-width: 0;
-  }
-  .monitor-card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .monitor-name-block {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-  .monitor-name {
-    font: 500 13.5px/1.2 var(--mono);
-    color: var(--ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
-  }
-  .monitor-schedule {
-    font: 11px var(--mono);
-    color: var(--ink-3);
-    margin-top: 4px;
-  }
-  .monitor-value-well {
-    padding: 14px 16px;
-    min-height: 64px;
-  }
-  .monitor-value {
-    font: 600 16px/1.2 var(--sans);
-    letter-spacing: -0.01em;
-  }
-  .monitor-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--ink-3);
-  }
+  .mon-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .mon-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+  .name-cell { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+  .fav-btn { background: none; border: 0; cursor: pointer; padding: 2px; color: var(--ink-4); display: inline-flex; margin-top: 1px; }
+  .fav-btn.on { color: var(--chg); }
+  .monitor-name { font: 600 14px/1.3 var(--sans); color: var(--ink); }
+  a.monitor-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .monitor-schedule { font: 12px var(--mono); color: var(--ink-3); margin-top: 3px; }
+  .paused-chip { font: 500 12px var(--sans); color: var(--ink-3); margin-left: 8px; }
+  .monitor-value { font-size: 14px; font-weight: 500; line-height: 1.4; }
+  .monitor-value.err { font: 12px/1.4 var(--mono); color: var(--err); }
+  .monitor-value.chg { color: var(--chg); }
+  .monitor-value.none { color: var(--ink-3); font-weight: 400; }
+  .prev { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .ran { font: 12px var(--mono); color: var(--ink-2); white-space: nowrap; }
+  .st { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap; }
+  .hist { display: inline-flex; gap: 2px; align-items: center; height: 18px; }
+  .hist s { display: block; width: 4px; height: 14px; border-radius: 1px; background: var(--ok); text-decoration: none; }
+  .hist s.error { background: var(--err); }
+  .hist s.changed { background: var(--chg); }
+  .actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .actions .btn { min-height: 32px; padding: 0 10px; }
 
-  /* ── Run button states ──────────────────────────────────── */
   .run-btn { position: relative; }
   .run-btn .spinner {
-    display: none;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    border: 1.5px solid var(--ink-4);
-    border-top-color: var(--accent);
+    display: none; width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--ink-4); border-top-color: var(--ink);
     animation: spin .6s linear infinite;
   }
   .run-btn.loading .btn-icon { display: none; }
   .run-btn.loading .spinner  { display: block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Status conn indicator ──────────────────────────────── */
-  .conn-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font: 400 11px var(--mono);
-    color: var(--ink-3);
-  }
-  .conn-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--ok);
-    box-shadow: 0 0 6px var(--ok-glow);
-  }
+  .empty { max-width: 440px; margin: 0 auto; padding: 72px 0; text-align: center; }
+  .empty h2 { font-size: 16px; margin-top: 16px; }
+  .empty p { font-size: 14px; color: var(--ink-2); line-height: 1.5; margin-top: 8px; }
+  .empty .acts { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
-  /* ── Paused chip ─────────────────────────────────────────── */
-  .paused-chip {
-    font: 500 9px/1 var(--sans);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    padding: 3px 7px;
-    border-radius: 999px;
-    background: var(--surface);
-    box-shadow: inset 1px 1px 3px var(--shadow), inset -1px -1px 3px var(--raise);
-  }
-
-  /* ── Sparkline ──────────────────────────────────────────── */
-  .sparkline-wrap { margin-top: 8px; height: 48px; }
-
-  /* ── Responsive ─────────────────────────────────────────── */
-  @media (max-width: 1100px) {
-    .monitor-grid { grid-template-columns: repeat(2, 1fr); }
-  }
   @media (max-width: 700px) {
-    .stat-strip {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 12px;
+    .tabs { flex-wrap: nowrap; overflow-x: auto; gap: 16px; }
+    .tabs button { min-height: 44px; white-space: nowrap; }
+    .mon-table thead { display: none; }
+    .mon-table, .mon-table tbody { display: block; }
+    .mon-table tr.monitor-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+      padding: 14px 0; border-bottom: 1px solid var(--line);
     }
-    .stat-tile { padding: 10px 14px; gap: 10px; }
-    .stat-tile .count { font-size: 20px; }
-    .monitor-grid { grid-template-columns: 1fr; gap: 10px; }
-    .monitor-card { padding: 10px 12px; gap: 8px; }
-    .monitor-value-well { padding: 8px 10px; min-height: 0; }
-    .monitor-value { font-size: 13px; }
-    .monitor-name { font-size: 12px; }
-    .monitor-schedule { font-size: 10px; margin-top: 2px; }
-    .monitor-footer { font-size: 10px; }
-    .sparkline-wrap { margin-top: 4px; height: 36px; }
-    .filter-row { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .monitor-card .run-btn { display: none; }
+    .mon-table td { display: block; padding: 0; border: 0; }
+    .mon-table td.c-name { grid-column: 1; grid-row: 1; }
+    .mon-table td.c-status { grid-column: 2; grid-row: 1; justify-self: end; }
+    .mon-table td.c-value { grid-column: 1; grid-row: 2; }
+    .mon-table td.c-ran { grid-column: 2; grid-row: 2; justify-self: end; }
+    .mon-table td.c-hist { grid-column: 1 / -1; grid-row: 3; }
+    .mon-table td.c-act { display: none; }
+    .fav-btn { min-width: 44px; min-height: 44px; margin: -12px 0 -12px -12px; align-items: center; justify-content: center; }
   }
 </style>
 {% endblock %}
 
 {% block topbar %}
+{% set n_ok      = monitors | selectattr('status', 'equalto', 'ok')      | list | length %}
+{% set n_changed = monitors | selectattr('status', 'equalto', 'changed') | list | length %}
+{% set n_error   = monitors | selectattr('status', 'equalto', 'error')   | list | length %}
+{% set n_pending = monitors | selectattr('status', 'equalto', 'pending') | list | length %}
 <div class="topbar-left">
   <h1>Monitors</h1>
-  <div class="topbar-sub">{% if favorites_mode %}{{ monitors | length }} favorites · live{% else %}{{ monitors | length }} monitors · live{% endif %}</div>
+  <div class="topbar-sub" id="summary">
+    {{ monitors | length }} {{ 'favorite' if favorites_mode else 'monitor' }}{{ 's' if monitors | length != 1 }}{% if n_error or n_changed %}: {% if n_error %}{{ n_error }} failing{% endif %}{% if n_error and n_changed %}, {% endif %}{% if n_changed %}{{ n_changed }} changed{% endif %}{% elif monitors %}, all healthy{% endif %}.
+  </div>
 </div>
 <div class="topbar-right">
   {% if favorites_mode %}
   <button class="btn" id="show-all-btn" onclick="toggleShowAll(this)">Show all</button>
   {% endif %}
-  <a href="/monitors/new" class="btn">New monitor</a>
   {% if git_sync_enabled %}
   <button class="btn" id="sync-btn" onclick="syncMonitors()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-15.5-6.3L3 8"/><path d="M3 4v4h4"/><path d="M3 12a9 9 0 0 0 15.5 6.3L21 16"/><path d="M21 20v-4h-4"/></svg>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-15.5-6.3L3 8"/><path d="M3 4v4h4"/><path d="M3 12a9 9 0 0 0 15.5 6.3L21 16"/><path d="M21 20v-4h-4"/></svg>
     <span id="sync-label">Sync</span>
   </button>
-  <span id="sync-error" style="color:var(--err);font-size:11px"></span>
+  <span id="sync-error" style="color:var(--err);font-size:12px"></span>
   {% endif %}
+  <a href="/monitors/new" class="btn primary">+ New monitor</a>
 </div>
 {% endblock %}
 
 {% block content %}
 {% if broken_files %}
-<div id="broken-banner" style="background:var(--err);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px">
-  <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+<div id="broken-banner" class="banner" role="alert">
+  <div class="banner-title">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     {{ broken_files | length }} monitor file{{ 's' if broken_files | length != 1 }} failed to load
   </div>
   {% for filename, error in broken_files.items() %}
-  <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:10px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+  <div class="banner-file" data-broken-file>
     <div style="min-width:0">
-      <div style="font-weight:600;font-size:13px;margin-bottom:4px">{{ filename }}</div>
-      <div class="mono" style="font-size:11px;opacity:0.9;word-break:break-all">{{ error }}</div>
+      <div style="font-weight:600;font-size:13px">{{ filename }}</div>
+      <div class="mono t-2" style="font-size:12px;margin-top:4px;word-break:break-all">{{ error }}</div>
     </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
+    <div style="display:flex;gap:8px">
       {% set stem = filename[:-3] if filename.endswith('.py') else filename %}
-      <a href="/monitors/{{ stem }}/edit" class="btn" style="background:rgba(255,255,255,0.2);color:#fff;border:none;font-size:12px;padding:5px 10px">Edit</a>
-      <button onclick="deleteBroken('{{ stem }}', this)" class="btn" style="background:rgba(255,255,255,0.15);color:#fff;border:none;font-size:12px;padding:5px 10px">Delete</button>
+      <a href="/monitors/{{ stem }}/edit" class="btn">Edit</a>
+      <button onclick="deleteBroken('{{ stem }}', this)" class="btn danger">Delete</button>
     </div>
   </div>
   {% endfor %}
@@ -202,152 +136,134 @@
 async function deleteBroken(name, btn) {
   if (!confirm('Delete ' + name + '.py?')) return;
   const res = await fetch('/api/monitors/' + name, {method: 'DELETE'});
-  if (res.ok) btn.closest('[style*="background:rgba"]').remove();
+  if (res.ok) btn.closest('[data-broken-file]').remove();
   const banner = document.getElementById('broken-banner');
-  if (banner && !banner.querySelector('[style*="background:rgba"]')) banner.remove();
+  if (banner && !banner.querySelector('[data-broken-file]')) banner.remove();
 }
 </script>
 {% endif %}
-{% set n_ok      = monitors | selectattr('status', 'equalto', 'ok')      | list | length %}
-{% set n_changed = monitors | selectattr('status', 'equalto', 'changed') | list | length %}
-{% set n_error   = monitors | selectattr('status', 'equalto', 'error')   | list | length %}
-{% set n_pending = monitors | selectattr('status', 'equalto', 'pending') | list | length %}
 
-<!-- Stat strip -->
-<div class="stat-strip">
-  <div class="neu-raised-sm stat-tile">
-    <div class="led lg ok"></div>
-    <div>
-      <div class="count num {% if n_ok == 0 %}zero{% endif %}">{{ "%02d" | format(n_ok) }}</div>
-      <div class="eyebrow" style="margin-top:6px">healthy</div>
-    </div>
-  </div>
-  <div class="neu-raised-sm stat-tile">
-    <div class="led lg changed"></div>
-    <div>
-      <div class="count num {% if n_changed == 0 %}zero{% endif %}">{{ "%02d" | format(n_changed) }}</div>
-      <div class="eyebrow" style="margin-top:6px">changed</div>
-    </div>
-  </div>
-  <div class="neu-raised-sm stat-tile">
-    <div class="led lg error"></div>
-    <div>
-      <div class="count num {% if n_error == 0 %}zero{% endif %}">{{ "%02d" | format(n_error) }}</div>
-      <div class="eyebrow" style="margin-top:6px">failing</div>
-    </div>
-  </div>
-  <div class="neu-raised-sm stat-tile">
-    <div class="led lg pending"></div>
-    <div>
-      <div class="count num {% if n_pending == 0 %}zero{% endif %}">{{ "%02d" | format(n_pending) }}</div>
-      <div class="eyebrow" style="margin-top:6px">pending</div>
-    </div>
-  </div>
-</div>
-
-<!-- Filter + status row -->
-<div class="filter-row">
-  <div class="seg">
-    <button class="on" onclick="filterMonitors('all', this)">All</button>
-    <button onclick="filterMonitors('error', this)">Failing</button>
-    <button onclick="filterMonitors('changed', this)">Changed</button>
-    <button onclick="filterMonitors('ok', this)">Healthy</button>
-  </div>
-  <div class="conn-indicator">
-    <div class="conn-dot"></div>
-    connected
-  </div>
-</div>
-
-<!-- Monitor grid -->
 {% if monitors %}
-<div class="monitor-grid" id="monitor-grid">
+<div class="tabs" role="group" aria-label="Filter by status">
+  <button class="on" data-filter="all" onclick="filterMonitors('all', this)">All <span class="cnt" data-count="all">{{ monitors | length }}</span></button>
+  <button data-filter="ok" onclick="filterMonitors('ok', this)"><span class="led ok"></span>Healthy <span class="cnt" data-count="ok">{{ n_ok }}</span></button>
+  <button data-filter="changed" onclick="filterMonitors('changed', this)"><span class="led changed"></span>Changed <span class="cnt" data-count="changed">{{ n_changed }}</span></button>
+  <button data-filter="error" onclick="filterMonitors('error', this)"><span class="led error"></span>Failing <span class="cnt" data-count="error">{{ n_error }}</span></button>
+  <button data-filter="pending" onclick="filterMonitors('pending', this)"><span class="led pending"></span>Pending <span class="cnt" data-count="pending">{{ n_pending }}</span></button>
+</div>
+
+<table class="mon-table" id="monitor-grid">
+  <thead>
+    <tr>
+      <th scope="col" style="width:34%">Monitor</th>
+      <th scope="col">Last value</th>
+      <th scope="col">Last 24 runs</th>
+      <th scope="col">Last run</th>
+      <th scope="col">Status</th>
+      <th scope="col"><span style="position:absolute;left:-9999px">Actions</span></th>
+    </tr>
+  </thead>
+  <tbody>
   {% for m in monitors %}
-  <a href="/monitors/{{ m.monitor_name }}" class="neu-raised monitor-card" data-status="{{ m.status }}" data-monitor="{{ m.monitor_name }}" style="display:flex;flex-direction:column;gap:14px;text-decoration:none;color:inherit">
-    <div class="monitor-card-header">
-      <button class="btn icon fav-btn" style="width:32px;height:32px;justify-content:center;color:{% if m.get('favorite') %}var(--chg){% else %}var(--ink-4){% endif %}"
-        onclick="event.preventDefault();event.stopPropagation();toggleFavorite('{{ m.monitor_name }}', this)" title="{% if m.get('favorite') %}Remove from favorites{% else %}Add to favorites{% endif %}">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="{% if m.get('favorite') %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-      </button>
-      <div class="monitor-name-block">
-        <div class="led {{ m.status }}"></div>
+  <tr class="monitor-row" data-status="{{ m.status }}" data-monitor="{{ m.monitor_name }}" data-history="{{ m.history | join(',') }}">
+    <td class="c-name">
+      <div class="name-cell">
+        <button class="fav-btn{% if m.get('favorite') %} on{% endif %}" onclick="toggleFavorite('{{ m.monitor_name }}', this)" aria-label="{% if m.get('favorite') %}Remove from favorites{% else %}Add to favorites{% endif %}" title="{% if m.get('favorite') %}Remove from favorites{% else %}Add to favorites{% endif %}">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="{% if m.get('favorite') %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
         <div style="min-width:0">
-          <span class="monitor-name">{{ m.display_name }}</span>
-          {% if m.get('schedule') %}
-          <div class="monitor-schedule">{{ m.schedule }}</div>
-          <div class="monitor-schedule" style="color:var(--ink-4)">{{ m.schedule | humanize_cron }}</div>
-          {% endif %}
+          <a href="/monitors/{{ m.monitor_name }}" class="monitor-name">{{ m.display_name }}</a>{% if m.paused %}<span class="paused-chip">paused</span>{% endif %}
+          {% if m.get('schedule') %}<div class="monitor-schedule" title="{{ m.schedule | humanize_cron }}">{{ m.schedule }}</div>{% endif %}
         </div>
       </div>
-      {% if m.paused %}
-      <span class="paused-chip">paused</span>
-      {% endif %}
-      {% if m.product_url %}
-      <button class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)"
-        onclick="event.preventDefault();event.stopPropagation();window.open('{{ m.product_url }}', '_blank')" title="Open product page">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 17 17 7"/><path d="M8 7h9v9"/>
-        </svg>
-      </button>
-      {% endif %}
-      <div class="run-btn" id="run-wrap-{{ m.monitor_name }}">
-        <button class="btn icon" style="width:32px;height:32px;justify-content:center;color:var(--ink-3)"
-          onclick="event.preventDefault();event.stopPropagation();runMonitor('{{ m.monitor_name }}')" title="Run now">
-          <span class="btn-icon">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" stroke="none">
-              <path d="M7 5l11 7-11 7V5z"/>
-            </svg>
-          </span>
-          <span class="spinner"></span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Value readout -->
-    <div class="neu-inset monitor-value-well">
-      <div class="eyebrow" style="margin-bottom:6px">Last value</div>
+    </td>
+    <td class="c-value">
       {% if m.status == 'error' %}
-        <div class="mono t-err" style="font-size:12px;line-height:1.4">{{ (m.error or '')[:60] }}{% if (m.error or '') | length > 60 %}…{% endif %}</div>
-      {% elif m.status == 'changed' %}
-        <div class="mono t-chg monitor-value">{{ m.last_value or '—' }}</div>
+        <div class="monitor-value err">{{ (m.error or '')[:60] }}{% if (m.error or '') | length > 60 %}…{% endif %}</div>
       {% elif m.status == 'pending' %}
-        <div class="t-4" style="font-size:14px">waiting for first run</div>
+        <div class="monitor-value none">waiting for first run</div>
       {% else %}
-        <div class="monitor-value {% if not m.last_value %}t-4{% endif %}">{{ m.last_value or '—' }}</div>
+        <div class="monitor-value{% if m.status == 'changed' %} chg{% endif %}{% if not m.last_value %} none{% endif %}">{{ m.last_value or '—' }}</div>
+        {% if m.status == 'changed' and m.previous_value %}<div class="prev">was {{ m.previous_value }}</div>{% endif %}
       {% endif %}
-    </div>
-
-    {% if m.metric %}
-    <div id="spark-{{ m.monitor_name }}" class="sparkline-wrap"></div>
-    {% endif %}
-
-    <!-- Footer -->
-    <div class="monitor-footer">
-      <span class="mono">last: {{ m.ran_at | localtime if m.ran_at else 'never' }}</span>
-      <span class="chip {{ m.status }}" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">{{ m.status }}</span>
-      <span class="mono">{% if m.duration_ms %}{{ m.duration_ms }}ms{% endif %}</span>
-    </div>
-  </a>
+    </td>
+    <td class="c-hist">
+      <span class="hist" role="img" aria-label="Last {{ m.history | length }} runs">{% for h in m.history %}<s class="{{ h }}"></s>{% endfor %}</span>
+    </td>
+    <td class="c-ran"><span class="ran">{{ m.ran_at | localtime if m.ran_at else 'never' }}</span></td>
+    <td class="c-status"><span class="st"><span class="led {{ m.status }}"></span><span class="st-label">{{ {'ok': 'OK', 'error': 'Failing', 'changed': 'Changed', 'pending': 'Pending'}.get(m.status, m.status) }}</span></span></td>
+    <td class="c-act">
+      <div class="actions">
+        {% if m.product_url %}<a href="{{ m.product_url }}" target="_blank" rel="noopener" class="btn" aria-label="Open product page" title="Open product page">↗</a>{% endif %}
+        <div class="run-btn" id="run-wrap-{{ m.monitor_name }}">
+          <button class="btn" onclick="runMonitor('{{ m.monitor_name }}')" aria-label="Run {{ m.display_name }} now">
+            <span class="btn-icon"><svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M7 5l11 7-11 7V5z"/></svg></span>
+            <span class="spinner"></span>Run
+          </button>
+        </div>
+      </div>
+    </td>
+  </tr>
   {% endfor %}
-</div>
+  </tbody>
+</table>
 {% else %}
-<div style="text-align:center;padding:4rem 2rem;color:var(--ink-4)">
-  <div style="font:500 14px var(--sans)">No monitors yet</div>
-  <div style="font:11px var(--mono);margin-top:8px">Drop a .py file in the monitors/ directory to get started</div>
+<div class="empty">
+  <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:10px;border:1px solid var(--line-3);color:var(--ink-2)">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+  </div>
+  <h2>No monitors yet</h2>
+  <p>A monitor is one Python file in the <span class="mono">monitors/</span> folder. Create one here, or drop a file in the folder{% if git_sync_enabled %} and press Sync{% endif %}.</p>
+  <div class="acts"><a href="/monitors/new" class="btn primary">+ New monitor</a></div>
 </div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-  function filterMonitors(status, btn) {
-    document.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    document.querySelectorAll('#monitor-grid .neu-raised').forEach(card => {
-      card.style.display = (status === 'all' || card.dataset.status === status) ? '' : 'none';
+  const STATUS_LABEL = { ok: 'OK', error: 'Failing', changed: 'Changed', pending: 'Pending' };
+  let _filter = 'all';
+
+  function esc(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
+  }
+
+  function applyFilter() {
+    document.querySelectorAll('#monitor-grid .monitor-row').forEach(row => {
+      row.style.display = (_filter === 'all' || row.dataset.status === _filter) ? '' : 'none';
     });
+  }
+
+  function filterMonitors(status, btn) {
+    _filter = status;
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    applyFilter();
+  }
+
+  function updateCounts() {
+    const rows = document.querySelectorAll('#monitor-grid .monitor-row');
+    const n = { all: 0, ok: 0, changed: 0, error: 0, pending: 0 };
+    rows.forEach(r => {
+      if (r.style.opacity === '0.6') return;
+      n.all++;
+      const s = r.dataset.status;
+      n[s in n ? s : 'pending']++;
+    });
+    Object.keys(n).forEach(k => {
+      const el = document.querySelector('[data-count="' + k + '"]');
+      if (el) el.textContent = n[k];
+    });
+    const summary = document.getElementById('summary');
+    if (summary) {
+      const parts = [];
+      if (n.error) parts.push(n.error + ' failing');
+      if (n.changed) parts.push(n.changed + ' changed');
+      const head = n.all + ' monitor' + (n.all === 1 ? '' : 's');
+      summary.textContent = head + (parts.length ? ': ' + parts.join(', ') : (n.all ? ', all healthy' : '')) + '.';
+    }
   }
 
   async function runMonitor(name) {
@@ -403,36 +319,38 @@ async function deleteBroken(name, btn) {
   var _allMonitors = {{ all_monitors | tojson }};
   var _showingAll = false;
 
+  function extraRow(m) {
+    const tr = document.createElement('tr');
+    tr.className = 'monitor-row';
+    tr.dataset.status = m.status;
+    tr.dataset.monitor = m.monitor_name;
+    tr.style.opacity = '0.6';
+    const name = esc(m.display_name || m.monitor_name);
+    tr.innerHTML =
+      '<td class="c-name"><div class="name-cell"><button class="fav-btn" onclick="toggleFavorite(\'' + esc(m.monitor_name) + '\', this)" aria-label="Add to favorites" title="Add to favorites">' +
+      '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>' +
+      '<div style="min-width:0"><a href="/monitors/' + encodeURIComponent(m.monitor_name) + '" class="monitor-name">' + name + '</a>' +
+      (m.schedule ? '<div class="monitor-schedule">' + esc(m.schedule) + '</div>' : '') + '</div></div></td>' +
+      '<td class="c-value"><div class="monitor-value' + (m.last_value ? '' : ' none') + '">' + esc(m.last_value || '—') + '</div></td>' +
+      '<td class="c-hist"><span class="hist">' + (m.history || []).map(h => '<s class="' + esc(h) + '"></s>').join('') + '</span></td>' +
+      '<td class="c-ran"><span class="ran">' + esc(m.ran_at || 'never') + '</span></td>' +
+      '<td class="c-status"><span class="st"><span class="led ' + esc(m.status) + '"></span><span class="st-label">' + esc(STATUS_LABEL[m.status] || m.status) + '</span></span></td>' +
+      '<td class="c-act"></td>';
+    return tr;
+  }
+
   function toggleShowAll(btn) {
     _showingAll = !_showingAll;
     btn.textContent = _showingAll ? 'Show favorites' : 'Show all';
-    btn.style.color = _showingAll ? 'var(--accent)' : '';
-    var grid = document.getElementById('monitor-grid');
-    if (!grid) return;
+    const body = document.querySelector('#monitor-grid tbody');
+    if (!body) return;
     if (_showingAll) {
-      var existing = new Set(Array.from(grid.querySelectorAll('.monitor-card')).map(function(c) { return c.dataset.monitor; }));
-      _allMonitors.forEach(function(m) {
-        if (!existing.has(m.monitor_name)) {
-          var card = document.createElement('a');
-          card.href = '/monitors/' + m.monitor_name;
-          card.className = 'neu-raised monitor-card';
-          card.dataset.status = m.status;
-          card.dataset.monitor = m.monitor_name;
-          card.style.opacity = '0.6';
-          card.style.display = 'flex';
-          card.style.flexDirection = 'column';
-          card.style.gap = '14px';
-          card.style.textDecoration = 'none';
-          card.style.color = 'inherit';
-          card.innerHTML = '<div class="monitor-card-header"><button class="btn icon fav-btn" style="width:32px;height:32px;justify-content:center;color:var(--ink-4)" onclick="event.preventDefault();event.stopPropagation();toggleFavorite(\'' + m.monitor_name + '\', this)" title="Add to favorites"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button><div class="monitor-name-block"><div class="led ' + m.status + '"></div><div style="min-width:0"><span class="monitor-name">' + (m.display_name || m.monitor_name) + '</span></div></div></div><div class="neu-inset monitor-value-well"><div class="monitor-value ' + (m.last_value ? '' : 't-4') + '">' + (m.last_value || '—') + '</div></div><div class="monitor-footer"><span class="mono">last: ' + (m.ran_at || 'never') + '</span><span class="chip ' + m.status + '" style="padding:3px 8px;font-size:9px;letter-spacing:0.1em">' + m.status + '</span></div>';
-          grid.appendChild(card);
-        }
-      });
+      const existing = new Set(Array.from(body.querySelectorAll('.monitor-row')).map(r => r.dataset.monitor));
+      _allMonitors.forEach(m => { if (!existing.has(m.monitor_name)) body.appendChild(extraRow(m)); });
     } else {
-      Array.from(grid.querySelectorAll('.monitor-card')).forEach(function(c) {
-        if (c.style.opacity === '0.6') c.remove();
-      });
+      Array.from(body.querySelectorAll('.monitor-row')).forEach(r => { if (r.style.opacity === '0.6') r.remove(); });
     }
+    applyFilter();
   }
   {% endif %}
 
@@ -450,36 +368,16 @@ async function deleteBroken(name, btn) {
 
   (function () {
     const indicator = document.querySelector('.conn-indicator');
-    const dot = indicator && indicator.querySelector('.conn-dot');
+    const dot = indicator && indicator.querySelector('.led');
 
     function setConn(ok) {
       if (!dot || !indicator) return;
-      dot.style.background = ok ? '' : 'var(--ink-4)';
-      dot.style.boxShadow  = ok ? '' : 'none';
+      dot.className = 'led ' + (ok ? 'ok' : 'pending');
       indicator.childNodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-          node.textContent = ok ? ' connected' : ' reconnecting…';
+          node.textContent = ok ? 'connected' : 'reconnecting…';
         }
       });
-    }
-
-    function updateStatStrip() {
-      const cards = document.querySelectorAll('#monitor-grid .monitor-card');
-      let ok = 0, changed = 0, error = 0, pending = 0;
-      cards.forEach(c => {
-        const s = c.dataset.status;
-        if (s === 'ok') ok++;
-        else if (s === 'changed') changed++;
-        else if (s === 'error') error++;
-        else pending++;
-      });
-      const counts = document.querySelectorAll('.stat-tile .count');
-      if (counts.length >= 4) {
-        [[ok, 0], [changed, 1], [error, 2], [pending, 3]].forEach(([n, i]) => {
-          counts[i].textContent = String(n).padStart(2, '0');
-          counts[i].className = 'count num' + (n === 0 ? ' zero' : '');
-        });
-      }
     }
 
     function setText(el, text) {
@@ -487,67 +385,53 @@ async function deleteBroken(name, btn) {
     }
 
     function updateCard(data) {
-      const card = document.querySelector('.monitor-card[data-monitor="' + data.monitor_name + '"]');
-      if (!card) { location.reload(); return; }
+      const row = document.querySelector('.monitor-row[data-monitor="' + data.monitor_name + '"]');
+      if (!row) { location.reload(); return; }
 
-      card.dataset.status = data.status;
+      row.dataset.status = data.status;
 
-      const led = card.querySelector('.led');
+      const led = row.querySelector('.c-status .led');
       if (led) led.className = 'led ' + data.status;
+      setText(row.querySelector('.st-label'), STATUS_LABEL[data.status] || data.status);
 
-      const chip = card.querySelector('.chip');
-      if (chip) { chip.className = 'chip ' + data.status; setText(chip, data.status); }
-
-      const well = card.querySelector('.monitor-value-well');
-      if (well) {
-        const valueEl = well.querySelector('.monitor-value') || well.querySelector('.t-4');
+      const valueEl = row.querySelector('.monitor-value');
+      if (valueEl) {
+        const prev = row.querySelector('.prev');
+        if (prev) prev.remove();
         if (data.status === 'error') {
           const msg = (data.error || '').slice(0, 60) + ((data.error || '').length > 60 ? '…' : '');
-          if (valueEl) {
-            valueEl.className = 'mono t-err';
-            valueEl.style.fontSize = '12px';
-            valueEl.style.lineHeight = '1.4';
-            setText(valueEl, msg);
-          }
-        } else if (data.status === 'changed') {
-          if (valueEl) {
-            valueEl.className = 'mono t-chg monitor-value';
-            valueEl.style.fontSize = '';
-            valueEl.style.lineHeight = '';
-            setText(valueEl, data.last_value || '—');
-          }
+          valueEl.className = 'monitor-value err';
+          setText(valueEl, msg);
         } else {
-          if (valueEl) {
-            valueEl.className = 'monitor-value' + (data.last_value ? '' : ' t-4');
-            valueEl.style.fontSize = '';
-            valueEl.style.lineHeight = '';
-            setText(valueEl, data.last_value || '—');
-          }
+          valueEl.className = 'monitor-value' + (data.status === 'changed' ? ' chg' : '') + (data.last_value ? '' : ' none');
+          setText(valueEl, data.last_value || '—');
         }
       }
 
-      const footer = card.querySelector('.monitor-footer');
-      if (footer) {
-        const timeEl = footer.querySelector('.mono');
-        if (timeEl) setText(timeEl, 'last: ' + (data.ran_at || 'never'));
-        const durEls = footer.querySelectorAll('.mono');
-        if (durEls[1] && data.duration_ms != null) setText(durEls[1], data.duration_ms + 'ms');
+      setText(row.querySelector('.ran'), data.ran_at || 'never');
+
+      const hist = row.querySelector('.hist');
+      if (hist) {
+        const s = document.createElement('s');
+        s.className = data.status;
+        hist.appendChild(s);
+        while (hist.children.length > 24) hist.removeChild(hist.firstChild);
       }
 
-      updateStatStrip();
+      updateCounts();
+      applyFilter();
     }
 
     function updatePauseChip(data) {
-      const card = document.querySelector('.monitor-card[data-monitor="' + data.monitor_name + '"]');
-      if (!card) return;
-      const existing = card.querySelector('.paused-chip');
+      const row = document.querySelector('.monitor-row[data-monitor="' + data.monitor_name + '"]');
+      if (!row) return;
+      const existing = row.querySelector('.paused-chip');
       if (data.paused && !existing) {
         const chip = document.createElement('span');
         chip.className = 'paused-chip';
         chip.textContent = 'paused';
-        const header = card.querySelector('.monitor-card-header');
-        const runBtn = header && header.querySelector('.run-btn');
-        if (header && runBtn) header.insertBefore(chip, runBtn);
+        const name = row.querySelector('.monitor-name');
+        if (name) name.after(chip);
       } else if (!data.paused && existing) {
         existing.remove();
       }
@@ -566,16 +450,4 @@ async function deleteBroken(name, btn) {
     window.addEventListener('beforeunload', () => src.close());
   })();
 </script>
-{% set ns = namespace(has_sparkline=false) %}
-{% for m in monitors %}{% if m.metric %}{% set ns.has_sparkline = true %}{% endif %}{% endfor %}
-{% if ns.has_sparkline %}
-<script src="/static/chart.js?v={{ chart_version }}"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    {% for m in monitors %}{% if m.metric %}
-    CWChart.initSparkline({{ m.monitor_name | tojson }}, {{ ('spark-' ~ m.monitor_name) | tojson }});
-    {% endif %}{% endfor %}
-  });
-</script>
-{% endif %}
 {% endblock %}

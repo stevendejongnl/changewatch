@@ -194,6 +194,24 @@ class Database:
             rows = await cur.fetchall()
         return [dict(r) for r in rows]
 
+    async def get_run_history(self, limit: int = 24) -> dict[str, list[dict]]:
+        """Last `limit` runs per monitor, newest first, in one query."""
+        async with self.conn.execute(
+            """SELECT monitor_name, status, last_value FROM (
+                   SELECT monitor_name, status, last_value, id,
+                          ROW_NUMBER() OVER (PARTITION BY monitor_name ORDER BY id DESC) AS rn
+                   FROM runs
+               ) WHERE rn <= ? ORDER BY monitor_name, id DESC""",
+            (limit,),
+        ) as cur:
+            rows = await cur.fetchall()
+        result: dict[str, list[dict]] = {}
+        for row in rows:
+            result.setdefault(row["monitor_name"], []).append(
+                {"status": row["status"], "last_value": row["last_value"]}
+            )
+        return result
+
     async def delete_monitor(self, monitor_name: str) -> None:
         async with self.conn.execute(
             "SELECT id FROM runs WHERE monitor_name = ?", (monitor_name,)

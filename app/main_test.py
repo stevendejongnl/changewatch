@@ -1252,6 +1252,15 @@ async def test_dashboard_favorites_mode_shows_favorited_monitor_before_first_run
     assert 'data-monitor="mon_a"' in response.text
 
 
+async def test_dashboard_shows_history_strip_and_previous_value(client, db):
+    await db.record_run("mon_a", status="ok", last_value="10", error=None, duration_ms=1)
+    await db.record_run("mon_a", status="changed", last_value="12", error=None, duration_ms=1)
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert "was 10" in response.text
+    assert 'data-history="ok,changed"' in response.text
+
+
 async def test_dashboard_shows_all_when_no_favorites(client, db):
     await db.record_run("mon_a", status="ok", last_value="v", error=None, duration_ms=10)
     await db.record_run("mon_b", status="ok", last_value="v", error=None, duration_ms=10)
